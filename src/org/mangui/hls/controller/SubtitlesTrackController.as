@@ -140,19 +140,19 @@ package org.mangui.hls.controller {
             }
             
             // PRIORITY #1: Automatically select forced subtitles track
-            if (HLSSettings.autoSelectForcedSubtitles && _forcedTrackId != -1){
+            if (HLSSettings.subtitlesAutoSelectForced && _forcedTrackId != -1){
                 subtitlesTrack = _forcedTrackId;
                 return;
             }
             
 			// PRIORITY #2: Automatically select auto-select subtitles track that matches current locale
-			if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
+			if (HLSSettings.subtitlesAutoSelect && autoSelectId != -1) {
 				subtitlesTrack = autoSelectId;
 				return;
 			}
 			
             // PRIORITY #3: Automatically select default subtitles track
-            if (HLSSettings.autoSelectDefaultSubtitles && _defaultTrackId != -1){
+            if (HLSSettings.subtitlesAutoSelectDefault && _defaultTrackId != -1){
                 subtitlesTrack = _defaultTrackId;
                 return;
             }

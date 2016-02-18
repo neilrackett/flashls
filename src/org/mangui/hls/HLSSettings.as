@@ -340,19 +340,19 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var seekFromLevel : Number = -1;
-
+		
 		/**
-		 * autoSelectDefaultSubtitles
+		 * subtitlesAutoSelectDefault
 		 * 
 		 * Should a subtitles track automatically be selected if it is flagged 
 		 * as DEFAULT=YES?
 		 * 
 		 * Default is false
 		 */
-		public static var autoSelectDefaultSubtitles:Boolean = false;
+		public static var subtitlesAutoSelectDefault:Boolean = false;
 		
         /**
-         * autoSelectSubtitles
+         * subtitlesAutoSelect
          * 
          * Should a subtitles track automatically be selected if it is flagged 
          * as AUTOSELECT=YES and the language matches the current system locale?
@@ -361,10 +361,10 @@ package org.mangui.hls {
          * 
          * Default is true 
          */
-        public static var autoSelectSubtitles:Boolean = true;
+        public static var subtitlesAutoSelect:Boolean = true;
         
         /**
-         * autoSelectForcedSubtitles
+         * subtitlesAutoSelectForced
          * 
          * Should a subtitles track automatically be selected is it is flagged 
          * as FORCED=YES? If true, forced subtitles will always be selected 
@@ -372,10 +372,10 @@ package org.mangui.hls {
          * 
          * Default is true 
          */
-        public static var autoSelectForcedSubtitles:Boolean = true;
+        public static var subtitlesAutoSelectForced:Boolean = true;
         
         /**
-         * keepEmptySubtitles
+         * subtitlesKeepEmpty
          * 
          * By default, empty subtitles are ignored and a generic empty subtitle
          * is used to fill the gaps to minimize the number of SUBTITLES_CHANGE
@@ -386,22 +386,22 @@ package org.mangui.hls {
          * 
          * Default is false
          */
-        public static var keepEmptySubtitles:Boolean = false;
+        public static var subtitlesKeepEmpty:Boolean = false;
         
         /**
-         * ignoreGapsInLiveSubtitles
+         * subtitlesIgnoreGapsInLive
          * 
          * By default, when there is a gap between subtitles for live streams
          * a generic empty subtitle is dispatched to tell the listener that 
          * the currently displayed subtitles should be cleared.
          * 
-         * However, if your live stream already include empty subtitles to
+         * However, if your live stream already includes empty subtitles to
          * fill these gaps, you may prefer to use this option, in combination
-         * with keepEmptySubtitles, to suppress these events. 
+         * with subtitlesKeepEmpty, to suppress these events. 
          * 
          * Default is false
          */
-        public static var ignoreGapsInLiveSubtitles:Boolean = false;
+        public static var subtitlesIgnoreGapsInLive:Boolean = false;
         
         /**
          * useHardwareVideoDecoder

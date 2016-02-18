@@ -238,7 +238,7 @@ package org.mangui.hls.loader {
                 }
                 
                 var suppressDispatch:Boolean = 
-                        HLSSettings.ignoreGapsInLiveSubtitles 
+                        HLSSettings.subtitlesIgnoreGapsInLive 
                         && _hls.type == HLSTypes.LIVE
                         && matchingSubtitles == _emptySubtitles;
                 
@@ -300,7 +300,7 @@ package org.mangui.hls.loader {
          */
         protected function loader_completeHandler(event:Event):void {
             
-            var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data, 0, HLSSettings.keepEmptySubtitles);
+            var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data, 0, HLSSettings.subtitlesKeepEmpty);
             
             if (_hls.type == HLSTypes.LIVE) {
                 _seqSubs[_fragment.seqnum] = parsed;
