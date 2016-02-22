@@ -295,6 +295,7 @@ package org.mangui.hls {
          *   -1  means infinite retry
          */
          public static var manifestRedundantLoadmaxRetry : int = 3;
+		 
         /**
          * startFromBitrate
          *
@@ -317,7 +318,6 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromLevel : Number = -1;
-
 
         /**
          * autoStartMaxDuration
