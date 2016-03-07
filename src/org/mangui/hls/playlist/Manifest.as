@@ -130,9 +130,9 @@ package org.mangui.hls.playlist {
         /** loading complete handler **/
         private function _loadCompleteHandler(event : Event) : void {
             _metrics.loading_end_time = getTimer();
-            onLoadedData(String(_urlloader.data));
+            onLoadedData(StringUtil.toLinux(String(_urlloader.data)));
         };
-
+		
         private function onLoadedData(data : String) : void {
             _success(data, _url, _index, _metrics);
         }
