@@ -19,17 +19,21 @@ package org.mangui.hls.utils
      */
     public class WebVTTParser
     {
-        static private const CUE:RegExp = /^(?:(.*)(?:\r\n|\n))?([\d:,.]+) --> ([\d:,.]+)((.|\n|\r|\r\n)*)/;
+        static private const CUE:RegExp = /^(?:(.*)(?:\n))?([\d:,.]+) --> ([\d:,.]+)((.|\n)*)/;
         static private const TIMESTAMP:RegExp = /^(?:(\d{2,}):)?(\d{2}):(\d{2})[,.](\d{3})$/;
         
         /**
          * Parse a string into a series of Subtitles objects and return
          * them in a Vector
+		 * 
+		 * All alignment and HTML formatting is currently removed.
          */
         static public function parse(data:String, offset:Number=0, keepEmpty:Boolean=false):Vector.<Subtitles>
         {
+			data = StringUtil.toLinux(data);
+			
             var results:Vector.<Subtitles> = new Vector.<Subtitles>;
-            var lines:Array = data.replace(/\balign:.*+/ig,'').split(/(?:(?:\r\n|\r|\n){2,})/);
+            var lines:Array = data.replace(/\balign:.*+/ig,'').split(/(?:(?:\n){2,})/);
             
             for each (var line:String in lines)
             {
@@ -38,7 +42,7 @@ package org.mangui.hls.utils
                 var matches:Array = CUE.exec(line);
                 var startPosition:Number = offset+parseTime(matches[2]);
                 var endPosition:Number = offset+parseTime(matches[3]);
-                var text:String = StringUtil.trim((matches[4] || '').replace(/(\r\n|\r|\|)/g, '\n'));
+                var text:String = StringUtil.trim(StringUtil.removeHtmlTags(matches[4] || '').replace(/(\|)/g, '\n'));
                 
                 if (keepEmpty || text)
                 {
