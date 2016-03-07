@@ -418,7 +418,7 @@ package org.mangui.hls.playlist {
         /** Extract Alternate Audio Tracks from manifest data. **/
         public static function extractSubtitlesTracks(data : String, base : String = '') : Vector.<SubtitlesPlaylistTrack> {
             var subtitlesTracks : Vector.<SubtitlesPlaylistTrack> = new Vector.<SubtitlesPlaylistTrack>();
-            var lines : Array = data.split("\n");
+			var lines : Vector.<String> = StringUtil.toLines(data);
             var i : int = 0;
             while (i < lines.length) {
                 var line : String = lines[i++];

@@ -3,8 +3,6 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.utils
 {
-    import mx.utils.StringUtil;
-    
     import org.mangui.hls.model.Subtitles;
 
     /**
