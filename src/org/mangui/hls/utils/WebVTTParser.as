@@ -30,7 +30,7 @@ package org.mangui.hls.utils
          */
         static public function parse(data:String, offset:Number=0, keepEmpty:Boolean=false):Vector.<Subtitles>
         {
-			data = StringUtil.toLinux(data);
+			data = StringUtil.toLF(data);
 			
             var results:Vector.<Subtitles> = new Vector.<Subtitles>;
             var lines:Array = data.replace(/\balign:.*+/ig,'').split(/(?:(?:\n){2,})/);
