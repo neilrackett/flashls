@@ -20,7 +20,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.model.Subtitles;
+    import org.mangui.hls.model.Subtitle;
     import org.mangui.hls.utils.WebVTTParser;
 
     CONFIG::LOGGING {
@@ -40,11 +40,11 @@ package org.mangui.hls.loader {
         protected var _seqSubs:Dictionary;
         protected var _seqNum:Number;
         protected var _seqStartPosition:Number;
-        protected var _currentSubtitles:Subtitles;
+        protected var _currentSubtitles:Subtitle;
         protected var _seqIndex:int;
         protected var _remainingRetries:int;
         protected var _retryTimeout:uint;
-        protected var _emptySubtitles:Subtitles;
+        protected var _emptySubtitles:Subtitle;
         
         public function SubtitlesFragmentLoader(hls:HLS) {
             
@@ -63,7 +63,7 @@ package org.mangui.hls.loader {
             
             _seqSubs = new Dictionary(true);
             _seqIndex = 0;
-            _emptySubtitles = new Subtitles(-1, -1, '');
+            _emptySubtitles = new Subtitle(-1, -1, '');
             _fragments = new Vector.<Fragment>;
         }
         
@@ -92,7 +92,7 @@ package org.mangui.hls.loader {
         /**
          * The currently displayed subtitles
          */
-        public function get currentSubtitles():Subtitles {
+        public function get currentSubtitles():Subtitle {
             return _currentSubtitles;
         }
         
@@ -208,17 +208,17 @@ package org.mangui.hls.loader {
             if (isCurrent(_currentSubtitles, position)) return;
             
             // Get the subtitles list for the current sequence (always 0 for VOD)
-            var subs:Vector.<Subtitles> = _seqSubs[_seqNum];
+            var subs:Vector.<Subtitle> = _seqSubs[_seqNum];
             
             if (subs) {
                 var mt:HLSMediatime = event.mediatime;
-                var matchingSubtitles:Subtitles = _emptySubtitles;
+                var matchingSubtitles:Subtitle = _emptySubtitles;
                 var i:uint;
                 var length:uint = subs.length;
                 
                 for (i=_seqIndex; i<length; ++i) {
                     
-                    var subtitles:Subtitles = subs[i];
+                    var subtitles:Subtitle = subs[i];
                     
                     // There's no point searching more that we need to!
                     if (subtitles.startPosition > position) {
@@ -257,7 +257,7 @@ package org.mangui.hls.loader {
         /**
          * Are the specified subtitles the correct ones for the specified position?
          */
-        protected function isCurrent(subtitles:Subtitles, position:Number):Boolean {
+        protected function isCurrent(subtitles:Subtitle, position:Number):Boolean {
             return subtitles 
                 && subtitles.startPosition <= position 
                 && subtitles.endPosition >= position
@@ -300,13 +300,13 @@ package org.mangui.hls.loader {
          */
         protected function loader_completeHandler(event:Event):void {
             
-            var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data, 0, HLSSettings.subtitlesKeepEmpty);
+            var parsed:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, 0, HLSSettings.subtitlesKeepEmpty);
             
             if (_hls.type == HLSTypes.LIVE) {
                 _seqSubs[_fragment.seqnum] = parsed;
             } else {
                 _seqSubs[_fragment.seqnum] = true;
-                _seqSubs[0] = (_seqSubs[0] is Vector.<Subtitles> ? _seqSubs[0] : new Vector.<Subtitles>).concat(parsed);
+                _seqSubs[0] = (_seqSubs[0] is Vector.<Subtitle> ? _seqSubs[0] : new Vector.<Subtitle>).concat(parsed);
             }
             
             CONFIG::LOGGING {

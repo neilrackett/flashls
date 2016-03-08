@@ -5,7 +5,7 @@ package org.mangui.hls.event {
     import flash.events.Event;
     
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Subtitles;
+    import org.mangui.hls.model.Subtitle;
 
     /** Event fired when an error prevents playback. **/
     public class HLSEvent extends Event {
@@ -113,7 +113,7 @@ package org.mangui.hls.event {
         /** a complete ID3 payload from PES, as a hex dump **/
         public var ID3Data : String;
         /** a subtitles model */
-        public var subtitles:Subtitles;
+        public var subtitles:Subtitle;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
@@ -135,7 +135,7 @@ package org.mangui.hls.event {
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
                 case SUBTITLES_CHANGE:
-                    subtitles = parameter as Subtitles;
+                    subtitles = parameter as Subtitle;
                     break;
                 case MANIFEST_PARSED:
                 case MANIFEST_LOADED:

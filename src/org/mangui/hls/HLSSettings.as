@@ -377,31 +377,32 @@ package org.mangui.hls {
         /**
          * subtitlesKeepEmpty
          * 
-         * By default, empty subtitles are ignored and a generic empty subtitle
-         * is used to fill the gaps to minimize the number of SUBTITLES_CHANGE
-         * it is necessary to dispatch.
+         * By default, all subtitles will be parsed and dispatched, even if 
+		 * they have no content.
+		 * 
+		 * Set this property to false if you would prefer to ignore subtitles
+		 * that have no content and use a generic empty subtitle to fill the 
+		 * gaps, minimizing the number of SUBTITLES_CHANGE it is necessary to 
+		 * dispatch.
          * 
-         * When set to true, all subtitles will be parsed and dispatched, even
-         * if they have no content.
-         * 
-         * Default is false
+         * Default is true
          */
-        public static var subtitlesKeepEmpty:Boolean = false;
+        public static var subtitlesKeepEmpty:Boolean = true;
         
         /**
          * subtitlesIgnoreGapsInLive
          * 
-         * By default, when there is a gap between subtitles for live streams
-         * a generic empty subtitle is dispatched to tell the listener that 
-         * the currently displayed subtitles should be cleared.
+         * By default, when there is a gap between subtitles a generic empty 
+		 * subtitle is dispatched to tell the listener that the currently 
+		 * displayed subtitles should be cleared.
          * 
-         * However, if your live stream already includes empty subtitles to
-         * fill these gaps, you may prefer to use this option, in combination
-         * with subtitlesKeepEmpty, to suppress these events. 
+         * However, most live streams already includes empty subtitles to
+         * fill these gaps, so this option, in combination with 
+		 * subtitlesKeepEmpty, enables you to suppress these events. 
          * 
-         * Default is false
+         * Default is true
          */
-        public static var subtitlesIgnoreGapsInLive:Boolean = false;
+        public static var subtitlesIgnoreGapsInLive:Boolean = true;
         
         /**
          * useHardwareVideoDecoder

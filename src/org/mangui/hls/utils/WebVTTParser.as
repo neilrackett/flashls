@@ -3,7 +3,7 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.utils
 {
-    import org.mangui.hls.model.Subtitles;
+    import org.mangui.hls.model.Subtitle;
 
     /**
      * WebVTT subtitles parser
@@ -26,13 +26,13 @@ package org.mangui.hls.utils
          * Parse a string into a series of Subtitles objects and return
          * them in a Vector
 		 * 
-		 * All alignment and HTML formatting is currently removed.
+		 * Alignment data is currently removed.
          */
-        static public function parse(data:String, offset:Number=0, keepEmpty:Boolean=false):Vector.<Subtitles>
+        static public function parse(data:String, offset:Number=0, keepEmpty:Boolean=true):Vector.<Subtitle>
         {
 			data = StringUtil.toLF(data);
 			
-            var results:Vector.<Subtitles> = new Vector.<Subtitles>;
+            var results:Vector.<Subtitle> = new Vector.<Subtitle>;
             var lines:Array = data.replace(/\balign:.*+/ig,'').split(/(?:(?:\n){2,})/);
             
             for each (var line:String in lines)
@@ -42,11 +42,11 @@ package org.mangui.hls.utils
                 var matches:Array = CUE.exec(line);
                 var startPosition:Number = offset+parseTime(matches[2]);
                 var endPosition:Number = offset+parseTime(matches[3]);
-                var text:String = StringUtil.trim(StringUtil.removeHtmlTags(matches[4] || '').replace(/(\|)/g, '\n'));
+                var text:String = StringUtil.trim((matches[4] || '').replace(/(\|)/g, '\n'));
                 
                 if (keepEmpty || text)
                 {
-                    var subs:Subtitles = new Subtitles(startPosition, endPosition, text);
+                    var subs:Subtitle = new Subtitle(startPosition, endPosition, text);
                     
                     CONFIG::LOGGING 
                     {
