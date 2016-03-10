@@ -263,8 +263,6 @@ package org.mangui.hls.loader {
 		
 		protected function dispatchSubtitle(subtitle:Subtitle):void {
 			
-			trace(this, ">>>", subtitle.text);
-			
 			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, subtitle));
 			}
