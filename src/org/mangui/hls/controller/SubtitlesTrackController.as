@@ -5,6 +5,7 @@ package org.mangui.hls.controller {
     import flash.net.ObjectEncoding;
     import flash.system.Capabilities;
     import flash.utils.ByteArray;
+    import flash.utils.setTimeout;
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
@@ -14,7 +15,6 @@ package org.mangui.hls.controller {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
-    import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
 
     CONFIG::LOGGING {
@@ -175,31 +175,17 @@ package org.mangui.hls.controller {
 			
 			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
 			
-			function f(event:HLSEvent):void
+			// Announce available subtitles tracks via onMetaData at the end of the current call stack
+			if (HLSSettings.subtitlesTx3gEnabled)
 			{
-				var p:HLSPlayMetrics = event.playMetrics;
-				var tags:Vector.<FLVTag> = Vector.<FLVTag>([toFLVTag(tx3gMetaData)]);
-				
-				_streamBuffer.appendTags
-				(
-					HLSLoaderTypes.FRAGMENT_SUBTITLES, 
-					_hls.currentLevel, 
-					p.seqnum, 
-					tags, 
-					p.program_date, 
-					p.program_date, 
-					0, 0
-				);
-				
-//				var stream:HLSNetStream = _hls.stream as HLSNetStream;
-//				stream.appendTags(tags);
-				
-				_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, f);
+				// TODO Do this using an FLVTag
+				setTimeout(function():void {
+					var client:Object = _hls.stream.client;
+					if (client && client.hasOwnProperty("onMetaData")) {
+						client.onMetaData(tx3gMetaData);
+					}
+				}, 0);
 			}
-			
-			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, f);
-			
-			trace(this, "@@@ TX3G metadata appended?!");
         }
         
 		/**
@@ -221,25 +207,6 @@ package org.mangui.hls.controller {
 			}
 			
 			return {trackinfo:trackinfo};
-		}
-		
-		private function toFLVTag(metaData:Object, pts:Number=0):FLVTag
-		{
-			//pts ||= _hls.position+10; // TODO Get accurate PTS?
-			
-			var tag : FLVTag = new FLVTag(FLVTag.METADATA, pts, pts, false);
-			var bytes : ByteArray = new ByteArray();
-			
-			bytes.objectEncoding = ObjectEncoding.AMF0;
-			bytes.writeObject("onMetaData");
-			bytes.objectEncoding = ObjectEncoding.AMF3;
-			bytes.writeByte(0x11);
-			bytes.writeObject(metaData);
-			
-			tag.push(bytes, 0, bytes.length);
-			tag.build();
-			
-			return tag;
 		}
 		
         /** Normally triggered by user selection, it should return the subtitles track to be parsed */

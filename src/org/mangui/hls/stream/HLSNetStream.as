@@ -93,11 +93,6 @@ package org.mangui.hls.stream {
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);
             _client.registerCallback("onID3Data", onID3Data);
-            
-            // ISO693/TX3G/onTextData subtitles
-            _client.registerCallback("onMetaData", onMetaData);
-            _client.registerCallback("onTextData", onTextData);
-            
             super.client = _client;
         }
 
@@ -123,7 +118,6 @@ package org.mangui.hls.stream {
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
-
 
         public function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
             CONFIG::LOGGING {
@@ -157,22 +151,6 @@ package org.mangui.hls.stream {
                 }
             }
         }    
-        
-        /**
-         * Subtitles are dispatched as onTextData events compliant with the
-		 * ISO693/TX3G standard
-         */
-        public function onTextData(data:Object):void {
-			
-            CONFIG::LOGGING {
-                Log.debug("onTextData:");
-                for (var a:String in textData) {
-                    Log.debug("\t"+a+" = "+textData[a]);
-                }
-            }
-            
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, Subtitle.toSubtitle(data)));
-        }        
         
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {

@@ -377,12 +377,12 @@ package org.mangui.hls {
         /**
          * subtitlesKeepEmpty
          * 
-         * By default, all subtitles will be parsed and dispatched, even if 
+         * If true, all subtitles will be parsed and dispatched, even if 
 		 * they have no content.
 		 * 
-		 * Set this property to false if you would prefer to ignore subtitles
-		 * that have no content and use a generic empty subtitle to fill the 
-		 * gaps, minimizing the number of SUBTITLES_CHANGE it is necessary to 
+		 * Set this property to false if you prefer to ignore subtitles that
+		 * have no content and use a generic empty subtitle to fill the gaps, 
+		 * minimizing the number of SUBTITLES_CHANGE it is necessary to 
 		 * dispatch.
          * 
          * Default is true
@@ -392,18 +392,29 @@ package org.mangui.hls {
         /**
          * subtitlesIgnoreGapsInLive
          * 
-         * By default, when there is a gap between subtitles a generic empty 
-		 * subtitle is dispatched to tell the listener that the currently 
-		 * displayed subtitles should be cleared.
+         * If true, gaps between subtitles will be filled using a generic 
+		 * empty subtitle, to tell the listener that the currently displayed 
+		 * subtitles should be cleared.
          * 
-         * However, most live streams already includes empty subtitles to
-         * fill these gaps, so this option, in combination with 
-		 * subtitlesKeepEmpty, enables you to suppress these events. 
+         * Many live streams already includes empty subtitles to fill these 
+		 * gaps, so this option, in combination with subtitlesKeepEmpty, 
+		 * enables you to suppress these events. 
+         * 
+         * Default is false
+         */
+        public static var subtitlesIgnoreGapsInLive:Boolean = false;
+        
+		/**
+		 * subtitlesTx3gEnabled
+		 * 
+		 * If true, all available subtitles tracks will be announced via the
+		 * NetStream client's onMetaData event and all subtitles will be
+		 * dispatched via onTextData in ISO693/TX3G format.
          * 
          * Default is true
-         */
-        public static var subtitlesIgnoreGapsInLive:Boolean = true;
-        
+		 */
+		public static var subtitlesTx3gEnabled:Boolean = true;
+		
         /**
          * useHardwareVideoDecoder
          *

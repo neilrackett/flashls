@@ -40,7 +40,7 @@ package org.mangui.hls.loader {
         protected var _seqSubs:Dictionary;
         protected var _seqNum:Number;
         protected var _seqStartPosition:Number;
-        protected var _currentSubtitles:Subtitle;
+        protected var _currentSubtitle:Subtitle;
         protected var _seqIndex:int;
         protected var _remainingRetries:int;
         protected var _retryTimeout:uint;
@@ -93,7 +93,7 @@ package org.mangui.hls.loader {
          * The currently displayed subtitles
          */
         public function get currentSubtitles():Subtitle {
-            return _currentSubtitles;
+            return _currentSubtitle;
         }
         
         /**
@@ -101,9 +101,9 @@ package org.mangui.hls.loader {
          */
         public function stop():void {
             
-            if (_currentSubtitles) {
-                _currentSubtitles = null;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, _emptySubtitles));
+            if (_currentSubtitle) {
+                _currentSubtitle = null;
+                dispatchSubtitle(_emptySubtitles);
             }
             
             try {
@@ -158,10 +158,9 @@ package org.mangui.hls.loader {
                 _seqIndex = 0;
                 
                 // Only needed if subs are selected and being listened for
-                if (_hls.subtitlesTrack != -1
-                    && _hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+                if (_hls.subtitlesTrack != -1 && hasChangeListener) {
                     
-                    _currentSubtitles = _emptySubtitles;
+                    _currentSubtitle = _emptySubtitles;
                     
                     try {
                         var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
@@ -198,21 +197,21 @@ package org.mangui.hls.loader {
          */
         protected function mediaTimeHandler(event:HLSEvent):void {
             // If subtitles are disabled or nobody's listening, there's nothing to do
-            if (_hls.subtitlesTrack == -1 || !_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+            if (_hls.subtitlesTrack == -1 || !hasChangeListener) {
                 return;
             }
             
             var position:Number = seqPosition;
             
             // If the subtitles haven't changed, there's nothing to do
-            if (isCurrent(_currentSubtitles, position)) return;
+            if (isCurrent(_currentSubtitle, position)) return;
             
             // Get the subtitles list for the current sequence (always 0 for VOD)
             var subs:Vector.<Subtitle> = _seqSubs[_seqNum];
             
             if (subs) {
                 var mt:HLSMediatime = event.mediatime;
-                var matchingSubtitles:Subtitle = _emptySubtitles;
+                var matchingSubtitle:Subtitle = _emptySubtitles;
                 var i:uint;
                 var length:uint = subs.length;
                 
@@ -226,7 +225,7 @@ package org.mangui.hls.loader {
                     }
                     
                     if (isCurrent(subtitles, position)) {
-                        matchingSubtitles = subtitles;
+                        matchingSubtitle = subtitles;
                         break;
                     }
                 }
@@ -240,20 +239,50 @@ package org.mangui.hls.loader {
                 var suppressDispatch:Boolean = 
                         HLSSettings.subtitlesIgnoreGapsInLive 
                         && _hls.type == HLSTypes.LIVE
-                        && matchingSubtitles == _emptySubtitles;
+                        && matchingSubtitle == _emptySubtitles;
                 
-                if (matchingSubtitles != _currentSubtitles && !suppressDispatch) {
+                if (matchingSubtitle != _currentSubtitle && !suppressDispatch) {
                     
                     CONFIG::LOGGING {
                         Log.debug("Changing subtitles to: "+matchingSubtitles);
                     }
                     
-                    _currentSubtitles = matchingSubtitles;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, matchingSubtitles));
+                    _currentSubtitle = matchingSubtitle;
+                    dispatchSubtitle(matchingSubtitle);
                 }
             }
         }
         
+		protected function get hasChangeListener():Boolean
+		{
+			var client:Object = _hls.stream.client;
+			
+			return _hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)
+				|| (client && client.hasOwnProperty("onTextData"))
+		}
+		
+		protected function dispatchSubtitle(subtitle:Subtitle):void {
+			
+			trace(this, ">>>", subtitle.text);
+			
+			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, subtitle));
+			}
+			
+			var client:Object = _hls.stream.client;
+			
+			if (HLSSettings.subtitlesTx3gEnabled 
+				&& client 
+				&& client.hasOwnProperty("onTextData"))
+			{
+				var textData:Object = subtitle.toJSON();
+				textData.trackid = _hls.subtitlesTrack;
+				
+				// TODO Implement this using FLVTag
+				client.onTextData(textData);
+			}
+		}
+		
         /**
          * Are the specified subtitles the correct ones for the specified position?
          */
