@@ -2,19 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.constant.HLSSeekStates;
-    import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.demux.ID3Tag;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSPlayMetrics;
-    import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-
-    import by.blooddy.crypto.Base64;
-
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
@@ -24,17 +11,31 @@ package org.mangui.hls.stream {
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
+    
+    import by.blooddy.crypto.Base64;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.controller.BufferThresholdController;
+    import org.mangui.hls.demux.ID3Tag;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.model.Subtitle;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
     /** 
-	 * Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
+     * Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
-	 * 
+     * 
      *  FROM                                TO                                  CONDITION
-	 * ------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------------------------------------------------------------------------
      *  HLSPlayStates.IDLE                  HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
      *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
      *  HLSPlayStates.PLAYING_BUFFERING     HLSPlayStates.PLAYING               buflen > minBufferLength
@@ -45,7 +46,7 @@ package org.mangui.hls.stream {
      * seek state transition :
      *
      *  FROM                                TO                                  CONDITION
-	 * ------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------------------------------------------------------------------------
      *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING               play()/play2()/seek() called
      *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED                upon first FLV tag appending after seek
      *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE                  upon playback complete or stop() called
@@ -92,6 +93,11 @@ package org.mangui.hls.stream {
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);
             _client.registerCallback("onID3Data", onID3Data);
+            
+            // ISO693/TX3G/onTextData subtitles
+            _client.registerCallback("onMetaData", onMetaData);
+            _client.registerCallback("onTextData", onTextData);
+            
             super.client = _client;
         }
 
@@ -137,7 +143,37 @@ package org.mangui.hls.stream {
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
-
+		
+		/**
+		 * Detected subtitles tracks are announced via the onMetaData event
+		 * in the format specified by the ISO693/TX3G standard
+		 */
+        public function onMetaData(data:Object):void {
+			
+            CONFIG::LOGGING {
+                Log.debug("onMetaData:");
+                for (var a:String in textData) {
+                    Log.debug("\t"+a+" = "+textData[a]);
+                }
+            }
+        }    
+        
+        /**
+         * Subtitles are dispatched as onTextData events compliant with the
+		 * ISO693/TX3G standard
+         */
+        public function onTextData(data:Object):void {
+			
+            CONFIG::LOGGING {
+                Log.debug("onTextData:");
+                for (var a:String in textData) {
+                    Log.debug("\t"+a+" = "+textData[a]);
+                }
+            }
+            
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, Subtitle.toSubtitle(data)));
+        }        
+        
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength,

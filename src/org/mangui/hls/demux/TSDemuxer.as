@@ -7,17 +7,24 @@ package org.mangui.hls.demux {
     import flash.events.TimerEvent;
     import flash.net.ObjectEncoding;
     import flash.utils.ByteArray;
-    import flash.utils.getTimer;
     import flash.utils.Timer;
+    import flash.utils.getTimer;
+    
+    import by.blooddy.crypto.Base64;
+    
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
-    import by.blooddy.crypto.Base64;
+    import org.mangui.hls.model.SubtitlesTrack;
+    import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
         import org.mangui.hls.HLSSettings;
         import org.mangui.hls.utils.Hex;
     }
+	
+	use namespace hls_internal;
+	
     /** Representation of an MPEG transport stream. **/
     public class TSDemuxer extends EventDispatcher implements Demuxer {
         /** read position **/
@@ -148,7 +155,7 @@ package org.mangui.hls.demux {
             _totalBytes += data.length;
             _timer.start();
         }
-
+		
         /** cancel demux operation */
         public function cancel() : void {
             CONFIG::LOGGING {
@@ -178,7 +185,7 @@ package org.mangui.hls.demux {
         public function get videoExpected() : Boolean {
             return (_pmtParsed == false || _avcId != -1);
         }
-
+		
         private function getNextTSBuffer(start : int) : ByteArray {
             if(_dataVector && start + 188 <= _totalBytes) {
                 // find element matching with start offset

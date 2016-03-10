@@ -183,7 +183,7 @@ package org.mangui.hls.stream {
             _lastMediaTimeUpdate = 0;
             _timer.start();
         }
-
+		
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number;
@@ -368,7 +368,7 @@ package org.mangui.hls.stream {
                 _timer.start();
             }
         }
-
+		
         /** Return current media position **/
         public function get position() : Number {
             switch(_hls.seekState) {

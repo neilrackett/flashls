@@ -2,13 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import flash.net.ObjectEncoding;
     import flash.system.Capabilities;
+    import flash.utils.ByteArray;
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
+    import org.mangui.hls.stream.HLSNetStream;
+    import org.mangui.hls.stream.StreamBuffer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -21,6 +28,8 @@ package org.mangui.hls.controller {
     public class SubtitlesTrackController {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
+		/** stream buffer instance **/
+		private var _streamBuffer : StreamBuffer;
         /** list of subtitles tracks from Manifest, matching with current level **/
         private var _subtitlesTracksFromManifest : Vector.<SubtitlesTrack>;
         /** merged subtitles tracks list **/
@@ -31,12 +40,14 @@ package org.mangui.hls.controller {
         private var _defaultTrackId : int;
         /** forced subtitles track id **/
         private var _forcedTrackId : int;
-
-        public function SubtitlesTrackController(hls : HLS) {
+		
+        public function SubtitlesTrackController(hls : HLS, streamBuffer : StreamBuffer) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             
+			_streamBuffer = streamBuffer;
+			
 			_subtitlesTrackId = -1;
             _defaultTrackId = -1;
             _forcedTrackId = -1;
@@ -76,7 +87,7 @@ package org.mangui.hls.controller {
             _subtitlesTracksFromManifest = new Vector.<SubtitlesTrack>();
             _updateSubtitlesTrackForLevel(_hls.loadLevel);
         };
-
+		
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
             var level : int = event.loadMetrics.level;
@@ -161,9 +172,76 @@ package org.mangui.hls.controller {
         }
         
         private function _subtitlesTracksMerge() : void {
-            _subtitlesTracks = _subtitlesTracksFromManifest.slice();
+			
+			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
+			
+			function f(event:HLSEvent):void
+			{
+				var p:HLSPlayMetrics = event.playMetrics;
+				var tags:Vector.<FLVTag> = Vector.<FLVTag>([toFLVTag(tx3gMetaData)]);
+				
+				_streamBuffer.appendTags
+				(
+					HLSLoaderTypes.FRAGMENT_SUBTITLES, 
+					_hls.currentLevel, 
+					p.seqnum, 
+					tags, 
+					p.program_date, 
+					p.program_date, 
+					0, 0
+				);
+				
+//				var stream:HLSNetStream = _hls.stream as HLSNetStream;
+//				stream.appendTags(tags);
+				
+				_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, f);
+			}
+			
+			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, f);
+			
+			trace(this, "@@@ TX3G metadata appended?!");
         }
         
+		/**
+		 * Simplified ISO693/TX3G metadata that can be used to announce
+		 * available subtitles tracks via an onMetaData NetStream event
+		 */
+		private function get tx3gMetaData():Object {
+			
+			var trackinfo : Array = [];
+			
+			for each (var track:SubtitlesTrack in subtitlesTracks) {
+				trackinfo.push({
+					language: track.language,
+					title: track.title,
+					sampledescription: [{
+						sampletype: 'tx3g'
+					}]
+				});
+			}
+			
+			return {trackinfo:trackinfo};
+		}
+		
+		private function toFLVTag(metaData:Object, pts:Number=0):FLVTag
+		{
+			//pts ||= _hls.position+10; // TODO Get accurate PTS?
+			
+			var tag : FLVTag = new FLVTag(FLVTag.METADATA, pts, pts, false);
+			var bytes : ByteArray = new ByteArray();
+			
+			bytes.objectEncoding = ObjectEncoding.AMF0;
+			bytes.writeObject("onMetaData");
+			bytes.objectEncoding = ObjectEncoding.AMF3;
+			bytes.writeByte(0x11);
+			bytes.writeObject(metaData);
+			
+			tag.push(bytes, 0, bytes.length);
+			tag.build();
+			
+			return tag;
+		}
+		
         /** Normally triggered by user selection, it should return the subtitles track to be parsed */
         public function subtitlesTrackSelectionHandler(subtitlesTrackList : Vector.<SubtitlesTrack>) : SubtitlesTrack {
             var subtitlesTrackChanged : Boolean = false;

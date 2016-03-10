@@ -58,11 +58,11 @@ package org.mangui.hls {
             _levelLoader = new LevelLoader(this);
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
-            _subtitlesLevelLoader = new SubtitlesLevelLoader(this);
-            _subtitlesTrackController = new SubtitlesTrackController(this);
-            _subtitlesFragmentLoader = new SubtitlesFragmentLoader(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
+			_subtitlesLevelLoader = new SubtitlesLevelLoader(this);
+			_subtitlesTrackController = new SubtitlesTrackController(this, _streamBuffer);
+			_subtitlesFragmentLoader = new SubtitlesFragmentLoader(this);
             _hlsURLStream = URLStream as Class;
             _hlsURLLoader = URLLoader as Class;
             // default loader
