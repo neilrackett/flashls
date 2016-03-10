@@ -244,7 +244,7 @@ package org.mangui.hls.loader {
                 if (matchingSubtitle != _currentSubtitle && !suppressDispatch) {
                     
                     CONFIG::LOGGING {
-                        Log.debug("Changing subtitles to: "+matchingSubtitles);
+                        Log.debug("Changing subtitles to: "+matchingSubtitle);
                     }
                     
                     _currentSubtitle = matchingSubtitle;

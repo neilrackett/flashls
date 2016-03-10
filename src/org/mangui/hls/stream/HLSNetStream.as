@@ -138,20 +138,6 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
 		
-		/**
-		 * Detected subtitles tracks are announced via the onMetaData event
-		 * in the format specified by the ISO693/TX3G standard
-		 */
-        public function onMetaData(data:Object):void {
-			
-            CONFIG::LOGGING {
-                Log.debug("onMetaData:");
-                for (var a:String in textData) {
-                    Log.debug("\t"+a+" = "+textData[a]);
-                }
-            }
-        }    
-        
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength,
