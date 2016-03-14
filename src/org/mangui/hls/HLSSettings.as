@@ -389,21 +389,6 @@ package org.mangui.hls {
          */
         public static var subtitlesKeepEmpty:Boolean = true;
         
-        /**
-         * subtitlesIgnoreGapsInLive
-         * 
-         * If true, gaps between subtitles will be filled using a generic 
-		 * empty subtitle, to tell the listener that the currently displayed 
-		 * subtitles should be cleared.
-         * 
-         * Many live streams already includes empty subtitles to fill these 
-		 * gaps, so this option, in combination with subtitlesKeepEmpty, 
-		 * enables you to suppress these events. 
-         * 
-         * Default is false
-         */
-        public static var subtitlesIgnoreGapsInLive:Boolean = false;
-        
 		/**
 		 * subtitlesTx3gEnabled
 		 * 

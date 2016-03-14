@@ -179,7 +179,7 @@ package org.mangui.hls.loader {
 
         private function _close() : void {
             CONFIG::LOGGING {
-                Log.debug("cancel any subtitles level load in progress");
+                Log.debug("Cancelling any subtitles level load in progress");
             }
             _closed = true;
             clearTimeout(_timeoutID);

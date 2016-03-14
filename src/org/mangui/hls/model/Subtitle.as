@@ -20,17 +20,33 @@ package org.mangui.hls.model
 		
         private var _startPosition:Number;
         private var _endPosition:Number;
+        private var _startPTS:Number;
+        private var _endPTS:Number;
         private var _htmlText:String;
         
-        public function Subtitle(startPosition:Number, endPosition:Number, htmlText:String) 
+		/**
+		 * Create a new Subtitle object
+		 * 
+		 * @param	startPosition	Relative start position from WebVTT
+		 * @param	endPosition		Relative start position from WebVTT
+		 * @param	htmlText		Subtitle text, including any HTML styling
+		 * @param	pts				The program timestamp (fragment #EXT-X-PROGRAM-DATE-TIME directive)
+		 */
+        public function Subtitle(startPosition:Number, endPosition:Number, htmlText:String, pts:Number=0) 
         {
             _startPosition = startPosition;
             _endPosition = endPosition;
+			
+            _startPTS = pts + startPosition*1000;
+            _endPTS = pts + endPosition*1000;
+			
             _htmlText = htmlText || '';
         }
         
         public function get startPosition():Number { return _startPosition; }
         public function get endPosition():Number { return _endPosition; }
+        public function get startPTS():Number { return _startPTS; }
+        public function get endPTS():Number { return _endPTS; }
         public function get duration():Number { return _endPosition-_startPosition; }
         
         /**
@@ -44,23 +60,38 @@ package org.mangui.hls.model
         public function get text():String { return StringUtil.removeHtmlTags(_htmlText); }
         
         /**
-         * Convert to a standard object via the standard toJSON method
+         * Convert to a plain object via the standard toJSON method
          */
         public function toJSON():Object
         {
             return {
                 startPosition: startPosition,
                 endPosition: endPosition,
+                startPTS: startPTS,
+                endPTS: endPTS,
                 duration: duration,
                 htmlText: htmlText,
                 text: text
             }
         }
+		
+		/**
+		 * Does this subtitle have the same content as the specified subtitle?
+		 * @param	subtitle	The subtitle to compare
+		 * @returns				Boolean true if the contents are the same
+		 */
+		public function equals(subtitle:Subtitle):Boolean
+		{
+			return subtitle is Subtitle
+				&& startPosition == subtitle.startPosition
+				&& endPosition == subtitle.endPosition
+				&& htmlText == subtitle.htmlText
+				;
+		}
         
         public function toString():String
         {
             return '[Subtitles startPosition='+startPosition+' endPosition='+endPosition+' htmlText="'+htmlText+'"]';
         }
-		
 	}
 }

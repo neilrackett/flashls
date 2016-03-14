@@ -191,6 +191,7 @@ package org.mangui.hls.controller {
 			
 			var trackinfo : Array = [];
 			
+			// TODO Add default style?
 			for each (var track:SubtitlesTrack in subtitlesTracks) {
 				trackinfo.push({
 					language: track.language,

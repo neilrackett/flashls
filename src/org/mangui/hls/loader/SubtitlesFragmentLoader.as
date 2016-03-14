@@ -149,7 +149,7 @@ package org.mangui.hls.loader {
          * sequence, and VOD content relative to the entire video duration 
          */
         protected function fragmentPlayingHandler(event:HLSEvent):void {
-            
+           
             if (_hls.type == HLSTypes.LIVE) {
                 
                 // Keep track all the time to prevent delay in subtitles starting when selected
@@ -207,49 +207,41 @@ package org.mangui.hls.loader {
             if (isCurrent(_currentSubtitle, position)) return;
             
             // Get the subtitles list for the current sequence (always 0 for VOD)
-            var subs:Vector.<Subtitle> = _seqSubs[_seqNum];
+            var subs:Vector.<Subtitle> = _seqSubs[_seqNum] || new Vector.<Subtitle>();
+            var mt:HLSMediatime = event.mediatime;
+            var matchingSubtitle:Subtitle = _emptySubtitles;
+            var i:uint;
+            var length:uint = subs.length;
             
-            if (subs) {
-                var mt:HLSMediatime = event.mediatime;
-                var matchingSubtitle:Subtitle = _emptySubtitles;
-                var i:uint;
-                var length:uint = subs.length;
+            for (i=_seqIndex; i<length; ++i) {
                 
-                for (i=_seqIndex; i<length; ++i) {
-                    
-                    var subtitles:Subtitle = subs[i];
-                    
-                    // There's no point searching more that we need to!
-                    if (subtitles.startPosition > position) {
-                        break;
-                    }
-                    
-                    if (isCurrent(subtitles, position)) {
-                        matchingSubtitle = subtitles;
-                        break;
-                    }
+                var subtitle:Subtitle = subs[i];
+                
+                // There's no point searching more that we need to!
+                if (subtitle.startPosition > position) {
+                    break;
                 }
                 
-                // To keep the search for the next subtitles as inexpensive as possible
-                // for big VOD, we start the next search at the previous jump off point
-                if (_hls.type == HLSTypes.VOD) {
-                    _seqIndex = i;
+                if (isCurrent(subtitle, position)) {
+                    matchingSubtitle = subtitle;
+                    break;
+                }
+            }
+            
+            // To keep the search for the next subtitles as inexpensive as possible
+            // for big VOD, we start the next search at the previous jump off point
+            if (_hls.type == HLSTypes.VOD) {
+                _seqIndex = i;
+            }
+            
+            if (!matchingSubtitle.equals(_currentSubtitle)) { // && !suppressDispatch) {
+                
+                CONFIG::LOGGING {
+                    Log.debug("Changing subtitles to: "+matchingSubtitle);
                 }
                 
-                var suppressDispatch:Boolean = 
-                        HLSSettings.subtitlesIgnoreGapsInLive 
-                        && _hls.type == HLSTypes.LIVE
-                        && matchingSubtitle == _emptySubtitles;
-                
-                if (matchingSubtitle != _currentSubtitle && !suppressDispatch) {
-                    
-                    CONFIG::LOGGING {
-                        Log.debug("Changing subtitles to: "+matchingSubtitle);
-                    }
-                    
-                    _currentSubtitle = matchingSubtitle;
-                    dispatchSubtitle(matchingSubtitle);
-                }
+                _currentSubtitle = matchingSubtitle;
+                dispatchSubtitle(matchingSubtitle);
             }
         }
         
@@ -327,8 +319,9 @@ package org.mangui.hls.loader {
          */
         protected function loader_completeHandler(event:Event):void {
             
-            var parsed:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, 0, HLSSettings.subtitlesKeepEmpty);
-            
+			var pts:Number = _fragment.program_date;
+            var parsed:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, pts, HLSSettings.subtitlesKeepEmpty);
+			
             if (_hls.type == HLSTypes.LIVE) {
                 _seqSubs[_fragment.seqnum] = parsed;
             } else {
