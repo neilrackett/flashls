@@ -200,7 +200,7 @@ package org.mangui.hls.loader {
             if (_hls.subtitlesTrack == -1 || !hasChangeListener) {
                 return;
             }
-            
+			
             var position:Number = seqPosition;
             
             // If the subtitles haven't changed, there's nothing to do
