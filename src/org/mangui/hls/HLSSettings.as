@@ -400,6 +400,31 @@ package org.mangui.hls {
 		 */
 		public static var subtitlesTx3gEnabled:Boolean = true;
 		
+		/**
+		 * subtitlesUseTags
+		 * 
+		 * The current subtitles implementation uses the MEDIA_TIME event to
+		 * sync subtitles, but by setting this property to true, you can enable
+		 * the experimental injection of subtitles into the video stream as
+		 * FLV tags.
+		 */
+		public static var subtitlesUseTags:Boolean = false;
+		
+		/**
+		 * altAudioSmoothSwitch
+		 * 
+		 * (Experimental)
+		 */
+		public static var altAudioSmoothSwitch:Boolean = true;
+		
+		/**
+		 * altAudioIgnoreSequence
+		 * 
+		 * If true, audio fragments are loaded using sequence numbers from the
+		 * main video stream, ignoring the numbers from the audio playlist 
+		 */
+		public static var altAudioIgnoreSequence:Boolean = true;
+		
         /**
          * useHardwareVideoDecoder
          *

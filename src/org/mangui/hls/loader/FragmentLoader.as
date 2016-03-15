@@ -199,7 +199,11 @@ package org.mangui.hls.loader {
                                     _levelNext = Math.min(_levelNext, _fragCurrent.level-1);
                                   // switch back to IDLE state to request new fragment at lowest level
                                   _loadingState = LOADING_IDLE;
-                                }
+                                } else {
+									CONFIG::LOGGING {
+										Log.warn(this+" _checkLoading: Call to _streamBuffer.flushLastFragment failed!");
+									}
+								}
                             }
                         }
                     }
@@ -429,7 +433,11 @@ package org.mangui.hls.loader {
                 Log.warn(hlsError.msg);
             }
             // flush any tags that might have been injected for this fragment
-            _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
+            if (!_streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum)) {
+				CONFIG::LOGGING {
+					Log.warn(this+" _fragHandleParsingError: Call to _streamBuffer.flushLastFragment failed!");
+				}
+			}
             _hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, hlsError));
             // if we have redundant streams left for that level, switch to it
             if(level.redundantStreamId < level.redundantStreamsNb) {

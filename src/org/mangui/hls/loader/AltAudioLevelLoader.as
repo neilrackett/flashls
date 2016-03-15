@@ -79,36 +79,6 @@ package org.mangui.hls.loader {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
-        /** parse a playlist **/
-        private function _parseAudioPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
-            if (string != null && string.length != 0) {
-                CONFIG::LOGGING {
-                    Log.debug("audio level " + level + " playlist:\n" + string);
-                }
-                var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
-                // set fragment and update sequence number range
-                var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
-                var audioLevel : Level = audioTrack.level;
-                if(audioLevel == null) {
-                    audioLevel = audioTrack.level = new Level();
-                }
-                audioLevel.updateFragments(frags);
-                audioLevel.targetduration = Manifest.getTargetDuration(string);
-                // if stream is live, arm a timer to periodically reload playlist
-                if (!Manifest.hasEndlist(string)) {
-                    var timeout : int = Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
-                    CONFIG::LOGGING {
-                        Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
-                    }
-                    _timeoutID = setTimeout(_loadAudioLevelPlaylist, timeout);
-                }
-            }
-            metrics.id  = audioLevel.start_seqnum;
-            metrics.id2 = audioLevel.end_seqnum;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, metrics));
-            _manifestLoading = null;
-        };
-
         /** load/reload active M3U8 playlist **/
         private function _loadAudioLevelPlaylist() : void {
             if (_closed) {
@@ -117,9 +87,39 @@ package org.mangui.hls.loader {
             _reloadPlaylistTimer = getTimer();
             var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_currentTrack].id];
             _manifestLoading = new Manifest();
-            _manifestLoading.loadPlaylist(_hls,altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _currentTrack, _hls.type, HLSSettings.flushLiveURLCache);
+            _manifestLoading.loadPlaylist(_hls, altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _currentTrack, _hls.type, HLSSettings.flushLiveURLCache);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _currentTrack));
         };
+		
+		/** parse a playlist **/
+		private function _parseAudioPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
+			if (string != null && string.length != 0) {
+				CONFIG::LOGGING {
+					Log.debug("audio level " + level + " playlist ("+url+"):\n" + string);
+				}
+				var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
+				// set fragment and update sequence number range
+				var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
+				var audioLevel : Level = audioTrack.level;
+				if(audioLevel == null) {
+					audioLevel = audioTrack.level = new Level();
+				}
+				audioLevel.updateFragments(frags);
+				audioLevel.targetduration = Manifest.getTargetDuration(string);
+				// if stream is live, arm a timer to periodically reload playlist
+				if (!Manifest.hasEndlist(string)) {
+					var timeout : int = Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
+					CONFIG::LOGGING {
+						Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
+					}
+						_timeoutID = setTimeout(_loadAudioLevelPlaylist, timeout);
+				}
+			}
+			metrics.id  = audioLevel.start_seqnum;
+			metrics.id2 = audioLevel.end_seqnum;
+			_hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, metrics));
+			_manifestLoading = null;
+		};
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
