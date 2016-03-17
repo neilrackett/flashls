@@ -1271,14 +1271,13 @@ package org.mangui.hls.stream {
             }
             _reachedEnd = true;
         }
-
+		
         private function _audioTrackChange(event : HLSEvent) : void {
-            CONFIG::LOGGING {
-                Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
-            }
-				
-			if (!HLSSettings.altAudioSmoothSwitch)
+			if (!HLSSettings.altAudioLazySwitching)
 			{
+				CONFIG::LOGGING {
+					Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
+				}
             	flushAudio();
 			}
         }

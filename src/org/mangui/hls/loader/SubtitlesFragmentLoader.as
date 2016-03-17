@@ -44,7 +44,7 @@ package org.mangui.hls.loader {
         protected var _seqIndex:int;
         protected var _remainingRetries:int;
         protected var _retryTimeout:uint;
-        protected var _emptySubtitles:Subtitle;
+        protected var _emptySubtitle:Subtitle;
         
         public function SubtitlesFragmentLoader(hls:HLS) {
             
@@ -63,7 +63,7 @@ package org.mangui.hls.loader {
             
             _seqSubs = new Dictionary(true);
             _seqIndex = 0;
-            _emptySubtitles = new Subtitle(-1, -1, '');
+            _emptySubtitle = new Subtitle(-1, -1, '');
             _fragments = new Vector.<Fragment>;
         }
         
@@ -103,7 +103,7 @@ package org.mangui.hls.loader {
             
             if (_currentSubtitle) {
                 _currentSubtitle = null;
-                dispatchSubtitle(_emptySubtitles);
+                dispatchSubtitle(_emptySubtitle);
             }
             
             try {
@@ -160,7 +160,7 @@ package org.mangui.hls.loader {
                 // Only needed if subs are selected and being listened for
                 if (_hls.subtitlesTrack != -1 && hasChangeListener) {
                     
-                    _currentSubtitle = _emptySubtitles;
+                    _currentSubtitle = _emptySubtitle;
                     
                     try {
                         var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
@@ -209,7 +209,7 @@ package org.mangui.hls.loader {
             // Get the subtitles list for the current sequence (always 0 for VOD)
             var subs:Vector.<Subtitle> = _seqSubs[_seqNum] || new Vector.<Subtitle>();
             var mt:HLSMediatime = event.mediatime;
-            var matchingSubtitle:Subtitle = _emptySubtitles;
+            var matchingSubtitle:Subtitle = _emptySubtitle;
             var i:uint;
             var length:uint = subs.length;
             
@@ -234,7 +234,14 @@ package org.mangui.hls.loader {
                 _seqIndex = i;
             }
             
-            if (!matchingSubtitle.equals(_currentSubtitle)) { // && !suppressDispatch) {
+			// TODO Does this result in the expected outcome?
+			var suppressDispatch:Boolean = 
+					HLSSettings.subtitlesIgnoreGapsInLive
+					&& subs.length
+					&& matchingSubtitle == _emptySubtitle;
+			
+            if (!matchingSubtitle.equals(_currentSubtitle)
+				&& !suppressDispatch) {
                 
                 CONFIG::LOGGING {
                     Log.debug("Changing subtitles to: "+matchingSubtitle);

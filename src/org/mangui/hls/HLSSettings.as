@@ -388,6 +388,15 @@ package org.mangui.hls {
          * Default is true
          */
         public static var subtitlesKeepEmpty:Boolean = true;
+		
+		/**
+		 * subtitlesIgnoreGapsInLive
+		 * 
+		 * If true, the player will not attempt to fill gaps in live subtitles.
+		 * 
+		 * Default is false
+		 */
+		public static var subtitlesIgnoreGapsInLive:Boolean = false;
         
 		/**
 		 * subtitlesTx3gEnabled
@@ -407,15 +416,22 @@ package org.mangui.hls {
 		 * sync subtitles, but by setting this property to true, you can enable
 		 * the experimental injection of subtitles into the video stream as
 		 * FLV tags.
+		 * 
+		 * Default is false
 		 */
 		public static var subtitlesUseTags:Boolean = false;
 		
 		/**
-		 * altAudioSmoothSwitch
+		 * altAudioLazySwitching
 		 * 
-		 * (Experimental)
+		 * If true, the audio buffer will not be cleared when switching between
+		 * audio tracks.  This is useful if you want to prevent the temporary loss
+		 * of audio or are experiencing a loss of audio or video corruption when 
+		 * switching audio tracks.
+		 * 
+		 * Default is false
 		 */
-		public static var altAudioSmoothSwitch:Boolean = true;
+		public static var altAudioLazySwitching:Boolean = false;
 		
 		/**
 		 * altAudioIgnoreSequence
@@ -424,8 +440,6 @@ package org.mangui.hls {
 		 * main video stream, ignoring the numbers from the audio playlist 
 		 */
 		public static var altAudioIgnoreSequence:Boolean = true;
-		
-		public static var altAudioHack:String = "";
 		
         /**
          * useHardwareVideoDecoder
