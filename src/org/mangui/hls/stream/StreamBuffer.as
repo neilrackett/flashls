@@ -1276,7 +1276,11 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
             }
-            flushAudio();
+				
+			if (!HLSSettings.altAudioSmoothSwitch)
+			{
+            	flushAudio();
+			}
         }
 
         /** monitor fragment loader stall events, arm a boolean  **/

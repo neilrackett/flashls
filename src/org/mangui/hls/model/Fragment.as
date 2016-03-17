@@ -5,6 +5,8 @@ package org.mangui.hls.model {
 
     import flash.net.ObjectEncoding;
     import flash.utils.ByteArray;
+    
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.flv.FLVTag;
 
@@ -16,8 +18,41 @@ package org.mangui.hls.model {
         public var start_time : Number;
         /** sequence number of this chunk. **/
         public var seqnum : int;
-        /** URL to this chunk. **/
-        public var url : String;
+        private var _url : String;
+
+		/** URL to this chunk. **/
+		public function get url():String
+		{
+			var url:String = _url;
+			
+			if (HLSSettings.altAudioHack && url.indexOf("audio") != -1)
+			{
+				var hack:Array = HLSSettings.altAudioHack.split(',');
+				
+				var url:String = url
+					.replace("_fra_", "_"+hack[0]+"_")
+					.replace("_315", "_"+hack[1])
+					;
+				
+				if (url != _url)
+				{
+					trace(this, "&&& Audio fragment URL hacked to ==>", url);
+				}
+			}
+			
+			return url;
+			
+			return _url;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set url(value:String):void
+		{
+			_url = value;
+		}
+
         /** level of  this chunk. **/
         public var level : int;
         /** continuity index of this chunk. **/

@@ -8,12 +8,13 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
@@ -123,7 +124,7 @@ package org.mangui.hls.loader {
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
-            _currentTrack = event.audioTrack;
+			_currentTrack = event.audioTrack;
             var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];

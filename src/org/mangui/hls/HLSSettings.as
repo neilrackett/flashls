@@ -425,6 +425,8 @@ package org.mangui.hls {
 		 */
 		public static var altAudioIgnoreSequence:Boolean = true;
 		
+		public static var altAudioHack:String = "";
+		
         /**
          * useHardwareVideoDecoder
          *

@@ -318,8 +318,7 @@ package org.mangui.hls {
         }
         
         /** How many audio tracks does the current media have? */
-        public function get numAudioTracks():uint
-        {
+        public function get numAudioTracks():uint {
             return !!audioTracks ? audioTracks.length : 0;
         }
         
