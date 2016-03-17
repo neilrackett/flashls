@@ -3,12 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
 
-    import flash.events.*;
-    import flash.net.*;
+    import flash.events.ErrorEvent;
+    import flash.events.Event;
+    import flash.events.HTTPStatusEvent;
+    import flash.events.IOErrorEvent;
+    import flash.events.ProgressEvent;
+    import flash.events.SecurityErrorEvent;
+    import flash.events.TimerEvent;
+    import flash.net.URLRequest;
+    import flash.net.URLStream;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.utils.getTimer;
-
+    
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -433,8 +440,9 @@ package org.mangui.hls.loader {
                 Log.warn(hlsError.msg);
             }
             // flush any tags that might have been injected for this fragment
-            if (!_streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum)) {
-				CONFIG::LOGGING {
+			var lastFragmentFlushed : Boolean = _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
+			CONFIG::LOGGING {
+	            if (!lastFragmentFlushed) {
 					Log.warn(this+" _fragHandleParsingError: Call to _streamBuffer.flushLastFragment failed!");
 				}
 			}

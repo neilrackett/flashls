@@ -1273,12 +1273,13 @@ package org.mangui.hls.stream {
         }
 		
         private function _audioTrackChange(event : HLSEvent) : void {
-			if (!HLSSettings.altAudioLazySwitching)
-			{
+			if (HLSSettings.altAudioLazySwitching) {
+				// TODO Can we partially trim the buffer to switch faster?
+			} else {
 				CONFIG::LOGGING {
 					Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
 				}
-            	flushAudio();
+	        	flushAudio();
 			}
         }
 
