@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
     import flash.display.Stage;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
@@ -281,13 +282,15 @@ package org.mangui.hls.controller {
                 CONFIG::LOGGING {
                     Log.debug("sftm:> 1+_switchup[_level]=" + (1 + _switchup[current_level]));
                 }
-                switch_to_level = current_level + 1;
+				var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
+                switch_to_level = Math.min(current_level+maxUpSwitchLimit, max_level);
             }
-
+			
             /* to switch level down :
             rsft should be smaller than switch up condition,
             or the current level is greater than max level
-             */ else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
+             */ 
+			else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
                 CONFIG::LOGGING {
                     Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
                 }
@@ -308,10 +311,11 @@ package org.mangui.hls.controller {
                     }
                 }
             }
-
+            
             // Then we should check if selected level is higher than max_level if so, than take the min of those two
-            switch_to_level = Math.min(max_level, switch_to_level);
-
+			var maxDownSwitchLimit:uint = Math.max(1, HLSSettings.maxDownSwitchLimit);
+            switch_to_level = Math.min(max_level, Math.max(switch_to_level, current_level-maxDownSwitchLimit));
+            
             CONFIG::LOGGING {
                 if (switch_to_level != current_level) {
                     Log.debug("switch to level " + switch_to_level);
