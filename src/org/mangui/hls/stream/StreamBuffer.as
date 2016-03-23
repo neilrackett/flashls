@@ -292,7 +292,7 @@ package org.mangui.hls.stream {
                    useful to compute sliding when discontinuity occurs
                 */
                 _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
-            } else {
+            } else if (fragmentType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
                 sliding = _liveSlidingAltAudio;
                 // if a new fragment is being appended
                 if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {

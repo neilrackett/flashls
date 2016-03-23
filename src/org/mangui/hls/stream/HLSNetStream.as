@@ -94,6 +94,10 @@ package org.mangui.hls.stream {
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);
             _client.registerCallback("onID3Data", onID3Data);
             super.client = _client;
+			
+			// TODO Subtitles
+//			_client.registerCallback("onMetaData", onMetaData);
+//			_client.registerCallback("onTextData", onTextData);
         }
 
         public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {

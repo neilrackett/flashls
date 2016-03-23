@@ -28,7 +28,7 @@ package org.mangui.hls.utils
 		 * 
 		 * Alignment data is currently removed.
          */
-        static public function parse(data:String, pts:Number=0, keepEmpty:Boolean=true):Vector.<Subtitle>
+        static public function parse(data:String, pts:Number=0):Vector.<Subtitle>
         {
 			data = StringUtil.toLF(data);
 			
@@ -43,18 +43,13 @@ package org.mangui.hls.utils
                 var startPosition:Number = parseTime(matches[2]);
                 var endPosition:Number = parseTime(matches[3]);
                 var text:String = StringUtil.trim((matches[4] || '').replace(/(\|)/g, '\n'));
+				var subtitle:Subtitle = new Subtitle(startPosition, endPosition, text, pts);
                 
-                if (keepEmpty || text)
-                {
-                    var subs:Subtitle = new Subtitle(startPosition, endPosition, text, pts);
-                    
-                    CONFIG::LOGGING 
-                    {
-                        Log.debug(subs);
-                    }
-                    
-                    results.push(subs);
+                CONFIG::LOGGING {
+                    Log.debug(subtitle);
                 }
+                
+                results.push(subtitle);
             }
             
             return results;

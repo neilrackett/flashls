@@ -374,30 +374,6 @@ package org.mangui.hls {
          */
         public static var subtitlesAutoSelectForced:Boolean = true;
         
-        /**
-         * subtitlesKeepEmpty
-         * 
-         * If true, all subtitles will be parsed and dispatched, even if 
-		 * they have no content.
-		 * 
-		 * Set this property to false if you prefer to ignore subtitles that
-		 * have no content and use a generic empty subtitle to fill the gaps, 
-		 * minimizing the number of SUBTITLES_CHANGE it is necessary to 
-		 * dispatch.
-         * 
-         * Default is true
-         */
-        public static var subtitlesKeepEmpty:Boolean = true;
-		
-		/**
-		 * subtitlesIgnoreGapsInLive
-		 * 
-		 * If true, the player will not attempt to fill gaps in live subtitles.
-		 * 
-		 * Default is false
-		 */
-		public static var subtitlesIgnoreGapsInLive:Boolean = false;
-        
 		/**
 		 * subtitlesTx3gEnabled
 		 * 
@@ -419,7 +395,7 @@ package org.mangui.hls {
 		 * 
 		 * Default is false
 		 */
-		public static var subtitlesUseTags:Boolean = false;
+		public static var subtitlesUseFlvTags:Boolean = false;
 		
 		/**
 		 * altAudioLazySwitching
