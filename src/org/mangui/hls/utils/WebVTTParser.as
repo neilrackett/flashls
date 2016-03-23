@@ -75,7 +75,7 @@ package org.mangui.hls.utils
             if (a[2]) seconds += a[2] * 60;
             if (a[1]) seconds += a[1] * 60 * 60;
             
-            return Math.round(seconds*10)/10;
+            return seconds;
         }
         
     }

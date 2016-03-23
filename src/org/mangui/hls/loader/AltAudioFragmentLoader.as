@@ -523,7 +523,7 @@ package org.mangui.hls.loader {
 
         private function _loadfirstfragment(position : Number) : int {
             CONFIG::LOGGING {
-                Log.debug("loadfirstaudiofragment(" + position + ")");
+                Log.debug(this+" loadfirstaudiofragment(" + position + ")");
             }
             var frag : Fragment = _level.getFragmentBeforePosition(position);
             _hasDiscontinuity = true;

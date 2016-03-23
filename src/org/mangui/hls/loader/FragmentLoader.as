@@ -784,7 +784,7 @@ package org.mangui.hls.loader {
 
         private function _loadfirstfragment(position : Number, level : int) : int {
             CONFIG::LOGGING {
-                Log.debug("loadfirstfragment(" + position + ")");
+                Log.debug(this+" loadfirstfragment(" + position + ")");
             }
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;

@@ -64,7 +64,7 @@ package org.mangui.hls.loader {
         private var _subtitlesPlaylistTracks : Vector.<SubtitlesPlaylistTrack>;
         /* manifest load metrics */
         private var _metrics : HLSLoadMetrics;
-
+		
         /** Setup the loader. **/
         public function LevelLoader(hls : HLS) {
             _hls = hls;
@@ -280,10 +280,11 @@ package org.mangui.hls.loader {
             }
             metrics.id  = _levels[level].start_seqnum;
             metrics.id2 = _levels[level].end_seqnum;
+			//trace(this, ">>>>>>>>>>>>>>> V:", metrics.id);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, metrics));
             _manifestLoading = null;
         }
-
+		
         /** Parse First Level Playlist **/
         private function _parseManifest(string : String) : void {
             var errorTxt : String = null;

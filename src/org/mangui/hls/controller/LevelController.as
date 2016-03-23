@@ -256,8 +256,8 @@ package org.mangui.hls.controller {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level : int, buffer : Number) : int {
-            if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
-                return 0;
+			if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
+                return current_level;
             }
 
             /* rsft : remaining segment fetch time : available time to fetch next segment

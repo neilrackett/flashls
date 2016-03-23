@@ -7,7 +7,6 @@ package org.mangui.hls {
     import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.net.NetConnection;
-    import flash.net.NetStream;
     import flash.net.URLLoader;
     import flash.net.URLStream;
     
@@ -245,7 +244,7 @@ package org.mangui.hls {
         };
 
         /** return HLS NetStream **/
-        public function get stream() : NetStream {
+        public function get stream() : HLSNetStream {
             return _hlsNetStream;
         }
 
