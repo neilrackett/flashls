@@ -373,17 +373,6 @@ package org.mangui.hls {
          * Default is true 
          */
         public static var subtitlesAutoSelectForced:Boolean = true;
-        
-		/**
-		 * subtitlesTx3gEnabled
-		 * 
-		 * If true, all available subtitles tracks will be announced via the
-		 * NetStream client's onMetaData event and all subtitles will be
-		 * dispatched via onTextData in ISO693/TX3G format.
-         * 
-         * Default is true
-		 */
-		public static var subtitlesTx3gEnabled:Boolean = true;
 		
 		/**
 		 * subtitlesUseTags

@@ -257,13 +257,11 @@ package org.mangui.hls.loader {
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, subtitle));
 			}
 			
-			if (HLSSettings.subtitlesTx3gEnabled) {		
-				var client:Object = _hls.stream.client;
-				if (client && client.hasOwnProperty("onTextData")) {
-					var textData:Object = subtitle.toJSON();
-					textData.trackid = _hls.subtitlesTrack;
-					client.onTextData(textData); // TODO Implement this using FLVTag
-				}
+			var client:Object = _hls.stream.client;
+			if (client && client.hasOwnProperty("onTextData")) {
+				var textData:Object = subtitle.toJSON();
+				textData.trackid = _hls.subtitlesTrack;
+				client.onTextData(textData); // TODO Implement this using FLVTag
 			}
 		}
 		

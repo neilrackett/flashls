@@ -171,16 +171,13 @@ package org.mangui.hls.controller {
 			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
 			
 			// Announce available subtitles tracks via onMetaData at the end of the current call stack
-			if (HLSSettings.subtitlesTx3gEnabled)
-			{
-				// TODO Do this using an FLVTag
-				setTimeout(function():void {
-					var client:Object = _hls.stream.client;
-					if (client && client.hasOwnProperty("onMetaData")) {
-						client.onMetaData(tx3gMetaData);
-					}
-				}, 0);
-			}
+			// TODO Do this using an FLVTag
+			setTimeout(function():void {
+				var client:Object = _hls.stream.client;
+				if (client && client.hasOwnProperty("onMetaData")) {
+					client.onMetaData(tx3gMetaData);
+				}
+			}, 0);
         }
         
 		/**
