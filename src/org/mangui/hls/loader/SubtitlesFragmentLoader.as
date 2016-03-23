@@ -167,7 +167,7 @@ package org.mangui.hls.loader {
                 _seqIndex = 0;
                 
                 // Only needed if subs are selected and being listened for
-                if (_hls.subtitlesTrack != -1 && hasChangeListener) {
+                if (_hls.subtitlesTrack != -1) {
                     
                     _currentSubtitle = _emptySubtitle;
                     
@@ -197,16 +197,13 @@ package org.mangui.hls.loader {
          */
         protected function mediaTimeHandler(event:HLSEvent):void {
 			
-			if (HLSSettings.subtitlesUseFlvTags || _hls.subtitlesTrack == -1 || !hasChangeListener) {
+			if (HLSSettings.subtitlesUseFlvTags || _hls.subtitlesTrack == -1) {
 				return;
 			}
 			
             var position:Number = _hls.type == HLSTypes.VOD ? _hls.position : _hls.position%10;
-            
-            // If the subtitles haven't changed, there's nothing to do
             if (isCurrent(_currentSubtitle, position)) return;
             
-            // Get the subtitles list for the current sequence (always 0 for VOD)
 			var mt:HLSMediatime = event.mediatime;
             var subs:Vector.<Subtitle> = _seqSubs[_seqNum] || new Vector.<Subtitle>();
             var matchingSubtitle:Subtitle = _emptySubtitle;
@@ -242,15 +239,8 @@ package org.mangui.hls.loader {
                 dispatchSubtitle(matchingSubtitle);
             }
         }
-        
-		protected function get hasChangeListener():Boolean
-		{
-			var client:Object = _hls.stream.client;
-			
-			return _hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)
-				|| (client && client.hasOwnProperty("onTextData"))
-		}
 		
+		// TODO Replace this functionality using FLVTags
 		protected function dispatchSubtitle(subtitle:Subtitle):void {
 			
 			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
@@ -261,7 +251,7 @@ package org.mangui.hls.loader {
 			if (client && client.hasOwnProperty("onTextData")) {
 				var textData:Object = subtitle.toJSON();
 				textData.trackid = _hls.subtitlesTrack;
-				client.onTextData(textData); // TODO Implement this using FLVTag
+				client.onTextData(textData);
 			}
 		}
 		
