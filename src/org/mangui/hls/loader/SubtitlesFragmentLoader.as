@@ -260,8 +260,9 @@ package org.mangui.hls.loader {
          */
         protected function isCurrent(subtitles:Subtitle, position:Number):Boolean {
             return subtitles 
-                && subtitles.startPosition <= position 
-                && subtitles.endPosition >= position
+				// Rounding positions prevents gaps/flicker
+                && int(subtitles.startPosition*10) <= int(position*10) 
+                && int(subtitles.endPosition*10) >= int(position*10);
         }
         
         /**
