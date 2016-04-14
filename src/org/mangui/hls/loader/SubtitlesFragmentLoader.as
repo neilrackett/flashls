@@ -311,21 +311,65 @@ package org.mangui.hls.loader {
 			
 			// Inject subtitles into the stream as onTextData events
 			if (HLSSettings.subtitlesUseFlvTags) {
-				for each (var s:Subtitle in parsed) {
-					_streamBuffer.appendTags(
-						HLSLoaderTypes.FRAGMENT_SUBTITLES, 
-						
-						_fragment.level, 
-						_fragment.seqnum, 
-						
-						Vector.<FLVTag>([s.tag]),
-						
-						s.startPTS,
-						s.endPTS,
-						_fragment.continuity,
-						s.startPTS
-					);
-				}
+				
+				var s:Subtitle;
+				var tags:Vector.<FLVTag> = new Vector.<FLVTag>();
+				
+				for each (s in parsed) {
+					tags.push(s.tag);
+				}				
+				
+				/*
+				_streamBuffer.appendTags(
+					HLSLoaderTypes.FRAGMENT_ALTAUDIO,
+					_fragCurrent.level,
+					_fragCurrent.seqnum,
+					fragData.tags, 
+					fragData.tag_pts_min, 
+					fragData.tag_pts_max + fragData.tag_duration, 
+					_fragCurrent.continuity, 
+					_fragCurrent.start_time + fragData.tag_pts_start_offset / 1000
+				);
+				
+				_streamBuffer.appendTags(
+					HLSLoaderTypes.FRAGMENT_MAIN,
+					_fragCurrent.level,
+					_fragCurrent.seqnum ,
+					tags,
+					_fragCurrent.data.pts_start_computed, 
+					_fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, 
+					_fragCurrent.continuity, 
+					_fragCurrent.start_time
+				);
+				
+				_streamBuffer.appendTags(
+					HLSLoaderTypes.FRAGMENT_MAIN,
+					_fragCurrent.level,
+					_fragCurrent.seqnum , 
+					fragData.tags, 
+					fragData.tag_pts_min, 
+					fragData.tag_pts_max + fragData.tag_duration, 
+					_fragCurrent.continuity, 
+					_fragCurrent.start_time + fragData.tag_pts_start_offset / 1000
+				);
+				
+				*/
+				
+				
+				_streamBuffer.appendTags(
+					HLSLoaderTypes.FRAGMENT_SUBTITLES, 
+					
+					_fragment.level, // TODO Should this be the current VIDEO level? 
+					_fragment.seqnum, 
+					
+					tags,
+					
+					_fragment.data.pts_start_computed, 
+					_fragment.data.pts_start_computed + 1000*_fragment.duration, 
+					_fragment.continuity, 
+					_fragment.start_time
+				);
+				
 				_seqSubs[_fragment.seqnum] = true;
 				
 			// ... or sync them using MEDIA_TIME events

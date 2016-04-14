@@ -96,8 +96,8 @@ package org.mangui.hls.stream {
             super.client = _client;
 			
 			// TODO Subtitles
-//			_client.registerCallback("onMetaData", onMetaData);
-//			_client.registerCallback("onTextData", onTextData);
+			_client.registerCallback("onMetaData", onMetaData);
+			_client.registerCallback("onTextData", onTextData);
         }
 
         public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
@@ -131,6 +131,14 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_SKIPPED, duration));
         }
 
+		public function onMetaData(data:Object) : void {
+			trace(this, "onMetaData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
+		}
+		
+		public function onTextData(data:Object) : void {
+			trace(this, "onTextData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
+		}
+		
         // function is called by SCRIPT in FLV
         public function onID3Data(data : ByteArray) : void {
             // we dump the content as base64 to get it to the Javascript in the browser.

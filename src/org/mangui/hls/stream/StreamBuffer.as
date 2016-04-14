@@ -183,7 +183,7 @@ package org.mangui.hls.stream {
             _lastMediaTimeUpdate = 0;
             _timer.start();
         }
-		
+        
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number;
@@ -368,7 +368,7 @@ package org.mangui.hls.stream {
                 _timer.start();
             }
         }
-		
+        
         /** Return current media position **/
         public function get position() : Number {
             switch(_hls.seekState) {
@@ -508,7 +508,7 @@ package org.mangui.hls.stream {
         }
 
         private function get videoExpected() : Boolean {
-            return _fragmentLoader.videoExpected;
+			return _fragmentLoader.videoExpected;
         }
 
         public function get audioBufferLength() : Number {
@@ -616,11 +616,12 @@ package org.mangui.hls.stream {
             // we want to keep only if alt audio loader OR
             // index less than start filtering index (i.e. we want to keep backbuffer) OR
             // matching with current fragment appended tags
-            return (item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO ||
-                                   index < _filteringStartIdx ||
-                                   (item.fragLevel == _fragMainLevelNetStream &&  item.fragSN == _fragMainSNNetStream));
+            return (item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO 
+                || index < _filteringStartIdx 
+                || (item.fragLevel == _fragMainLevelNetStream && item.fragSN == _fragMainSNNetStream))
+                ;
         }
-
+        
         /**  StreamBuffer Timer, responsible of
          * reporting media time event
          *  injecting tags into NetStream
@@ -1220,7 +1221,7 @@ package org.mangui.hls.stream {
         private function get min_min_pos() : Number {
             if (audioExpected) {
                 if (videoExpected) {
-                    return Math.min(min_audio_pos, min_video_pos);
+					return Math.min(min_audio_pos, min_video_pos);
                 } else {
                     return min_audio_pos;
                 }
@@ -1271,16 +1272,16 @@ package org.mangui.hls.stream {
             }
             _reachedEnd = true;
         }
-		
+        
         private function _audioTrackChange(event : HLSEvent) : void {
-			if (HLSSettings.altAudioLazySwitching) {
-				// TODO Can we partially trim the buffer to switch faster?
-			} else {
-				CONFIG::LOGGING {
-					Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
-				}
-	        	flushAudio();
-			}
+            if (HLSSettings.altAudioLazySwitching) {
+                // TODO Can we partially trim the buffer to switch faster?
+            } else {
+                CONFIG::LOGGING {
+                    Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
+                }
+                flushAudio();
+            }
         }
 
         /** monitor fragment loader stall events, arm a boolean  **/

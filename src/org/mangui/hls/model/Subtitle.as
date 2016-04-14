@@ -82,7 +82,7 @@ package org.mangui.hls.model
                 startPTS: startPTS,
                 endPTS: endPTS,
                 duration: duration,
-                htmlText: htmlText,
+                htmlText: htmlText+" - "+Math.random(),
                 text: text
             }
         }
@@ -107,20 +107,24 @@ package org.mangui.hls.model
 		hls_internal function get tag():FLVTag {
 			
 			if (!_tag) {
-				_tag = new FLVTag(FLVTag.METADATA, startPTS, startPTS, true);
+				_tag = new FLVTag(FLVTag.METADATA, startPTS, startPTS, false);
 				
-				var data:ByteArray = new ByteArray();
+				var bytes:ByteArray = new ByteArray();
 				
-				data.objectEncoding = ObjectEncoding.AMF0;
-				data.writeObject("onTextData");
-				data.objectEncoding = ObjectEncoding.AMF3;
-				data.writeObject(toJSON());
+				bytes.objectEncoding = ObjectEncoding.AMF0;
+				bytes.writeObject("onTextData");
+				bytes.writeObject(toJSON());
 				
-				_tag.push(data, 0, data.length);
+				_tag.push(bytes, 0, bytes.length);
 				_tag.build();
 			}
 			
 			return _tag;
+		}
+		
+		[Transient]
+		hls_internal function get tags():Vector.<FLVTag> {
+			return Vector.<FLVTag>([tag]);
 		}
 		
         public function toString():String
