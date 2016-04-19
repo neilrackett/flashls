@@ -55,7 +55,7 @@ package org.mangui.hls.loader {
         /** next level (-1 if not defined yet) **/
         private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels : Vector.<Level>;
+        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist 
         /** Util for loading the fragment. **/
         private var _fragstreamloader : URLStream;
         /** Util for loading the key. **/
@@ -1150,6 +1150,7 @@ package org.mangui.hls.loader {
                         _loadingState = LOADING_IDLE;
                         _switchLevel = true;
                         _demux = null;
+						_hls.stream.seek(_hls.position); // NEIL: This resolves the blank screen issue, but means we start at level 0 :'-(
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, fragLevelIdx));
                         // speed up loading of new playlist
                         _timer.start();

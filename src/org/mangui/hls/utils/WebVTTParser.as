@@ -25,10 +25,8 @@ package org.mangui.hls.utils
         /**
          * Parse a string into a series of Subtitles objects and return
          * them in a Vector
-		 * 
-		 * Alignment data is currently removed.
          */
-        static public function parse(data:String, pts:Number=0):Vector.<Subtitle>
+        static public function parse(data:String, fragmentPTS:Number=0):Vector.<Subtitle>
         {
 			data = StringUtil.toLF(data);
 			
@@ -43,7 +41,7 @@ package org.mangui.hls.utils
                 var startPosition:Number = parseTime(matches[2]);
                 var endPosition:Number = parseTime(matches[3]);
                 var text:String = StringUtil.trim((matches[4] || '').replace(/(\|)/g, '\n'));
-				var subtitle:Subtitle = new Subtitle(startPosition, endPosition, text, pts);
+				var subtitle:Subtitle = new Subtitle(startPosition, endPosition, text, fragmentPTS);
                 
                 CONFIG::LOGGING {
                     Log.debug(subtitle);

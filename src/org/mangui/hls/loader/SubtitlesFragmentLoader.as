@@ -20,6 +20,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
+    import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Subtitle;
@@ -39,40 +40,50 @@ package org.mangui.hls.loader {
      */
     public class SubtitlesFragmentLoader {
         
-        protected var _hls:HLS;
+		protected var _hls:HLS;
+		
+		// Loader
         protected var _streamBuffer:StreamBuffer;
         protected var _loader:URLLoader;
         protected var _fragments:Vector.<Fragment>;
         protected var _fragment:Fragment;
-        protected var _seqSubs:Dictionary;
-        protected var _seqNum:Number;
-        protected var _currentSubtitle:Subtitle;
-        protected var _seqIndex:int;
         protected var _remainingRetries:int;
         protected var _retryTimeout:uint;
+		
+		// Sequencer
         protected var _emptySubtitle:Subtitle;
-        
+		protected var _seqSubs:Dictionary;
+		protected var _seqIndex:int;
+		protected var _playMetrics:HLSPlayMetrics;
+		protected var _currentSubtitle:Subtitle;
+
         public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
-            
+
             _hls = hls;
-            _hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
+			_streamBuffer = streamBuffer;
+			
+			// Loader
+            
+			_hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
+			
+			_fragments = new Vector.<Fragment>;
+			
+			_loader = new URLLoader();
+			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
+			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
+			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
+			
+			// Sequencer
+            
+			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
             _hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
             
-			_streamBuffer = streamBuffer;
-			
-            _loader = new URLLoader();
-            _loader.addEventListener(Event.COMPLETE, loader_completeHandler);
-            _loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
-            _loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
-            
             _seqSubs = new Dictionary(true);
             _seqIndex = 0;
             _emptySubtitle = new Subtitle(-1, -1, '');
-            _fragments = new Vector.<Fragment>;
         }
         
         public function dispose():void {
@@ -92,6 +103,7 @@ package org.mangui.hls.loader {
             _loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
             _loader = null;
             
+			_playMetrics = null;
             _seqSubs = null;
             _fragments = null;
             _fragment = null;
@@ -148,128 +160,6 @@ package org.mangui.hls.loader {
         protected function subtitlesLevelLoadedHandler(event:HLSEvent):void {
             _fragments = _fragments.concat(_hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments);
             loadNextFragment();
-        }
-        
-        /**
-         * Sync subtitles with the current audio/video fragments
-         * 
-         * Live subtitles are assumed to contain times reletive to the current
-         * sequence, and VOD content relative to the entire video duration 
-         */
-        protected function fragmentPlayingHandler(event:HLSEvent):void {
-           
-			if (HLSSettings.subtitlesUseFlvTags) return;
-			
-            if (_hls.type == HLSTypes.LIVE) {
-                
-                // Keep track all the time to prevent delay in subtitles starting when selected
-                _seqNum = event.playMetrics.seqnum;
-                _seqIndex = 0;
-                
-                // Only needed if subs are selected and being listened for
-                if (_hls.subtitlesTrack != -1) {
-                    
-                    _currentSubtitle = _emptySubtitle;
-                    
-                    try {
-                        var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
-                        var dvrWindowDuration:Number = _hls.liveSlidingMain;
-                        var firstSeqNum:Number = _seqNum - (dvrWindowDuration/targetDuration);
-                        
-                        for (var seqNum:* in _seqSubs) {
-                            if (seqNum is Number && seqNum < firstSeqNum) {
-                                delete _seqSubs[seqNum];
-                            }
-                        }
-                    }
-                    catch(e:Error) {}
-                }
-                
-                return;
-            }
-            
-            _seqNum = 0;
-        }
-        
-        /**
-         * Match subtitles to the current playhead position and dispatch
-         * events as appropriate
-         */
-        protected function mediaTimeHandler(event:HLSEvent):void {
-			
-			if (HLSSettings.subtitlesUseFlvTags || _hls.subtitlesTrack == -1) {
-				return;
-			}
-			
-            var position:Number = _hls.type == HLSTypes.VOD ? _hls.position : _hls.position%10;
-            if (isCurrent(_currentSubtitle, position)) return;
-            
-			var mt:HLSMediatime = event.mediatime;
-            var subs:Vector.<Subtitle> = _seqSubs[_seqNum] || new Vector.<Subtitle>();
-            var matchingSubtitle:Subtitle = _emptySubtitle;
-            var i:uint;
-            var length:uint = subs.length;
-            
-            for (i=_seqIndex; i<length; ++i) {
-                
-                var subtitle:Subtitle = subs[i];
-                
-                // There's no point searching more that we need to!
-                if (subtitle.startPosition > position) {
-                    break;
-                }
-                
-                if (isCurrent(subtitle, position)) {
-                    matchingSubtitle = subtitle;
-                    break;
-                }
-            }
-            
-            // To keep the search for the next subtitles as inexpensive as possible
-            // for big VOD, we start the next search at the previous jump off point
-            if (_hls.type == HLSTypes.VOD) {
-                _seqIndex = i;
-            }
-            
-            if (!matchingSubtitle.equals(_currentSubtitle)) {
-                CONFIG::LOGGING {
-                    Log.debug("Changing subtitles to: "+matchingSubtitle);
-                }
-                _currentSubtitle = matchingSubtitle;
-                dispatchSubtitle(matchingSubtitle);
-            }
-        }
-		
-		// TODO Replace this functionality using FLVTags
-		protected function dispatchSubtitle(subtitle:Subtitle):void {
-			
-			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, subtitle));
-			}
-			
-			var client:Object = _hls.stream.client;
-			if (client && client.hasOwnProperty("onTextData")) {
-				var textData:Object = subtitle.toJSON();
-				textData.trackid = _hls.subtitlesTrack;
-				client.onTextData(textData);
-			}
-		}
-		
-        /**
-         * Are the specified subtitles the correct ones for the specified position?
-         */
-        protected function isCurrent(subtitles:Subtitle, position:Number):Boolean {
-            return subtitles 
-				// Rounding positions prevents gaps/flicker
-                && int(subtitles.startPosition*10) <= int(position*10) 
-                && int(subtitles.endPosition*10) >= int(position*10);
-        }
-        
-        /**
-         * When the media seeks, we reset the index from which we look for the next subtitles
-         */
-        protected function seekStateHandler(event:Event):void {
-            _seqIndex = 0;
         }
         
         /**
@@ -405,6 +295,144 @@ package org.mangui.hls.loader {
             }
         }
         
+		
+		/*
+		 * MEDIA-TIME SEQUENCER
+		 *
+		 * The methods below are used by the media-time based subtitle 
+		 * sequencer which will eventually be replaced by onTextData 
+		 * events inserted into the stream using FLVTag data; an experimental
+		 * FLVTag implementation can be enabled by setting subtitlesUseFlvTags
+		 * to true in HLSSettings
+		 */
+		
+		/**
+		 * Sync subtitles with the current audio/video fragments
+		 * 
+		 * Live subtitles are assumed to contain times reletive to the current
+		 * sequence, and VOD content relative to the entire video duration 
+		 */
+		protected function fragmentPlayingHandler(event:HLSEvent):void {
+			
+			if (HLSSettings.subtitlesUseFlvTags) return;
+			
+			_playMetrics = event.playMetrics;
+			
+			if (_hls.type == HLSTypes.LIVE) {
+				
+				// Keep track all the time to prevent delay in subtitles starting when selected
+				_seqIndex = 0;
+				
+				// Only needed if subs are selected and being listened for
+				if (_hls.subtitlesTrack != -1) {
+					_currentSubtitle = _emptySubtitle;
+					try {
+						var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
+						var dvrWindowDuration:Number = _hls.liveSlidingMain;
+						var firstSeqNum:Number = _playMetrics.seqnum - (dvrWindowDuration/targetDuration);
+						
+						for (var seqNum:* in _seqSubs) {
+							if (seqNum is Number && seqNum < firstSeqNum) {
+								delete _seqSubs[seqNum];
+							}
+						}
+					}
+					catch(e:Error) {}
+				}
+				
+				return;
+			}
+		}
+		
+		/**
+		 * Match subtitles to the current playhead position and dispatch
+		 * events as appropriate
+		 */
+		protected function mediaTimeHandler(event:HLSEvent):void {
+			
+			if (HLSSettings.subtitlesUseFlvTags 
+				|| _hls.subtitlesTrack == -1 
+				|| !_playMetrics) {
+				return;
+			}
+			
+			var isLive:Boolean = (_hls.type == HLSTypes.LIVE);
+			var position:Number = isLive ? _hls.position%10 : _hls.position;
+			var seqNum:uint = isLive ? _playMetrics.seqnum : 0;
+			var pts:Number = _playMetrics.program_date + position*1000;
+			
+			if (isCurrentTime(_currentSubtitle, pts)) return;
+			
+			var mt:HLSMediatime = event.mediatime;
+			var subs:Vector.<Subtitle> = _seqSubs[seqNum] || new Vector.<Subtitle>();
+			var matchingSubtitle:Subtitle = _emptySubtitle;
+			var i:uint;
+			var length:uint = subs.length;
+			
+			if (length)
+			{
+				for (i=_seqIndex; i<length; ++i) {
+					
+					var subtitle:Subtitle = subs[i];
+					
+					// There's no point searching more that we need to!
+					if (subtitle.startPTS > pts) {
+						break;
+					}
+					
+					if (isCurrentTime(subtitle, pts)) {
+						matchingSubtitle = subtitle;
+						break;
+					}
+				}
+				
+				// To keep the search for the next subtitles as inexpensive as possible
+				// for big VOD, we start the next search at the previous jump off point
+				if (_hls.type == HLSTypes.VOD) {
+					_seqIndex = i;
+				}
+			}
+			
+			if (!matchingSubtitle.equals(_currentSubtitle)) {
+				CONFIG::LOGGING {
+					Log.debug("Changing subtitles to: "+matchingSubtitle);
+				}
+					_currentSubtitle = matchingSubtitle;
+				dispatchSubtitle(matchingSubtitle);
+			}
+		}
+		
+		// TODO Replace this functionality using FLVTags
+		protected function dispatchSubtitle(subtitle:Subtitle):void {
+			
+			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, subtitle));
+			}
+			
+			var client:Object = _hls.stream.client;
+			if (client && client.hasOwnProperty("onTextData")) {
+				var textData:Object = subtitle.toJSON();
+				textData.trackid = _hls.subtitlesTrack;
+				client.onTextData(textData);
+			}
+		}
+		
+		/**
+		 * Are the specified subtitles the correct ones for the specified position?
+		 */
+		protected function isCurrentTime(subtitle:Subtitle, pts:Number):Boolean {
+			return subtitle
+			&& subtitle.startPTS <= pts
+				&& subtitle.endPTS >= pts;
+		}
+		
+		/**
+		 * When the media seeks, we reset the index from which we look for the next subtitles
+		 */
+		protected function seekStateHandler(event:Event):void {
+			_seqIndex = 0;
+		}
+		
     }
 
 }
