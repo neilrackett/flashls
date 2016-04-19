@@ -246,7 +246,7 @@ package org.mangui.hls.loader {
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
                         // to avoid loading outdated fragments
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
+                        if (_levels.length < level+1 || (_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
@@ -1150,7 +1150,7 @@ package org.mangui.hls.loader {
                         _loadingState = LOADING_IDLE;
                         _switchLevel = true;
                         _demux = null;
-						_hls.stream.seek(_hls.position); // NEIL: This resolves the blank screen issue, but means we start at level 0 :'-(
+//						_hls.stream.seek(_hls.position); // NEIL: This resolves the blank screen issue, but means we start at level 0 :'-(
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, fragLevelIdx));
                         // speed up loading of new playlist
                         _timer.start();
