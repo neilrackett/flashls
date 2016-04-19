@@ -66,7 +66,7 @@ package org.mangui.hls.utils {
 
         protected function _trigger(event : String, ...args) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call(_callbackName, event, args);
+				ExternalInterface.call.apply(ExternalInterface, [_callbackName+"."+event].concat(args));
             }
         }
 
@@ -104,7 +104,7 @@ package org.mangui.hls.utils {
 
         override public function load(request : URLRequest) : void {
             CONFIG::LOGGING {
-            Log.debug("JSURLStream.load:" + request.url);
+            Log.debug("JSURLStream.load: " + request.url);
             }
             if (ExternalInterface.available) {
                 _trigger('requestFragment', ExternalInterface.objectID, request.url, _callbackLoaded, _callbackFailure);

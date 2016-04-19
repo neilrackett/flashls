@@ -51,8 +51,15 @@ package org.mangui.hls.utils {
 
         protected function _trigger(event : String, ...args) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call(_callbackName, event, args);
-            }
+				CONFIG::LOGGING {
+					Log.debug("JSURLLoader._trigger: "+_callbackName+", "+event+", "+args.join(", "));
+				}
+				ExternalInterface.call.apply(ExternalInterface, [_callbackName+"."+event].concat(args));
+            } else {
+				CONFIG::LOGGING {
+					Log.debug("ExternalInterface not available!");
+				}
+			}
         }
 
         override public function close() : void {
@@ -65,7 +72,7 @@ package org.mangui.hls.utils {
 
         override public function load(request : URLRequest) : void {
             CONFIG::LOGGING {
-            Log.debug("JSURLLoader.load:" + request.url);
+            Log.debug("JSURLLoader.load: " + request.url);
             }
             bytesLoaded = bytesTotal = 0;
             data = null;

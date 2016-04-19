@@ -26,6 +26,7 @@ package org.mangui.hls {
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
+    import org.mangui.hls.utils.Log;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
