@@ -14,7 +14,6 @@ package org.mangui.hls.demux {
     
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
@@ -843,8 +842,8 @@ package org.mangui.hls.demux {
                     }
                     break;
                 case _pmtId:
-                    if (_pmtParsed == false || _unknownPIDFound == true) {
-                        CONFIG::LOGGING {
+					CONFIG::LOGGING {
+	                    if (_pmtParsed == false || _unknownPIDFound == true) {
                             if(_pmtParsed == false) {
                                 Log.debug("TS: PMT found");
                             } else {

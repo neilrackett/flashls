@@ -35,13 +35,19 @@ package org.mangui.hls.utils
             
             for each (var line:String in lines)
             {
-                if (!CUE.test(line)) continue;
+                if (!CUE.test(line)) 
+				{
+					CONFIG::LOGGING {
+						Log.debug("[WebVTTParser] Skipped line: "+line);
+					}
+					continue;
+				}
                 
                 var matches:Array = CUE.exec(line);
-                var startPosition:Number = parseTime(matches[2]);
-                var endPosition:Number = parseTime(matches[3]);
+                var ptsStart:Number = fragmentPTS + parseTime(matches[2])*1000;
+                var ptsEnd:Number = fragmentPTS + parseTime(matches[3])*1000;
                 var text:String = StringUtil.trim((matches[4] || '').replace(/(\|)/g, '\n'));
-				var subtitle:Subtitle = new Subtitle(startPosition, endPosition, text, fragmentPTS);
+				var subtitle:Subtitle = new Subtitle(ptsStart, ptsEnd, text);
                 
                 CONFIG::LOGGING {
                     Log.debug(subtitle);

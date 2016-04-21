@@ -256,7 +256,7 @@ package org.mangui.hls.controller {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level : int, buffer : Number) : int {
-			if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
+            if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
                 return current_level;
             }
 
@@ -270,27 +270,38 @@ package org.mangui.hls.controller {
             var sftm : Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
             var max_level : Number = _maxLevel;
             var switch_to_level : int = current_level;
-            // CONFIG::LOGGING {
-            // Log.info("rsft:" + rsft);
-            // Log.info("sftm:" + sftm);
-            // }
-            // }
+            
+            CONFIG::LOGGING {
+                Log.info("rsft: " + rsft);
+                Log.info("sftm: " + sftm);
+            }
+            
+			// Test fix for blank/frozen video at start of playback
+//            if (_hls.watched < 10 && rsft < 0) return current_level;
+            if (rsft < 0) return current_level;
+            
             /* to switch level up :
             rsft should be greater than switch up condition
              */
-            if ((current_level < max_level) && (sftm > (1 + _switchup[current_level]))) {
+            if (current_level < max_level && sftm > 1+_switchup[current_level]) {
                 CONFIG::LOGGING {
-                    Log.debug("sftm:> 1+_switchup[_level]=" + (1 + _switchup[current_level]));
+                    Log.debug("sftm > 1+_switchup[_level] = "+sftm+" > "+(1+_switchup[current_level]));
                 }
-				var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
-                switch_to_level = Math.min(current_level+maxUpSwitchLimit, max_level);
+                
+                var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
+                max_level = Math.min(max_level, current_level+maxUpSwitchLimit);
+                
+                while (switch_to_level < max_level 
+                    && sftm > 1+_switchup[switch_to_level]) {
+                    ++switch_to_level;
+                }
             }
-			
+            
             /* to switch level down :
             rsft should be smaller than switch up condition,
             or the current level is greater than max level
              */ 
-			else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
+            else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
                 CONFIG::LOGGING {
                     Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
                 }
@@ -313,7 +324,7 @@ package org.mangui.hls.controller {
             }
             
             // Then we should check if selected level is higher than max_level if so, than take the min of those two
-			var maxDownSwitchLimit:uint = Math.max(1, HLSSettings.maxDownSwitchLimit);
+            var maxDownSwitchLimit:uint = Math.max(1, HLSSettings.maxDownSwitchLimit);
             switch_to_level = Math.min(max_level, Math.max(switch_to_level, current_level-maxDownSwitchLimit));
             
             CONFIG::LOGGING {
@@ -379,14 +390,13 @@ package org.mangui.hls.controller {
                     } else {
                         if (HLSSettings.startFromBitrate > 0) {
                             start_level = findIndexOfClosestLevel(HLSSettings.startFromBitrate);
-                        } else if (HLSSettings.startFromLevel > 0) {
-                            // adjust start level using a rule by 3
-                            start_level += Math.round(HLSSettings.startFromLevel * (levels.length - start_level - 1));
+                        } else if (HLSSettings.startFromLevel >= 0) {
+                            start_level = Math.round(HLSSettings.startFromLevel * (levels.length-1));
                         }
                     }
                 }
                 CONFIG::LOGGING {
-                    Log.debug("start level :" + start_level);
+                    Log.debug("start level: " + start_level);
                 }
             }
             return start_level;

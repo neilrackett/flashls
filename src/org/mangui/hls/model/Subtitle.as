@@ -23,42 +23,31 @@ package org.mangui.hls.model
 		 */
 		public static function toSubtitle(data:Object):Subtitle
 		{
-			return new Subtitle(data.startPosition, data.endPosition, data.htmlText || data.text, data.pts || 0);
+			return new Subtitle(data.startTime, data.endTime, data.htmlText || data.text);
 		}
 		
 		
-        private var _startPosition:Number;
-        private var _endPosition:Number;
-        private var _startPTS:Number;
-        private var _endPTS:Number;
+        private var _startTime:Number;
+        private var _endTime:Number;
         private var _htmlText:String;
-		private var _pts:Number;
         
 		/**
 		 * Create a new Subtitle object
 		 * 
-		 * @param	startPosition	Relative start position from WebVTT
-		 * @param	endPosition		Relative start position from WebVTT
+		 * @param	startTime		Start timestamp from WebVTT (fragment PTS + start position)
+		 * @param	endTime			End timestamp from WebVTT (fragment PTS + end position)
 		 * @param	htmlText		Subtitle text, including any HTML styling
-		 * @param	pts				The program timestamp (fragment #EXT-X-PROGRAM-DATE-TIME directive)
 		 */
-        public function Subtitle(startPosition:Number, endPosition:Number, htmlText:String, pts:Number=0) 
+        public function Subtitle(startTime:Number, endTime:Number, htmlText:String) 
         {
-            _startPosition = startPosition;
-            _endPosition = endPosition;
-			
-			_pts = pts;
-            _startPTS = pts + startPosition*1000;
-            _endPTS = pts + endPosition*1000;
-			
+            _startTime = startTime;
+            _endTime = endTime;
             _htmlText = htmlText || '';
         }
         
-        public function get startPosition():Number { return _startPosition; }
-        public function get endPosition():Number { return _endPosition; }
-        public function get startPTS():Number { return _startPTS; }
-        public function get endPTS():Number { return _endPTS; }
-        public function get duration():Number { return _endPosition-_startPosition; }
+        public function get startTime():Number { return _startTime; }
+        public function get endTime():Number { return _endTime; }
+        public function get duration():Number { return _endTime-_startTime; }
 		
         /**
          * The subtitle's text, including HTML tags (if applicable)
@@ -76,13 +65,10 @@ package org.mangui.hls.model
         public function toJSON():Object
         {
             return {
-                startPosition: startPosition,
-                endPosition: endPosition,
-                pts: pts,
-                startPTS: startPTS,
-                endPTS: endPTS,
+				startTime: startTime,
+				endTime: endTime,
                 duration: duration,
-                htmlText: htmlText+" - "+Math.random(),
+                htmlText: htmlText,
                 text: text
             }
         }
@@ -95,19 +81,16 @@ package org.mangui.hls.model
 		public function equals(subtitle:Subtitle):Boolean
 		{
 			return subtitle is Subtitle
-				&& startPosition == subtitle.startPosition
-				&& endPosition == subtitle.endPosition
+				&& startTime == subtitle.startTime
+				&& endTime == subtitle.endTime
 				&& htmlText == subtitle.htmlText
 				;
 		}
 		
-		hls_internal function get pts():Number { return _pts; }
-		
-		[Transient]
-		hls_internal function get tag():FLVTag {
+		hls_internal function toTag():FLVTag {
 			
 			if (!_tag) {
-				_tag = new FLVTag(FLVTag.METADATA, startPTS, startPTS, false);
+				_tag = new FLVTag(FLVTag.METADATA, startTime, startTime, false);
 				
 				var bytes:ByteArray = new ByteArray();
 				
@@ -122,14 +105,13 @@ package org.mangui.hls.model
 			return _tag;
 		}
 		
-		[Transient]
-		hls_internal function get tags():Vector.<FLVTag> {
-			return Vector.<FLVTag>([tag]);
+		hls_internal function toTags():Vector.<FLVTag> {
+			return Vector.<FLVTag>([toTag()]);
 		}
 		
         public function toString():String
         {
-            return '[Subtitles startPosition='+startPosition+' endPosition='+endPosition+' htmlText="'+htmlText+'"]';
+            return '[Subtitles startTime='+startTime+' endTime='+endTime+' htmlText="'+htmlText+'"]';
         }
 	}
 }

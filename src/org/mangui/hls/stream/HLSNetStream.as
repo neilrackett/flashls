@@ -24,7 +24,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.model.Subtitle;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -132,11 +131,11 @@ package org.mangui.hls.stream {
         }
 
 		public function onMetaData(data:Object) : void {
-			trace(this, "onMetaData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
+//			trace(this, "onMetaData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
 		}
 		
 		public function onTextData(data:Object) : void {
-			trace(this, "onTextData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
+//			trace(this, "onTextData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
 		}
 		
         // function is called by SCRIPT in FLV

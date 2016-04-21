@@ -410,13 +410,13 @@ package org.mangui.hls {
 		 * When bandwidth availability increases, what is the maximum number 
 		 * of quality levels we can we switch up at a time?
 		 */
-		public static var maxUpSwitchLimit:uint = 3;
+		public static var maxUpSwitchLimit:uint = 1;
 		
 		/**
 		 * When bandwidth availability decreases, what is the maximum number 
 		 * of quality levels we can we switch down at a time?
 		 */
-		public static var maxDownSwitchLimit:uint = 3;
+		public static var maxDownSwitchLimit:uint = 2;
 		
         /**
          * useHardwareVideoDecoder

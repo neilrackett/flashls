@@ -20,6 +20,7 @@
     <classEntry path="org.mangui.hls.loader.SubtitlesFragmentLoader"/>
     <classEntry path="org.mangui.hls.model.Subtitle"/>
     <classEntry path="org.mangui.hls.utils.hls_internal"/>
+    <classEntry path="org.mangui.hls.utils.SubtitlesSequencer"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

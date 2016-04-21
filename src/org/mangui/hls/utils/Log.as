@@ -13,12 +13,14 @@ package org.mangui.hls.utils {
         {
             JS_METHODS[LEVEL_INFO] = 'info';
             JS_METHODS[LEVEL_DEBUG] = 'log';
+            JS_METHODS[LEVEL_DEBUG_2] = 'debug';
             JS_METHODS[LEVEL_WARN] = 'info';
             JS_METHODS[LEVEL_ERROR] = 'error';
         }
         
         private static const LEVEL_INFO : String = "INFO:";
         private static const LEVEL_DEBUG : String = "DEBUG:";
+        private static const LEVEL_DEBUG_2 : String = "DEBUG2:";
         private static const LEVEL_WARN : String = "WARN:";
         private static const LEVEL_ERROR : String = "ERROR:";
         private static const JS_METHODS : Array = [];
@@ -35,7 +37,7 @@ package org.mangui.hls.utils {
 
         public static function debug2(message : *) : void {
             if (HLSSettings.logDebug2)
-                outputlog(LEVEL_DEBUG, String(message));
+                outputlog(LEVEL_DEBUG_2, String(message));
         };
 
         public static function warn(message : *) : void {
