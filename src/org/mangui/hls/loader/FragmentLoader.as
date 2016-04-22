@@ -35,6 +35,9 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
+    import org.mangui.hls.utils.Hex;
+    import org.mangui.hls.utils.Log;
+    import org.mangui.hls.utils.PTS;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -690,7 +693,20 @@ package org.mangui.hls.loader {
                 }
                 fragData.decryptAES = null;
             }
-
+			
+			/*
+			// Subtitles
+			if (HLSSettings.subtitlesUseFlvTags) {
+				var subTags:Vector.<FLVTag> = _hls.subtitlesFragmentLoader.getTags(_fragCurrent.seqnum);
+				if (subTags && subTags.length) {
+					CONFIG::LOGGING {
+						Log.debug(this+" Appending "+subTags.length+" subtitle tags");
+					}
+					_fragParsingProgressHandler(subTags);
+				}
+			}
+			*/
+			
             // deal with byte range here
             if (_fragCurrent.byterange_start_offset != -1) {
                 CONFIG::LOGGING {
@@ -1006,7 +1022,7 @@ package org.mangui.hls.loader {
 
         /** triggered when demux has retrieved some tags from fragment **/
         private function _fragParsingProgressHandler(tags : Vector.<FLVTag>) : void {
-            CONFIG::LOGGING {
+			CONFIG::LOGGING {
                 Log.debug2(tags.length + " tags extracted");
             }
             var fragData : FragmentData = _fragCurrent.data;

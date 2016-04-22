@@ -92,14 +92,12 @@ package org.mangui.hls.stream {
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);
             _client.registerCallback("onID3Data", onID3Data);
-            super.client = _client;
-			
-			// TODO Subtitles
 			_client.registerCallback("onMetaData", onMetaData);
 			_client.registerCallback("onTextData", onTextData);
+            super.client = _client;
         }
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, pts:Number, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -119,7 +117,7 @@ package org.mangui.hls.stream {
                     Log.debug("id3 tag:" + id3Tag);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, pts, customTagArray, id3TagArray)));
         }
 
         public function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
@@ -131,10 +129,12 @@ package org.mangui.hls.stream {
         }
 
 		public function onMetaData(data:Object) : void {
+			trace(this, ">>> onMetaData <<<");
 //			trace(this, "onMetaData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
 		}
 		
 		public function onTextData(data:Object) : void {
+			trace(this, ">>> onTextData <<<");
 //			trace(this, "onTextData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
 		}
 		

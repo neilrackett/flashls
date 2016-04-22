@@ -382,9 +382,9 @@ package org.mangui.hls {
 		 * the experimental injection of subtitles into the video stream as
 		 * FLV tags.
 		 * 
-		 * Default is false
+		 * Default is true
 		 */
-		public static var subtitlesUseFlvTags:Boolean = false;
+		public static var subtitlesUseFlvTags:Boolean = true;
 		
 		/**
 		 * altAudioLazySwitching

@@ -9,7 +9,6 @@ package org.mangui.hls.loader {
     import flash.events.SecurityErrorEvent;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
-    import flash.utils.Dictionary;
     import flash.utils.clearTimeout;
     import flash.utils.setTimeout;
     
@@ -17,6 +16,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Fragment;
@@ -44,19 +44,20 @@ package org.mangui.hls.loader {
         protected var _streamBuffer:StreamBuffer;
         protected var _loader:URLLoader;
         protected var _fragments:Vector.<Fragment> = new Vector.<Fragment>;
-        protected var _fragmentHistory:Dictionary = new Dictionary(true);
+
         protected var _fragment:Fragment;
         protected var _remainingRetries:int;
         protected var _retryTimeout:uint;
 		protected var _sequencer:SubtitlesSequencer;
 		
-        public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
+		public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
 
             _hls = hls;
 			_streamBuffer = streamBuffer;
             
 			_hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
+            _hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
@@ -80,7 +81,6 @@ package org.mangui.hls.loader {
             _loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
             _loader = null;
             
-			_fragmentHistory = null;
             _fragments = null;
             _fragment = null;
 			
@@ -98,7 +98,6 @@ package org.mangui.hls.loader {
             } catch (e:Error) {};
             
             _fragments = new Vector.<Fragment>();
-			_fragmentHistory = new Dictionary(true);
 			
 			// Sequencer
 			_sequencer.stop();
@@ -126,25 +125,30 @@ package org.mangui.hls.loader {
          * Preload all of the subtitles listed in the loaded subtitles level definitions
          */
         protected function subtitlesLevelLoadedHandler(event:HLSEvent):void {
-            _fragments = _fragments.concat(_hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments);
-            loadNextFragment();
+            if (_hls.subtitlesTrack != -1) {
+				_fragments = _fragments.concat(_hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments);
+	            loadNextFragment();
+			}
+        }
+        
+		/**
+		 * Flashls flushes tags on seek, which wipes out VOD subtitles because they're
+		 * all loaded at the start, so we need to reload them (live subtitles are
+		 * per fragment, so they should take care of themselves)
+		 */
+        protected function seekStateHandler(event:HLSEvent):void {
+			if (_hls.type == HLSTypes.VOD) {
+				subtitlesLevelLoadedHandler(event);
+			}
         }
         
         /**
          * Load the next subtitles fragment (if it hasn't been loaded already) 
          */
         protected function loadNextFragment():void {
-            
-            if (!_fragments || !_fragments.length) return;
-            
             _remainingRetries = HLSSettings.fragmentLoadMaxRetry;
             _fragment = _fragments.shift();
-            
-            if (!_fragmentHistory[_fragment.seqnum]) {
-                loadFragment();
-            } else {
-                loadNextFragment();
-            }
+            loadFragment();
         }
         
         /**
@@ -152,62 +156,76 @@ package org.mangui.hls.loader {
          */
         protected function loadFragment():void {
             clearTimeout(_retryTimeout);
-            _loader.load(new URLRequest(_fragment.url));
+			if (_fragment) {
+            	_loader.load(new URLRequest(_fragment.url));
+			}
         }
         
         /**
-         * Parse the loaded WebVTT subtitles
+         * Parse the loaded WebVTT data
          */
         protected function loader_completeHandler(event:Event):void {
-            
-			var pts:Number = _fragment.program_date;
-            var parsed:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, pts);
+			appendSubtitles(WebVTTParser.parse(_loader.data, _fragment.level, _fragment.program_date));
+            loadNextFragment();
+        }
+        
+		/**
+		 * Inject subtitles into the stream
+		 */
+		protected function appendSubtitles(subtitles:Vector.<Subtitle>):void {
 			
 			CONFIG::LOGGING {
-				Log.debug("Loaded "+parsed.length+" subtitles from "+_fragment.url.split("/").pop()+":\n"+parsed.join("\n"));
+				Log.debug("Appending "+subtitles.length+" subtitles from "+_fragment.url.split("/").pop()+":\n"+subtitles.join("\n"));
 			}
 			
 			// Inject subtitles into the stream as onTextData events
 			if (HLSSettings.subtitlesUseFlvTags) {
 				
-				var s:Subtitle;
+				var subtitle:Subtitle;
 				var tags:Vector.<FLVTag> = new Vector.<FLVTag>();
 				
-				for each (s in parsed) {
-					tags.push(s.toTag());
-				}
-				
-				// TODO Splice in blank subtitles to fill the gaps
-				
-				CONFIG::LOGGING {
-					Log.debug(this+" >>> Appending "+tags.length+" subtitle tags ("+_fragment.data.pts_start_computed --> _fragment.data.pts_max+")");
-				}
+				// Fill gaps in VOD subtitles (live streams include "" subtitles for gaps aleady)
+				if (_hls.type == HLSTypes.VOD) {
 					
+					// Fill all the gaps
+					for (var i:uint=0; i<subtitles.length-1; i++) {
+						
+						var nextSubtitle:Subtitle = subtitles[i+1];
+						subtitle = subtitles[i];
+						
+						if (subtitle.endPTS < nextSubtitle.startPTS) {
+							subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endTime, nextSubtitle.startTime));
+						}
+					}
+					
+					// ... and add a blank one at the end
+					subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endTime, subtitle.endTime));
+				}
+				
+				for each (subtitle in subtitles) {
+					tags.push(subtitle.toTag());
+				}
+				
 				_streamBuffer.appendTags(
 					HLSLoaderTypes.FRAGMENT_SUBTITLES, 
-					
-					_fragment.level, // TODO Which level is this referring to? 
+					_fragment.level,
 					_fragment.seqnum, 
-					
 					tags,
-					
-					_fragment.data.pts_start_computed, 
+					_fragment.data.pts_min, 
 					_fragment.data.pts_max, 
 					_fragment.continuity, 
 					_fragment.start_time
 				);
 				
-				_fragmentHistory[_fragment.seqnum] = true;
+				// TODO Should we be caching tags for VOD streams?
 				
-			// ... or sync them using MEDIA_TIME events
+				// ... or sync them using MEDIA_TIME events?
 			} else {
 				// Sequencer
-				_sequencer.appendSubtitles(parsed, _fragment.seqnum);
+				_sequencer.appendSubtitles(subtitles, _fragment.seqnum);
 			}
-			
-            loadNextFragment();
-        }
-        
+		}
+		
         /**
          * If the subtitles fail to load, give up and load the next subtitles fragment
          */
@@ -227,7 +245,6 @@ package org.mangui.hls.loader {
                 loadNextFragment();
             }
         }
-		
-    }
+	}
 
 }

@@ -52,6 +52,10 @@ package org.mangui.hls {
         /* overrided quality_manual_level level */
         private var _manual_level : int = -1;
 
+//		public function get subtitlesFragmentLoader():SubtitlesFragmentLoader {
+//			return _subtitlesFragmentLoader;
+//		}
+		
         /** Create and connect all components. **/
         public function HLS() {
             _levelLoader = new LevelLoader(this);

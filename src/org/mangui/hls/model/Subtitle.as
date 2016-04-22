@@ -23,53 +23,95 @@ package org.mangui.hls.model
 		 */
 		public static function toSubtitle(data:Object):Subtitle
 		{
-			return new Subtitle(data.startTime, data.endTime, data.htmlText || data.text);
+			return new Subtitle(data.htmlText || data.text, 
+				data.startPTS, data.endPTS, 
+				data.startPosition, data.endPosition, 
+				data.startTime, data.endTime);
 		}
 		
-		
-        private var _startTime:Number;
-        private var _endTime:Number;
-        private var _htmlText:String;
+		private var _trackid:int;
+		private var _htmlText:String;
+		private var _text:String;
+		private var _startPTS:Number;
+		private var _endPTS:Number;
+		private var _startTime:Number;
+		private var _endTime:Number;
+		private var _startPosition:Number;
+		private var _endPosition:Number;
         
 		/**
 		 * Create a new Subtitle object
 		 * 
-		 * @param	startTime		Start timestamp from WebVTT (fragment PTS + start position)
-		 * @param	endTime			End timestamp from WebVTT (fragment PTS + end position)
+		 * @param	trackid			The ID of the subtitles track this subtitle related to (TX3G standard naming)
 		 * @param	htmlText		Subtitle text, including any HTML styling
+		 * @param	startPTS		Start timestamp for FLVTag in milliseconds (MPEGTS/90 + startPosition*1000)
+		 * @param	endPTS			End timestamp for FLVTag in milliseconds (MPEGTS/90 + endPosition*1000)
+		 * @param	startPosition	Start position in seconds
+		 * @param	endPosition		End position in seconds
+		 * @param	startTime		Start timestamp (#EXT-X-PROGRAM-DATE-TIME + startPosition)
+		 * @param	endTime			End timestamp (#EXT-X-PROGRAM-DATE-TIME + endPosition)
 		 */
-        public function Subtitle(startTime:Number, endTime:Number, htmlText:String) 
+        public function Subtitle(
+			trackid:int,
+			htmlText:String, 
+			startPTS:Number, endPTS:Number,
+			startPosition:Number, endPosition:Number,
+			startTime:Number=NaN, endTime:Number=NaN
+		)
         {
-            _startTime = startTime;
-            _endTime = endTime;
-            _htmlText = htmlText || '';
+			_trackid = trackid;
+			
+			_htmlText = htmlText || '';
+			_text = StringUtil.removeHtmlTags(_htmlText);
+			
+			_startPTS = startPTS;
+			_endPTS = endPTS;
+			
+			_startPosition = startPosition;
+			_endPosition = endPosition;
+			
+			_startTime = startTime || startPosition*1000;
+			_endTime = endTime || endPosition*1000
         }
         
+		/**
+		 * The subtitle's text, including HTML tags (if applicable)
+		 */
+		public function get htmlText():String { return _htmlText; }
+		
+		/**
+		 * The subtitle's text, with HTML markup removed
+		 */
+		public function get text():String { return _text; }
+		
+        public function get trackid():Number { return _trackid; }
+        public function get startPTS():Number { return _startPTS; }
+        public function get endPTS():Number { return _endPTS; }
+		public function get startPosition():Number { return _startPosition; }
+		public function get endPosition():Number { return _endPosition; }
         public function get startTime():Number { return _startTime; }
         public function get endTime():Number { return _endTime; }
-        public function get duration():Number { return _endTime-_startTime; }
+        public function get duration():Number { return _endPosition-_startPosition; }
 		
-        /**
-         * The subtitle's text, including HTML tags (if applicable)
-         */
-        public function get htmlText():String { return _htmlText; }
-        
-        /**
-         * The subtitles's text, with any HTML tags removed
-         */
-        public function get text():String { return StringUtil.removeHtmlTags(_htmlText); }
-        
         /**
          * Convert to a plain object via the standard toJSON method
          */
         public function toJSON():Object
         {
             return {
+				// TX3G properties
+				trackid: trackid,
+				text: text,
+				
+				// flashls specific properties
+				htmlText: htmlText,
+				startPTS: startPTS,
+				endPTS: endPTS,
+				startPosition: startPosition,
+				endPosition: endPosition,
 				startTime: startTime,
 				endTime: endTime,
-                duration: duration,
-                htmlText: htmlText,
-                text: text
+                duration: duration
             }
         }
 		
@@ -78,19 +120,24 @@ package org.mangui.hls.model
 		 * @param	subtitle	The subtitle to compare
 		 * @returns				Boolean true if the contents are the same
 		 */
-		public function equals(subtitle:Subtitle):Boolean
+		public function equals(subtitle:Subtitle):Boolean 
 		{
 			return subtitle is Subtitle
-				&& startTime == subtitle.startTime
-				&& endTime == subtitle.endTime
 				&& htmlText == subtitle.htmlText
-				;
+				&& startPTS == subtitle.startPTS
+				&& endPTS == subtitle.endPTS;
 		}
 		
-		hls_internal function toTag():FLVTag {
-			
-			if (!_tag) {
-				_tag = new FLVTag(FLVTag.METADATA, startTime, startTime, false);
+        public function toString():String
+        {
+            return '[Subtitles startPTS='+startPTS+' endPTS='+endPTS+' htmlText="'+htmlText+'"]';
+        }
+		
+		hls_internal function toTag():FLVTag 
+		{
+			if (!_tag) 
+			{
+				_tag = new FLVTag(FLVTag.METADATA, startPTS, startPTS, false);
 				
 				var bytes:ByteArray = new ByteArray();
 				
@@ -104,14 +151,5 @@ package org.mangui.hls.model
 			
 			return _tag;
 		}
-		
-		hls_internal function toTags():Vector.<FLVTag> {
-			return Vector.<FLVTag>([toTag()]);
-		}
-		
-        public function toString():String
-        {
-            return '[Subtitles startTime='+startTime+' endTime='+endTime+' htmlText="'+htmlText+'"]';
-        }
 	}
 }

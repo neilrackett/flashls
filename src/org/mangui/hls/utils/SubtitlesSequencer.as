@@ -15,6 +15,8 @@ package org.mangui.hls.utils {
 	import org.mangui.hls.event.HLSPlayMetrics;
 	import org.mangui.hls.model.Subtitle;
 
+	use namespace hls_internal;
+	
 	/**
 	 * MEDIA-TIME SUBTITLE SEQUENCER
 	 *
@@ -42,13 +44,13 @@ package org.mangui.hls.utils {
 			_hls = hls;
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
-			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
+			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
 			
 			_seqSubs = new Dictionary(true);
 			_seqIndex = 0;
-			_emptySubtitle = new Subtitle(-1, -1, '');
+			_emptySubtitle = new Subtitle(-1, '', -1, -1, -1, -1);
 		}
 		
 		public function appendSubtitles(subtitles:Vector.<Subtitle>, sequenceNumber:uint=0):void
@@ -74,8 +76,8 @@ package org.mangui.hls.utils {
 			
 			_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
-			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
+			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
 			
 			_playMetrics = null;

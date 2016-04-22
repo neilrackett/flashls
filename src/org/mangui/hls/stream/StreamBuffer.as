@@ -848,15 +848,29 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {
+			
+			var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
+			
+			// TODO Why is absolute position NaN when subtitles are enabled? Are tags added too early?
+			if (isNaN(absoluteStartPosition)) { // || isNaN(tags[0].positionAbsolute)) {
+				return filteredTags;
+			}
+			
             var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
             aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
-            var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
             var idx2Clone : Vector.<int> = new Vector.<int>();
-
+			
             // loop through all tags and find index position of header tags located before start position
             while(lastIdx ==-1) {
                 for (var i : int = 0; i < tags.length; i++) {
                     var data : FLVData = tags[i];
+					// We don't need subtitles that were in the past, so we just throw them away
+					// TODO Are NaN postitions caused by subtitle tags being appended?
+					if (isNaN(data.positionAbsolute)
+						|| (data.positionAbsolute <= absoluteStartPosition && data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES)) {
+						tags.splice(i,1);
+						continue;
+					}
                     if (data.positionAbsolute <= absoluteStartPosition) {
                         lastIdx = i;
                         // current tag is before requested start position
@@ -866,9 +880,9 @@ package org.mangui.hls.stream {
                                 disIdx = i;
                                 break;
                             case FLVTag.METADATA:
-                                if(data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                                if (data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
                                     metIdxMain = i;
-                                } else {
+								} else {
                                     metIdxAltAudio = i;
                                 }
                                 break;
