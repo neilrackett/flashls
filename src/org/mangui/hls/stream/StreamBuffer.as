@@ -21,6 +21,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.loader.SubtitlesFragmentLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
@@ -37,6 +38,7 @@ package org.mangui.hls.stream {
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
         private var _altaudiofragmentLoader : AltAudioFragmentLoader;
+        private var _subtitlesFragmentLoader : SubtitlesFragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
@@ -88,6 +90,7 @@ package org.mangui.hls.stream {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
             _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
+            _subtitlesFragmentLoader = new SubtitlesFragmentLoader(hls, this);
             flushBuffer();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
@@ -109,6 +112,7 @@ package org.mangui.hls.stream {
             _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
             _fragmentLoader.dispose();
             _altaudiofragmentLoader.dispose();
+            _subtitlesFragmentLoader.dispose();
             _fragmentLoader = null;
             _altaudiofragmentLoader = null;
             _hls = null;
@@ -144,7 +148,7 @@ package org.mangui.hls.stream {
                     order at the nominal playback rate), the client SHOULD NOT
                     choose a segment which starts less than three target durations from
                     the end of the Playlist file */
-				
+                
                 _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
@@ -509,7 +513,7 @@ package org.mangui.hls.stream {
         }
 
         private function get videoExpected() : Boolean {
-			return _fragmentLoader.videoExpected;
+            return _fragmentLoader.videoExpected;
         }
 
         public function get audioBufferLength() : Number {
@@ -848,29 +852,29 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {
-			
-			var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
-			
-			// TODO Why is absolute position NaN when subtitles are enabled? Are tags added too early?
-			if (isNaN(absoluteStartPosition)) { // || isNaN(tags[0].positionAbsolute)) {
-				return filteredTags;
-			}
-			
+            
+            var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
+            
+            // TODO Why is absolute position NaN when subtitles are enabled? Are tags added too early?
+            if (isNaN(absoluteStartPosition)) { // || isNaN(tags[0].positionAbsolute)) {
+                return filteredTags;
+            }
+            
             var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
             aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
             var idx2Clone : Vector.<int> = new Vector.<int>();
-			
+            
             // loop through all tags and find index position of header tags located before start position
             while(lastIdx ==-1) {
                 for (var i : int = 0; i < tags.length; i++) {
                     var data : FLVData = tags[i];
-					// We don't need subtitles that were in the past, so we just throw them away
-					// TODO Are NaN postitions caused by subtitle tags being appended?
-					if (isNaN(data.positionAbsolute)
-						|| (data.positionAbsolute <= absoluteStartPosition && data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES)) {
-						tags.splice(i,1);
-						continue;
-					}
+                    // We don't need subtitles that were in the past, so we just throw them away
+                    // TODO Are NaN postitions caused by subtitle tags being appended?
+                    if (isNaN(data.positionAbsolute)) {
+                        //|| (data.positionAbsolute <= absoluteStartPosition && data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES)) {
+                        tags.splice(i,1);
+                        continue;
+                    }
                     if (data.positionAbsolute <= absoluteStartPosition) {
                         lastIdx = i;
                         // current tag is before requested start position
@@ -882,7 +886,7 @@ package org.mangui.hls.stream {
                             case FLVTag.METADATA:
                                 if (data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
                                     metIdxMain = i;
-								} else {
+                                } else {
                                     metIdxAltAudio = i;
                                 }
                                 break;
@@ -1236,7 +1240,7 @@ package org.mangui.hls.stream {
         private function get min_min_pos() : Number {
             if (audioExpected) {
                 if (videoExpected) {
-					return Math.min(min_audio_pos, min_video_pos);
+                    return Math.min(min_audio_pos, min_video_pos);
                 } else {
                     return min_audio_pos;
                 }

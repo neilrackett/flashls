@@ -37,7 +37,6 @@ package org.mangui.hls {
         private var _audioTrackController : AudioTrackController;
         private var _subtitlesLevelLoader : SubtitlesLevelLoader;
         private var _subtitlesTrackController : SubtitlesTrackController;
-        private var _subtitlesFragmentLoader : SubtitlesFragmentLoader;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
@@ -52,10 +51,6 @@ package org.mangui.hls {
         /* overrided quality_manual_level level */
         private var _manual_level : int = -1;
 
-//		public function get subtitlesFragmentLoader():SubtitlesFragmentLoader {
-//			return _subtitlesFragmentLoader;
-//		}
-		
         /** Create and connect all components. **/
         public function HLS() {
             _levelLoader = new LevelLoader(this);
@@ -63,9 +58,8 @@ package org.mangui.hls {
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
-			_subtitlesLevelLoader = new SubtitlesLevelLoader(this);
-			_subtitlesTrackController = new SubtitlesTrackController(this, _streamBuffer);
-			_subtitlesFragmentLoader = new SubtitlesFragmentLoader(this, _streamBuffer);
+			_subtitlesLevelLoader = new SubtitlesLevelLoader(this, _levelLoader);
+			_subtitlesTrackController = new SubtitlesTrackController(this, _streamBuffer, _levelLoader);
             _hlsURLStream = URLStream as Class;
             _hlsURLLoader = URLLoader as Class;
             // default loader
@@ -102,7 +96,6 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _subtitlesLevelLoader.dispose();
             _subtitlesTrackController.dispose();
-            _subtitlesFragmentLoader.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
             _streamBuffer.dispose();
@@ -259,11 +252,6 @@ package org.mangui.hls {
         public function set client(value : Object) : void {
             _client = value;
         }
-        
-        /** get subtitles tracks list from playlist **/
-        public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
-            return _levelLoader.subtitlesPlaylistTracks;
-        };
 
         /** get subtitles tracks list**/
         public function get subtitlesTracks() : Vector.<SubtitlesTrack> {
@@ -278,11 +266,6 @@ package org.mangui.hls {
         /** select an audio track, based on its index in audio track lists**/
         public function set subtitlesTrack(val : int) : void {
             _subtitlesTrackController.subtitlesTrack = val;
-        }
-        
-        /** How many subtitles tracks does the current media have? */
-        public function get numSubtitlesTracks():uint {
-            return !!subtitlesTracks ? subtitlesTracks.length : 0;
         }
         
         /** The ID of the default subtitles track */
@@ -318,11 +301,6 @@ package org.mangui.hls {
         /** select an audio track, based on its index in audio track lists**/
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
-        }
-        
-        /** How many audio tracks does the current media have? */
-        public function get numAudioTracks():uint {
-            return !!audioTracks ? audioTracks.length : 0;
         }
         
         /* set stage */

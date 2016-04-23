@@ -694,19 +694,6 @@ package org.mangui.hls.loader {
                 fragData.decryptAES = null;
             }
 			
-			/*
-			// Subtitles
-			if (HLSSettings.subtitlesUseFlvTags) {
-				var subTags:Vector.<FLVTag> = _hls.subtitlesFragmentLoader.getTags(_fragCurrent.seqnum);
-				if (subTags && subTags.length) {
-					CONFIG::LOGGING {
-						Log.debug(this+" Appending "+subTags.length+" subtitle tags");
-					}
-					_fragParsingProgressHandler(subTags);
-				}
-			}
-			*/
-			
             // deal with byte range here
             if (_fragCurrent.byterange_start_offset != -1) {
                 CONFIG::LOGGING {

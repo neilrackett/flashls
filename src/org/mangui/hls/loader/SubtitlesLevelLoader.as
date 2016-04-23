@@ -32,6 +32,8 @@ package org.mangui.hls.loader {
     public class SubtitlesLevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
+        /** Reference to the hls level loader. **/
+        private var _levelLoader : LevelLoader;
         /** Link to the M3U8 file. **/
         private var _url : String;
         /** Timeout ID for reloading live playlists. **/
@@ -47,12 +49,14 @@ package org.mangui.hls.loader {
         /* playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
-
+		
         /** Setup the loader. **/
-        public function SubtitlesLevelLoader(hls : HLS) {
+        public function SubtitlesLevelLoader(hls : HLS, levelLoader : LevelLoader) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
+			
+			_levelLoader = levelLoader;
         };
 
         public function dispose() : void {
@@ -134,8 +138,8 @@ package org.mangui.hls.loader {
             
             _reloadPlaylistTimer = getTimer();
             
-            var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[_hls.subtitlesTracks[_currentTrack].id];
-            
+            var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _levelLoader.subtitlesPlaylistTracks[_hls.subtitlesTracks[_currentTrack].id];
+			
             _manifestLoading = new Manifest();
             _manifestLoading.loadPlaylist(_hls, subtitlesPlaylistTrack.url, _parseSubtitlesPlaylist, _errorHandler, _currentTrack, _hls.type, HLSSettings.flushLiveURLCache);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_LEVEL_LOADING, _currentTrack));
@@ -147,13 +151,13 @@ package org.mangui.hls.loader {
             _currentTrack = event.subtitlesTrack;
             clearTimeout(_timeoutID);
             
-            if (_currentTrack > -1 && _currentTrack < _hls.numSubtitlesTracks) {
+            if (_currentTrack > -1 && _currentTrack < _hls.subtitlesTracks.length) {
                 
                 var subtitlesTrack:SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
                 
                 if (subtitlesTrack.source == SubtitlesTrack.FROM_PLAYLIST) {
                     
-                    var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[subtitlesTrack.id];
+                    var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _levelLoader.subtitlesPlaylistTracks[subtitlesTrack.id];
                     
                     if (subtitlesPlaylistTrack.url) {
                         
