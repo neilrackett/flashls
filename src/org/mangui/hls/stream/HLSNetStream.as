@@ -24,6 +24,8 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.model.Subtitle;
+    import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -76,6 +78,8 @@ package org.mangui.hls.stream {
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
+        use namespace hls_internal;
+        
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
@@ -92,8 +96,9 @@ package org.mangui.hls.stream {
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);
             _client.registerCallback("onID3Data", onID3Data);
-			_client.registerCallback("onMetaData", onMetaData);
-			_client.registerCallback("onTextData", onTextData);
+			// Subtitles implemented as TX3G timed text, using onMetaData for track list and onTextData for subtitle text
+            _client.registerCallback("onMetaData", onMetaData);
+            _client.registerCallback("onTextData", onTextData);
             super.client = _client;
         }
 
@@ -128,16 +133,16 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_SKIPPED, duration));
         }
 
-		public function onMetaData(data:Object) : void {
-			trace(this, ">>> onMetaData <<<");
-//			trace(this, "onMetaData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
-		}
-		
-		public function onTextData(data:Object) : void {
-			trace(this, ">>> onTextData <<<");
-//			trace(this, "onTextData >>>>>>>>>>>>>>>>>>>>>", JSON.stringify(data));
-		}
-		
+        public function onMetaData(data:Object) : void {
+            if (data && data.trackinfo) {
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_TRACKS_LIST_CHANGE));
+            }
+        }
+        
+        public function onTextData(data:Object) : void {
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, Subtitle.toSubtitle(data)));
+        }
+        
         // function is called by SCRIPT in FLV
         public function onID3Data(data : ByteArray) : void {
             // we dump the content as base64 to get it to the Javascript in the browser.
@@ -148,7 +153,7 @@ package org.mangui.hls.stream {
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
-		
+        
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength,
@@ -244,6 +249,11 @@ package org.mangui.hls.stream {
         /** Return the current playback quality level **/
         public function get currentLevel() : int {
             return _currentLevel;
+        }
+
+        /** append tag to NetStream **/
+        public function appendTag(tag : FLVTag) : void {
+            appendTags(Vector.<FLVTag>([tag]));
         }
 
         /** append tags to NetStream **/
@@ -475,6 +485,10 @@ package org.mangui.hls.stream {
             return _client.delegate;
         }
 
+        hls_internal function get client() : HLSNetStreamClient {
+            return _client;
+        }
+        
         /** Stop playback. **/
         override public function close() : void {
             CONFIG::LOGGING {

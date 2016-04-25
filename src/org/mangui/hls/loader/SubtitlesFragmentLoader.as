@@ -152,7 +152,7 @@ package org.mangui.hls.loader {
          * per fragment, so they should take care of themselves)
          */
         protected function seekStateHandler(event:HLSEvent):void {
-            if (_hls.type == HLSTypes.VOD) {
+            if (_hls.type == HLSTypes.VOD && _hls.watched) {
                 subtitlesLevelLoadedHandler(event);
             }
         }

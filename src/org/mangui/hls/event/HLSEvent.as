@@ -7,9 +7,9 @@ package org.mangui.hls.event {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.model.Subtitle;
 
-    /** Event fired when an error prevents playback. **/
+    /** Event fired when an error prevents playback. */
     public class HLSEvent extends Event {
-        /** Identifier for a manifest loading event, triggered after a call to hls.load(url) **/
+        /** Identifier for a manifest loading event, triggered after a call to hls.load(url) */
         public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
         /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
@@ -17,105 +17,107 @@ package org.mangui.hls.event {
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
         /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved */
         public static const MANIFEST_LOADED : String = "hlsEventManifestLoaded";
-        /** Identifier for a level loading event  **/
+        /** Identifier for a level loading event  */
         public static const LEVEL_LOADING : String = "hlsEventLevelLoading";
-        /** Identifier for a level loading aborted event  **/
+        /** Identifier for a level loading aborted event  */
         public static const LEVEL_LOADING_ABORTED : String = "hlsEventLevelLoadingAborted";
-        /** Identifier for a level loaded event  **/
+        /** Identifier for a level loaded event  */
         public static const LEVEL_LOADED : String = "hlsEventLevelLoaded";
-        /** Identifier for a level switch event. **/
+        /** Identifier for a level switch event. */
         public static const LEVEL_SWITCH : String = "hlsEventLevelSwitch";
-        /** Identifier for a level ENDLIST event. **/
+        /** Identifier for a level ENDLIST event. */
         public static const LEVEL_ENDLIST : String = "hlsEventLevelEndList";
-        /** Identifier for a fragment loading event. **/
+        /** Identifier for a fragment loading event. */
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
-        /** Identifier for a fragment loaded event. **/
+        /** Identifier for a fragment loaded event. */
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
         /** Identifier for fragment load aborting for emergency switch down */
         public static const FRAGMENT_LOAD_EMERGENCY_ABORTED : String = "hlsEventFragmentLoadEmergencyAborted";
-        /** Identifier for a fragment playing event. **/
+        /** Identifier for a fragment playing event. */
         public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
-        /** Identifier for a fragment skipping event. **/
+        /** Identifier for a fragment skipping event. */
         public static const FRAGMENT_SKIPPED : String = "hlsEventFragmentSkipped";
-        /** Identifier for a audio tracks list change **/
+        /** Identifier for a audio tracks list change */
         public static const AUDIO_TRACKS_LIST_CHANGE : String = "audioTracksListChange";
-        /** Identifier for a audio track switch **/
+        /** Identifier for a audio track switch */
         public static const AUDIO_TRACK_SWITCH : String = "audioTrackSwitch";
-        /** Identifier for a audio level loading event  **/
+        /** Identifier for a audio level loading event  */
         public static const AUDIO_LEVEL_LOADING : String = "hlsEventAudioLevelLoading";
-        /** Identifier for a audio level loaded event  **/
+        /** Identifier for a audio level loaded event  */
         public static const AUDIO_LEVEL_LOADED : String = "hlsEventAudioLevelLoaded";
-        /** Identifier for a subtitles track switch **/
+		/** Identifier for a subtitles tracks list change */
+		public static const SUBTITLES_TRACKS_LIST_CHANGE : String = "subtitlesTracksListChange";
+        /** Identifier for a subtitles track switch */
         public static const SUBTITLES_TRACK_SWITCH : String = "hlsEventSubtitlesTrackSwitch";
-        /** Identifier for a subtitles level loading event  **/
+        /** Identifier for a subtitles level loading event  */
         public static const SUBTITLES_LEVEL_LOADING : String = "hlsEventSubtitlesLevelLoading";
-        /** Identifier for a subtitles level loaded event  **/
+        /** Identifier for a subtitles level loaded event  */
         public static const SUBTITLES_LEVEL_LOADED : String = "hlsEventSubtitlesLevelLoaded";
-        /** Identifier for a subtitles level loaded event  **/
+        /** Identifier for when current subtitles change */
         public static const SUBTITLES_CHANGE : String = "hlsEventSubtitlesChange";
-        /** Identifier for audio/video TAGS loaded event. **/
+        /** Identifier for audio/video TAGS loaded event. */
         public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
-        /** Identifier when last fragment of playlist has been loaded **/
+        /** Identifier when last fragment of playlist has been loaded */
         public static const LAST_VOD_FRAGMENT_LOADED : String = "hlsEventLastFragmentLoaded";
-        /** Identifier for a playback warning event. **/
+        /** Identifier for a playback warning event. */
         public static const WARNING : String = "hlsEventWarning";
-        /** Identifier for a playback error event. **/
+        /** Identifier for a playback error event. */
         public static const ERROR : String = "hlsEventError";
-        /** Identifier for a playback media time change event. **/
+        /** Identifier for a playback media time change event. */
         public static const MEDIA_TIME : String = "hlsEventMediaTime";
-        /** Identifier for a playback state switch event. **/
+        /** Identifier for a playback state switch event. */
         public static const PLAYBACK_STATE : String = "hlsPlaybackState";
-        /** Identifier for a seek state switch event. **/
+        /** Identifier for a seek state switch event. */
         public static const SEEK_STATE : String = "hlsSeekState";
-        /** Identifier for stream type changes: VoD or Live, type will be stored in 'streamType' field **/
+        /** Identifier for stream type changes: VoD or Live, type will be stored in 'streamType' field */
         public static const STREAM_TYPE_DID_CHANGE:String = "hlsEventStreamTypeDidChange";
-        /** Identifier for a playback complete event. **/
+        /** Identifier for a playback complete event. */
         public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
-        /** Identifier for a Playlist Duration updated event **/
+        /** Identifier for a Playlist Duration updated event */
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
-        /** Identifier for a ID3 updated event **/
+        /** Identifier for a ID3 updated event */
         public static const ID3_UPDATED : String = "hlsID3Updated";
-        /** Identifier for a fps drop event **/
+        /** Identifier for a fps drop event */
         public static const FPS_DROP : String = "hlsFPSDrop";
-        /** Identifier for a fps drop level capping event **/
+        /** Identifier for a fps drop level capping event */
         public static const FPS_DROP_LEVEL_CAPPING : String = "hlsFPSDropLevelCapping";
-        /** Identifier for a fps drop smooth level switch event **/
+        /** Identifier for a fps drop smooth level switch event */
         public static const FPS_DROP_SMOOTH_LEVEL_SWITCH : String = "hlsFPSDropSmoothLevelSwitch";
-        /** Identifier for a live loading stalled event **/
+        /** Identifier for a live loading stalled event */
         public static const LIVE_LOADING_STALLED : String = "hlsLiveLoadingStalled";
-        /** Identifier for a Stage set event **/
+        /** Identifier for a Stage set event */
         public static const STAGE_SET : String = "hlsStageSet";
 
-        /** The current url **/
+        /** The current url */
         public var url : String;
-        /** The current quality level. **/
+        /** The current quality level. */
         public var level : int;
-        /** The current playlist duration. **/
+        /** The current playlist duration. */
         public var duration : Number;
-        /** The list with quality levels. **/
+        /** The list with quality levels. */
         public var levels : Vector.<Level>;
-        /** The error message. **/
+        /** The error message. */
         public var error : HLSError;
-        /** Load Metrics. **/
+        /** Load Metrics. */
         public var loadMetrics : HLSLoadMetrics;
-        /** Play Metrics. **/
+        /** Play Metrics. */
         public var playMetrics : HLSPlayMetrics;
-        /** The time position. **/
+        /** The time position. */
         public var mediatime : HLSMediatime;
-        /** The new playback state. **/
+        /** The new playback state. */
         public var state : String;
-        /** The new stream type value **/
+        /** The new stream type value */
         public var streamType: String;
-        /** The current audio track **/
+        /** The current audio track */
         public var audioTrack : int;
-        /** The current subtitles track **/
+        /** The current subtitles track */
         public var subtitlesTrack : int;
-        /** a complete ID3 payload from PES, as a hex dump **/
+        /** a complete ID3 payload from PES, as a hex dump */
         public var ID3Data : String;
         /** a subtitles model */
         public var subtitles:Subtitle;
 
-        /** Assign event parameter and dispatch. **/
+        /** Assign event parameter and dispatch. */
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
             switch(type) {
                 case MANIFEST_LOADING:

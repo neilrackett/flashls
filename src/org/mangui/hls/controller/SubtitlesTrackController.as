@@ -2,23 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import flash.net.ObjectEncoding;
     import flash.system.Capabilities;
-    import flash.utils.ByteArray;
     import flash.utils.setTimeout;
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSPlayMetrics;
-    import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.loader.LevelLoader;
-    import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.model.Level;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
+    import org.mangui.hls.stream.HLSNetStreamClient;
     import org.mangui.hls.stream.StreamBuffer;
+    import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -33,8 +28,8 @@ package org.mangui.hls.controller {
         private var _hls : HLS;
         /** Reference to the HLS level loader. **/
         private var _levelLoader : LevelLoader;
-		/** stream buffer instance **/
-		private var _streamBuffer : StreamBuffer;
+        /** stream buffer instance **/
+        private var _streamBuffer : StreamBuffer;
         /** list of subtitles tracks from Manifest, matching with current level **/
         private var _subtitlesTracksFromManifest : Vector.<SubtitlesTrack>;
         /** merged subtitles tracks list **/
@@ -45,17 +40,19 @@ package org.mangui.hls.controller {
         private var _defaultTrackId : int;
         /** forced subtitles track id **/
         private var _forcedTrackId : int;
-		
+        
+        use namespace hls_internal;
+        
         public function SubtitlesTrackController(hls : HLS, streamBuffer : StreamBuffer, levelLoader : LevelLoader) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             
-			_streamBuffer = streamBuffer;
-			_levelLoader = levelLoader;
-			
-			_subtitlesTracks = new Vector.<SubtitlesTrack>;
-			_subtitlesTrackId = -1;
+            _streamBuffer = streamBuffer;
+            _levelLoader = levelLoader;
+            
+            _subtitlesTracks = new Vector.<SubtitlesTrack>;
+            _subtitlesTrackId = -1;
             _defaultTrackId = -1;
             _forcedTrackId = -1;
         }
@@ -85,16 +82,18 @@ package org.mangui.hls.controller {
             return _subtitlesTracks;
         }
 
+        /**
+         * Reset subtitles tracks
+         */
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-            
-            // reset subtitles tracks
             _defaultTrackId = -1;
             _forcedTrackId = -1;
             _subtitlesTrackId = -1;
             _subtitlesTracksFromManifest = new Vector.<SubtitlesTrack>();
+            _subtitlesTracks = new Vector.<SubtitlesTrack>();
             _updateSubtitlesTrackForLevel(_hls.loadLevel);
         };
-		
+
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
             var level : int = event.loadMetrics.level;
@@ -138,7 +137,7 @@ package org.mangui.hls.controller {
                     }
                 }
             }
-            
+
             // check if subtitles tracks matching with current level have changed since last time
             var subtitlesTrackChanged : Boolean = false;
             if (_subtitlesTracksFromManifest.length != subtitlesTrackList.length) {
@@ -150,25 +149,25 @@ package org.mangui.hls.controller {
                     }
                 }
             }
-            
+
             // update subtitles list
             if (subtitlesTrackChanged) {
                 _subtitlesTracksFromManifest = subtitlesTrackList;
                 _subtitlesTracksMerge();
             }
-            
+
             // PRIORITY #1: Automatically select forced subtitles track
             if (HLSSettings.subtitlesAutoSelectForced && _forcedTrackId != -1){
                 subtitlesTrack = _forcedTrackId;
                 return;
             }
-            
-			// PRIORITY #2: Automatically select auto-select subtitles track that matches current locale
-			if (HLSSettings.subtitlesAutoSelect && autoSelectId != -1) {
-				subtitlesTrack = autoSelectId;
-				return;
-			}
-			
+
+            // PRIORITY #2: Automatically select auto-select subtitles track that matches current locale
+            if (HLSSettings.subtitlesAutoSelect && autoSelectId != -1) {
+                subtitlesTrack = autoSelectId;
+                return;
+            }
+
             // PRIORITY #3: Automatically select default subtitles track
             if (HLSSettings.subtitlesAutoSelectDefault && _defaultTrackId != -1){
                 subtitlesTrack = _defaultTrackId;
@@ -177,72 +176,60 @@ package org.mangui.hls.controller {
             
             // Otherwise leave subtitles off/unselected
         }
-        
+
+        /**
+         * Strictly speaking this isn't really needed for subtitles, but I've 
+         * left it in place in case we want to merge in CEA-608 captions or
+         * external subtitles support in the future
+         */
         private function _subtitlesTracksMerge() : void {
-			
-			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
-			
-			/*
-			if (HLSSettings.subtitlesUseFlvTags) {
-				
-				var level:Level = _levelLoader.levels[_hls.currentLevel];
-				var seqnum:Number = level.getSeqNumNearestProgramDate(0);
-				
-				var fragment:Fragment = level.getFragmentfromSeqNum(seqnum);
-				var pts:Number = fragment.data.pts_min;
-			
-				var tag:FLVTag = new FLVTag(FLVTag.METADATA, pts, pts, false);
-				var bytes:ByteArray = new ByteArray();
-				
-				bytes.objectEncoding = ObjectEncoding.AMF0;
-				bytes.writeObject("onMetaData");
-				bytes.writeObject(tx3gMetaData);
-				
-				tag.push(bytes, 0, bytes.length);
-				tag.build();
-				
-				_streamBuffer.appendTags(
-					HLSLoaderTypes.FRAGMENT_SUBTITLES, 
-					_hls.currentLevel, 
-					seqnum, 
-					Vector.<FLVTag>([tag]), 
-					pts, pts, 0, 0
-				);
-					
-			} else {
-			*/
-				// Announce available subtitles tracks via onMetaData at the end of the current call stack
-				setTimeout(function():void {
-					var client:Object = _hls.stream.client;
-					if (client && client.hasOwnProperty("onMetaData")) {
-						client.onMetaData(tx3gMetaData);
-					}
-				}, 0);
-//			}
+            _subtitlesTracks = _subtitlesTracksFromManifest.slice();
+            setTimeout(dispatchMetaData, 0);
+        }
+
+        /**
+         * Announce availability of subtitles tracks using TX3G metadata
+         */
+        protected function dispatchMetaData():void {
+            
+//            var tag:FLVTag = new FLVTag(FLVTag.METADATA, 1000, 1000, false);
+//            var bytes:ByteArray = new ByteArray();
+//            
+//            bytes.objectEncoding = ObjectEncoding.AMF0;
+//            bytes.writeObject("onMetaData");
+//            bytes.writeObject(tx3gMetaData);
+//            
+//            tag.push(bytes, 0, bytes.length);
+//            tag.build();
+//
+//            _hls.stream.appendTag(tag);
+            
+            // The code above breaks the stream, so we use script to achieve the same outcome
+            var client:HLSNetStreamClient = _hls.stream.hls_internal::client;
+            client.onMetaData(tx3gMetaData);
         }
         
-		/**
-		 * Simplified ISO693/TX3G metadata that can be used to announce
-		 * available subtitles tracks via an onMetaData NetStream event
-		 */
-		private function get tx3gMetaData():Object {
-			
-			var trackinfo : Array = [];
-			
-			// TODO Add default style?
-			for each (var track:SubtitlesTrack in subtitlesTracks) {
-				trackinfo.push({
-					language: track.language,
-					title: track.title,
-					sampledescription: [{
-						sampletype: 'tx3g'
-					}]
-				});
-			}
-			
-			return {trackinfo:trackinfo};
-		}
-		
+        /**
+         * Minimal TX3G timed text metadata used to announce available 
+         * subtitles tracks via an onMetaData NetStream event
+         */
+        private function get tx3gMetaData():Object {
+            
+            var trackinfo : Array = [];
+            
+            for each (var track:SubtitlesTrack in subtitlesTracks) {
+                trackinfo.push({
+                    language: track.language,
+                    title: track.title,
+                    sampledescription: [{
+                        sampletype: 'tx3g'
+                    }]
+                });
+            }
+            
+            return {trackinfo:trackinfo};
+        }
+
         /** Normally triggered by user selection, it should return the subtitles track to be parsed */
         public function subtitlesTrackSelectionHandler(subtitlesTrackList : Vector.<SubtitlesTrack>) : SubtitlesTrack {
             var subtitlesTrackChanged : Boolean = false;
@@ -257,15 +244,15 @@ package org.mangui.hls.controller {
                 return _subtitlesTracks[_subtitlesTrackId];
             }
         }
-        
+
         public function get defaultSubtitlesTrack():int {
             return _defaultTrackId;
         }
-        
+
         public function get hasForcedSubtitles():Boolean {
             return _forcedTrackId != -1;
         }
-        
+
         public function get forcedSubtitlesTrack():int {
             return _forcedTrackId;
         }
