@@ -23,7 +23,6 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Subtitle;
     import org.mangui.hls.stream.StreamBuffer;
-    import org.mangui.hls.utils.SubtitlesSequencer;
     import org.mangui.hls.utils.WebVTTParser;
     import org.mangui.hls.utils.hls_internal;
 
@@ -51,9 +50,6 @@ package org.mangui.hls.loader {
         protected var _retryTimeout:uint;
         protected var _cache:Dictionary = new Dictionary(true);
         
-        // Sequencer
-        protected var _sequencer:SubtitlesSequencer;
-        
         public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
 
             _hls = hls;
@@ -68,9 +64,6 @@ package org.mangui.hls.loader {
             _loader.addEventListener(Event.COMPLETE, loader_completeHandler);
             _loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
             _loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
-            
-            // Sequencer
-            _sequencer = new SubtitlesSequencer(hls);
         }
         
         public function dispose():void {
@@ -91,9 +84,6 @@ package org.mangui.hls.loader {
             _fragments = null;
             _fragment = null;
             _cache = null;
-            
-            // Sequencer
-            _sequencer.dispose();
         }
         
         /**
@@ -105,9 +95,6 @@ package org.mangui.hls.loader {
             catch (e:Error) {};
             
             _fragments = new Vector.<Fragment>();
-            
-            // Sequencer
-            _sequencer.stop();
         }
         
         /**
@@ -206,50 +193,40 @@ package org.mangui.hls.loader {
         }
         
         /**
-         * Inject subtitles into the stream
+         * Convert subtitles into FLVTag and append them to the stream
          */
         protected function appendSubtitles(subtitles:Vector.<Subtitle>):Vector.<FLVTag> {
             
             CONFIG::LOGGING {
                 Log.debug("Appending "+subtitles.length+" subtitles from "+_fragment.url.split("/").pop());//+":\n"+subtitles.join("\n"));
             }
+                
+            var subtitle:Subtitle;
+            var tags:Vector.<FLVTag> = new Vector.<FLVTag>();
             
-            // Inject subtitles into the stream as onTextData events
-            if (HLSSettings.subtitlesUseFlvTags) {
+            // Fill gaps in VOD subtitles (live streams include "" subtitles for gaps aleady)
+            if (_hls.type == HLSTypes.VOD) {
                 
-                var subtitle:Subtitle;
-                var tags:Vector.<FLVTag> = new Vector.<FLVTag>();
-                
-                // Fill gaps in VOD subtitles (live streams include "" subtitles for gaps aleady)
-                if (_hls.type == HLSTypes.VOD) {
+                // Fill all the gaps
+                for (var i:uint=0; i<subtitles.length-1; i++) {
                     
-                    // Fill all the gaps
-                    for (var i:uint=0; i<subtitles.length-1; i++) {
-                        
-                        var nextSubtitle:Subtitle = subtitles[i+1];
-                        subtitle = subtitles[i];
-                        
-                        if (subtitle.endPTS < nextSubtitle.startPTS) {
-                            subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endTime, nextSubtitle.startTime));
-                        }
+                    var nextSubtitle:Subtitle = subtitles[i+1];
+                    subtitle = subtitles[i];
+                    
+                    if (subtitle.endPTS < nextSubtitle.startPTS) {
+                        subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endTime, nextSubtitle.startTime));
                     }
-                    
-                    // ... and add a blank one at the end
-                    subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endTime, subtitle.endTime));
                 }
                 
-                for each (subtitle in subtitles) {
-                    tags.push(subtitle.toTag());
-                }
-                
-                return tags;
-                
-                // ... or sync them using MEDIA_TIME events?
-            } else {
-                // Sequencer
-                _sequencer.appendSubtitles(subtitles, _fragment.seqnum);
-                return null;
+                // ... and add a blank one at the end
+                subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endTime, subtitle.endTime));
             }
+            
+            for each (subtitle in subtitles) {
+                tags.push(subtitle.toTag());
+            }
+            
+            return tags;
         }
         
         /**

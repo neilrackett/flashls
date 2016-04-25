@@ -375,18 +375,6 @@ package org.mangui.hls {
         public static var subtitlesAutoSelectForced:Boolean = true;
 		
 		/**
-		 * subtitlesUseTags
-		 * 
-		 * The current subtitles implementation uses the MEDIA_TIME event to
-		 * sync subtitles, but by setting this property to true, you can enable
-		 * the experimental injection of subtitles into the video stream as
-		 * FLV tags.
-		 * 
-		 * Default is true
-		 */
-		public static var subtitlesUseFlvTags:Boolean = true;
-		
-		/**
 		 * altAudioLazySwitching
 		 * 
 		 * If true, the audio buffer will not be cleared when switching between
