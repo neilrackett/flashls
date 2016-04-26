@@ -373,6 +373,16 @@ package org.mangui.hls {
          * Default is true 
          */
         public static var subtitlesAutoSelectForced:Boolean = true;
+        
+        /**
+         * subtitlesUseFlvTagForVod
+         * 
+         * Should VOD subtitles be appended directly into the stream or handled
+		 * using media time events? Live subtitles are always appended. 
+         * 
+         * Default is false
+         */
+        public static var subtitlesUseFlvTagForVod:Boolean = false;
 		
 		/**
 		 * altAudioLazySwitching

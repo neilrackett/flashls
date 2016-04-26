@@ -23,6 +23,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Subtitle;
     import org.mangui.hls.stream.StreamBuffer;
+    import org.mangui.hls.utils.SubtitlesSequencer;
     import org.mangui.hls.utils.WebVTTParser;
     import org.mangui.hls.utils.hls_internal;
 
@@ -52,7 +53,9 @@ package org.mangui.hls.loader {
         protected var _cache:Dictionary = new Dictionary(true);
 		/** Track IDs of subtitles tracks that have alreadsy been loaded and appended to the stream (VOD only) */
         protected var _appended:Dictionary = new Dictionary(true);
-        
+        /** Subtitles sequencer used for VOD streams while we iron out some bugs */
+		protected var _sequencer:SubtitlesSequencer;
+		
         public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
 
             _hls = hls;
@@ -67,6 +70,9 @@ package org.mangui.hls.loader {
             _loader.addEventListener(Event.COMPLETE, loader_completeHandler);
             _loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
             _loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
+			
+			// Alternative method of sequencing VOD subs until we work out why some streams f*** up 
+			_sequencer = new SubtitlesSequencer(hls);
         }
         
         public function dispose():void {
@@ -88,6 +94,7 @@ package org.mangui.hls.loader {
             _fragment = null;
             _cache = null;
             _appended = null;
+			_sequencer = null;
         }
         
         /**
@@ -97,9 +104,12 @@ package org.mangui.hls.loader {
 			CONFIG::LOGGING {
 				Log.debug(this+" Stopping");
 			}
-            try { _loader.close(); } 
+            
+			try { _loader.close(); } 
             catch (e:Error) {};
+			
             _fragments = new Vector.<Fragment>();
+			_sequencer.stop();
         }
         
         /**
@@ -109,8 +119,10 @@ package org.mangui.hls.loader {
 			CONFIG::LOGGING {
 				Log.debug(this+" Manifest loading, stopping loading and resetting cache");
 			}
-            stop();
-            _cache= new Dictionary(true);
+            
+			stop();
+			
+            _cache = new Dictionary(true);
             _appended = new Dictionary(true);
         }
         
@@ -149,7 +161,9 @@ package org.mangui.hls.loader {
          * per fragment, so they should take care of themselves)
          */
         protected function seekStateHandler(event:HLSEvent):void {
-            if (_hls.type == HLSTypes.VOD && _hls.watched) {
+            if (HLSSettings.subtitlesUseFlvTagForVod 
+				&& _hls.type == HLSTypes.VOD 
+				&& _hls.watched) {
 				CONFIG::LOGGING {
 					Log.debug(this+" Re-appending subtitles after seek");
 				}
@@ -179,24 +193,33 @@ package org.mangui.hls.loader {
          * The load operation was separated from loadNextFragment() to enable retries
          */
         protected function loadFragment():void {
+			
 			clearTimeout(_retryTimeout);
-            if (_appended[_hls.subtitlesTrack]) {
+            
+			if (_appended[_hls.subtitlesTrack]) {
                 CONFIG::LOGGING {
                     Log.debug(this+" Subtitles fragments for track "+_hls.subtitlesTrack+" already loaded");
                 }
                 return;
             }
+			
             if (_fragment) {
+				
 				CONFIG::LOGGING {
 					Log.debug(this+" Loading subtitles fragment: "+_fragment.url);
 				}
-                var cached:Vector.<FLVTag> = _cache[_fragment];
-                if (cached) {
-                    appendTags(_fragment, cached);
-                    loadNextFragment();
-                } else {
-                    _loader.load(new URLRequest(_fragment.url));
-                }
+				
+				// Have we already loaded the fragment?
+				if (_cache[_fragment]) {
+	                var cached:Vector.<FLVTag> = _cache[_fragment] as Vector.<FLVTag>;
+	                if (cached) {
+	                    appendTags(_fragment, cached);
+	                    loadNextFragment();
+					}
+				} else {
+					_loader.load(new URLRequest(_fragment.url));
+				}
+				
             } else {
                 loadNextFragment();
             }
@@ -212,18 +235,51 @@ package org.mangui.hls.loader {
 			}
 			
             var subtitles:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, _fragment.level, _fragment.program_date);
-            var tags:Vector.<FLVTag> = toTags(subtitles);
-            
-            if (tags) {
-                if (_hls.type == HLSTypes.VOD) {
-                    _cache[_fragment] = tags;
-                }
-                appendTags(_fragment, tags);
-            }
-            
+			
+			if (_hls.type == HLSTypes.VOD) {
+				subtitles = padSubtitles(subtitles);
+			}
+			
+			if (_hls.type == HLSTypes.LIVE 
+				|| HLSSettings.subtitlesUseFlvTagForVod) {
+				var tags:Vector.<FLVTag> = toTags(subtitles);
+				if (tags) {
+	                if (_hls.type == HLSTypes.VOD) {
+	                    _cache[_fragment] = tags;
+	                }
+	                appendTags(_fragment, tags);
+	            }
+			} else {
+				_cache[_fragment] = true;
+				_sequencer.appendSubtitles(_fragment.level, subtitles);
+			}
+			
             loadNextFragment();
         }
         
+		/**
+		 * Fill in the gaps between subtitles with blanks
+		 */
+		protected function padSubtitles(subtitles:Vector.<Subtitle>):Vector.<Subtitle> {
+			
+			// Fill all the gaps
+			for (var i:uint=0; i<subtitles.length-1; i++) {
+				
+				var nextSubtitle:Subtitle = subtitles[i+1];
+				var subtitle:Subtitle = subtitles[i];
+				
+				if (subtitle.endPTS < nextSubtitle.startPTS) {
+					subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endDate, nextSubtitle.startDate));
+					++i;
+				}
+			}
+			
+			// ... and add a blank one at the end
+			subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endDate, subtitle.endDate));
+			
+			return subtitles;
+		}
+		
         /**
          * Convert subtitles into FLVTag that can be appended to the stream
          */
@@ -236,24 +292,6 @@ package org.mangui.hls.loader {
             var subtitle:Subtitle;
             var tags:Vector.<FLVTag> = new Vector.<FLVTag>();
             
-            // Fill gaps in VOD subtitles (live streams include "" subtitles for gaps aleady)
-            if (_hls.type == HLSTypes.VOD) {
-                
-                // Fill all the gaps
-                for (var i:uint=0; i<subtitles.length-1; i++) {
-                    
-                    var nextSubtitle:Subtitle = subtitles[i+1];
-                    subtitle = subtitles[i];
-                    
-                    if (subtitle.endPTS < nextSubtitle.startPTS) {
-                        subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endTime, nextSubtitle.startTime));
-						++i;
-                    }
-                }
-                
-                // ... and add a blank one at the end
-                subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endTime, subtitle.endTime));
-            }
             
             for each (subtitle in subtitles) {
                 tags.push(subtitle.toTag());
@@ -261,33 +299,25 @@ package org.mangui.hls.loader {
             
             return tags;
         }
-        
+		
         /**
          * Append subtitle tags to the stream
          */
         protected function appendTags(fragment:Fragment, tags:Vector.<FLVTag>):void {
             if (fragment && tags && tags.length) {
-                tags = tags.slice();
-                if (_hls.type == HLSTypes.VOD) {
-                    while (tags.length && tags[0].pts < _hls.position*1000) {
-                        tags.shift();
-                    }
-                }
-                if (tags.length) {
-					CONFIG::LOGGING {
-						Log.debug(this+" Appending "+tags.length+" onTextData tags to the stream");
-					}
-                    _streamBuffer.appendTags(
-                        HLSLoaderTypes.FRAGMENT_SUBTITLES, 
-                        fragment.level,
-                        fragment.seqnum, 
-                        tags,
-                        tags[0].pts,
-                        tags[tags.length-1].pts,
-                        fragment.continuity,
-                        fragment.start_time
-                    );
-                }
+				CONFIG::LOGGING {
+					Log.debug(this+" Appending "+tags.length+" onTextData tags for seqnum "+fragment.seqnum+" to the stream at "+fragment.start_time);
+				}
+				_streamBuffer.appendTags(
+                    HLSLoaderTypes.FRAGMENT_SUBTITLES, 
+                    fragment.level,
+                    fragment.seqnum, 
+                    tags,
+                    tags[0].pts,
+                    tags[tags.length-1].pts,
+                    fragment.continuity,
+                    fragment.start_time
+                );
             }
         }
         

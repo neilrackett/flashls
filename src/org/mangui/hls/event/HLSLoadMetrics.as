@@ -4,13 +4,13 @@
  package org.mangui.hls.event {
     /** Fragment Loading metrics **/
     public class HLSLoadMetrics {
-        /* Loader Type : refer to HLSLoaderTypes for enumeration */
+        /** Loader Type : refer to HLSLoaderTypes for enumeration */
         public var type : int;
-        /* level of loaded content */
+        /** level of loaded content */
         public var level : int;
-        /* id of loaded content : should be SN for fragment, startSN for playlist */
+        /** id of loaded content : should be SN for fragment, startSN for playlist */
         public var id : int;
-        /* id2 of loaded content : endSN for playlist, nb tags for tags loaded */
+        /** id2 of loaded content : endSN for playlist, nb tags for tags loaded */
         public var id2 : int;
         /** fragment/playlist size  **/
         public var size : int;

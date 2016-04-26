@@ -26,7 +26,7 @@ package org.mangui.hls.model
 			return new Subtitle(data.htmlText || data.text, 
 				data.startPTS, data.endPTS, 
 				data.startPosition, data.endPosition, 
-				data.startTime, data.endTime);
+				data.startDate, data.endDate);
 		}
 		
 		private var _trackid:int;
@@ -34,8 +34,8 @@ package org.mangui.hls.model
 		private var _text:String;
 		private var _startPTS:Number;
 		private var _endPTS:Number;
-		private var _startTime:Number;
-		private var _endTime:Number;
+		private var _startDate:Number;
+		private var _endDate:Number;
 		private var _startPosition:Number;
 		private var _endPosition:Number;
         
@@ -48,15 +48,15 @@ package org.mangui.hls.model
 		 * @param	endPTS			End timestamp for FLVTag in milliseconds (MPEGTS/90 + endPosition*1000)
 		 * @param	startPosition	Start position in seconds
 		 * @param	endPosition		End position in seconds
-		 * @param	startTime		Start timestamp (#EXT-X-PROGRAM-DATE-TIME + startPosition)
-		 * @param	endTime			End timestamp (#EXT-X-PROGRAM-DATE-TIME + endPosition)
+		 * @param	startDate		Start timestamp (#EXT-X-PROGRAM-DATE-TIME + startPosition*1000)
+		 * @param	endDate			End timestamp (#EXT-X-PROGRAM-DATE-TIME + endPosition*1000)
 		 */
         public function Subtitle(
 			trackid:int,
 			htmlText:String, 
 			startPTS:Number, endPTS:Number,
-			startPosition:Number, endPosition:Number,
-			startTime:Number=NaN, endTime:Number=NaN
+			startPosition:Number=NaN, endPosition:Number=NaN,
+			startDate:Number=NaN, endDate:Number=NaN
 		)
         {
 			_trackid = trackid;
@@ -67,11 +67,11 @@ package org.mangui.hls.model
 			_startPTS = startPTS;
 			_endPTS = endPTS;
 			
-			_startPosition = startPosition;
-			_endPosition = endPosition;
+			_startPosition = startPosition || _startPTS/1000;
+			_endPosition = endPosition || _endPTS/1000;
 			
-			_startTime = startTime || startPosition*1000;
-			_endTime = endTime || endPosition*1000
+			_startDate = startDate || _startPosition*1000;
+			_endDate = endDate || _endPosition*1000
         }
         
 		/**
@@ -89,8 +89,8 @@ package org.mangui.hls.model
         public function get endPTS():Number { return _endPTS; }
 		public function get startPosition():Number { return _startPosition; }
 		public function get endPosition():Number { return _endPosition; }
-        public function get startTime():Number { return _startTime; }
-        public function get endTime():Number { return _endTime; }
+        public function get startDate():Number { return _startDate; }
+        public function get endDate():Number { return _endDate; }
         public function get duration():Number { return _endPosition-_startPosition; }
 		
         /**
@@ -109,8 +109,8 @@ package org.mangui.hls.model
 				endPTS: endPTS,
 				startPosition: startPosition,
 				endPosition: endPosition,
-				startTime: startTime,
-				endTime: endTime,
+				startDate: startDate,
+				endDate: endDate,
                 duration: duration
             }
         }
@@ -120,10 +120,14 @@ package org.mangui.hls.model
 		 * @param	subtitle	The subtitle to compare
 		 * @returns				Boolean true if the contents are the same
 		 */
-		public function equals(subtitle:Subtitle):Boolean 
+		public function equals(subtitle:Subtitle, textOnly:Boolean=true):Boolean 
 		{
-			return subtitle is Subtitle
-				&& htmlText == subtitle.htmlText
+			var isMatch:Boolean = subtitle is Subtitle
+				&& htmlText == subtitle.htmlText;
+			
+			if (textOnly) return isMatch;
+			
+			return isMatch 
 				&& startPTS == subtitle.startPTS
 				&& endPTS == subtitle.endPTS;
 		}

@@ -21,9 +21,9 @@
         private var iv1 : uint;
         private var iv2 : uint;
         private var iv3 : uint;
-        /* callback function upon decrypt progress */
+        /** callback function upon decrypt progress */
         private var _progress : Function;
-        /* callback function upon decrypt complete */
+        /** callback function upon decrypt complete */
         private var _complete : Function;
         /** Byte data to be decrypt **/
         private var _data : ByteArray;
@@ -32,7 +32,7 @@
         /** write position **/
         private var _writePosition : uint;
         /** chunk size to avoid blocking **/
-        private static const CHUNK_SIZE : uint = 4096;
+        private static const CHUNK_SIZE : uint = Math.pow(2, 16); // Original value: 2048
         /** is bytearray full ? **/
         private var _dataComplete : Boolean;
         /** display object used for ENTER_FRAME listener */

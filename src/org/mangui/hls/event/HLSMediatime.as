@@ -22,8 +22,10 @@ package org.mangui.hls.event {
         public var backbuffer : Number;
         /** total watched duration  (in seconds) since hls.load(URL) **/
         public var watched : Number;
+        /** current PTS **/
+        public var pts : Number;
 
-        public function HLSMediatime(position : Number, duration : Number, buffer : Number, backbuffer : Number, live_sliding_main : Number, live_sliding_altaudio : Number, watched : Number) {
+        public function HLSMediatime(position : Number, duration : Number, buffer : Number, backbuffer : Number, live_sliding_main : Number, live_sliding_altaudio : Number, watched : Number, pts : Number = NaN) {
             this.position = position;
             this.duration = duration;
             this.buffer = buffer;
@@ -31,6 +33,7 @@ package org.mangui.hls.event {
             this.live_sliding_main = live_sliding_main;
             this.live_sliding_altaudio = live_sliding_altaudio;
             this.watched = watched;
+			this.pts = pts || position*1000;
         }
     }
 }

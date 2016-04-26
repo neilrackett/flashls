@@ -17,13 +17,11 @@ package org.mangui.hls {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
-    import org.mangui.hls.loader.SubtitlesFragmentLoader;
     import org.mangui.hls.loader.SubtitlesLevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
 
@@ -195,6 +193,16 @@ package org.mangui.hls {
         /** Return the current playback position. **/
         public function get position() : Number {
             return _streamBuffer.position;
+        };
+
+        /** Return the current PTS (experimental) **/
+        public function get pts() : Number {
+            return _streamBuffer.pts;
+        };
+
+        /** Return the current program date as a timestamp (experimental) **/
+        public function get programDate() : Number {
+            return _streamBuffer.programDate;
         };
 
         /** Return the live main playlist sliding in seconds since previous out of buffer seek(). **/
