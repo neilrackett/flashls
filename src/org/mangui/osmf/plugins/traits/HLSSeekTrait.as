@@ -29,6 +29,7 @@
             Log.debug("HLSSeekTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
+			_hls = null;
             super.dispose();
         }
 

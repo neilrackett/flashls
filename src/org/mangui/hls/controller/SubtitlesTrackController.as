@@ -11,7 +11,7 @@ package org.mangui.hls.controller {
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
-    import org.mangui.hls.stream.HLSNetStreamClient;
+    import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.hls_internal;
 
@@ -205,8 +205,8 @@ package org.mangui.hls.controller {
 //            _hls.stream.appendTag(tag);
             
             // The code above breaks the stream, so we use script to achieve the same outcome
-            var client:HLSNetStreamClient = _hls.stream.hls_internal::client;
-            client.onMetaData(tx3gMetaData);
+            var stream:HLSNetStream = _hls.stream;
+			stream.$dispatchClientEvent("onMetaData", tx3gMetaData);
         }
         
         /**

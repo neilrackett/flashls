@@ -35,10 +35,6 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
-    import org.mangui.hls.utils.Hex;
-    import org.mangui.hls.utils.Log;
-    import org.mangui.hls.utils.PTS;
-
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
         import org.mangui.hls.utils.Hex;
@@ -355,7 +351,7 @@ package org.mangui.hls.loader {
             _levelNext = -1;
             _timer.start();
         }
-
+		
         public function seekFromLastFrag(lastFrag : Fragment) : void {
             CONFIG::LOGGING {
                 Log.info("FragmentLoader:seekFromLastFrag(level:" + lastFrag.level + ",SN:" + lastFrag.seqnum + ",PTS:" + lastFrag.data.pts_start +")");

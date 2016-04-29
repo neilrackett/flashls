@@ -7,12 +7,11 @@ package org.mangui.hls.utils {
 	import flash.utils.Dictionary;
 	
 	import org.mangui.hls.HLS;
-	import org.mangui.hls.HLSSettings;
 	import org.mangui.hls.constant.HLSPlayStates;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
 	import org.mangui.hls.model.Subtitle;
-	import org.mangui.hls.stream.HLSNetStreamClient;
+	import org.mangui.hls.stream.HLSNetStream;
 	
 	/**
 	 * MEDIA-TIME SUBTITLE SEQUENCER FOR VOD
@@ -28,55 +27,56 @@ package org.mangui.hls.utils {
 	 */
 	public class SubtitlesSequencer {
 		
-		protected var _hls:HLS;
-		
 		protected var _currentIndex:uint;
 		protected var _currentSubtitle:Subtitle;
+		protected var _hls:HLS;
 		protected var _tracks:Dictionary;
+		
+		private var _enabled:Boolean = false;
 		
 		use namespace hls_internal;
 		
 		public function SubtitlesSequencer(hls:HLS) {
-			
 			_hls = hls;
-			_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
-			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
-			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
-			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
-			
 			_currentIndex = 0;
 			_tracks = new Dictionary(true);
 		}
 		
+		/**
+		 * Append subtitles for use with the specified track
+		 */
 		public function appendSubtitles(trackId:uint, subtitles:Vector.<Subtitle>):void {
 			var track:Vector.<Subtitle> = (_tracks[trackId] || new Vector.<Subtitle>()).concat(subtitles);
 			_tracks[trackId] = track.sort(comparePts);
+			enabled = true;
 		}
 		
+		/**
+		 * Stop!
+		 */
 		public function stop():void {
 			_currentIndex = 0;
-			if (_currentSubtitle) {
-				_currentSubtitle = null;
-				dispatchSubtitle(emptySubtitle);
-			}
+			_currentSubtitle = null;
 		}
 		
+		/**
+		 * Destroy!
+		 */
 		public function dispose():void {
 			
-			_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
-			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
-			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
-			_hls = null;
+			enabled = false;
 			
+			_hls = null;
 			_currentIndex = 0;
 			_currentSubtitle = null;
 			_tracks = null;
 		}
 		
+		/**
+		 * Create a time-specific empty subtitle
+		 */
 		public function get emptySubtitle():Subtitle {
-			return new Subtitle(_hls.subtitlesTrack, "", _hls.position*1000, _hls.position*1000);
+			return new Subtitle(_hls.subtitlesTrack, "", _hls.pts, _hls.pts);
 		}
 		
 		/**
@@ -84,6 +84,31 @@ package org.mangui.hls.utils {
 		 */
 		public function get currentSubtitle():Subtitle {
 			return _currentSubtitle;
+		}
+		
+		/**
+		 * The sequencer is automatically disabled when a new track is loaded
+		 * and enabled when one or more subtitles are appended
+		 */
+		protected function get enabled():Boolean {
+			return _enabled;
+		}
+		protected function set enabled(value:Boolean):void {
+			_enabled = value;
+			
+			if (value) {
+				_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
+				_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
+				_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
+				_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+				_hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
+			} else {
+				_hls.removeEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
+				_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
+				_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
+				_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+				_hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
+			}
 		}
 		
 		/**
@@ -99,6 +124,7 @@ package org.mangui.hls.utils {
 		 */
 		protected function manifestLoadingHandler(event:HLSEvent):void {
 			stop();
+			enabled = false;
 			_tracks = new Dictionary(true);
 		}
 		
@@ -108,8 +134,8 @@ package org.mangui.hls.utils {
 		 */
 		protected function mediaTimeHandler(event:HLSEvent):void {
 			
-			if (HLSSettings.subtitlesUseFlvTagForVod 
-				|| _hls.subtitlesTrack == -1) {
+			if (_hls.subtitlesTrack == -1 
+				|| !_tracks[_hls.subtitlesTrack]) {
 				return;
 			}
 			
@@ -143,10 +169,13 @@ package org.mangui.hls.utils {
 			
 			if (!matchingSubtitle.equals(_currentSubtitle)) {
 				_currentSubtitle = matchingSubtitle;
-				dispatchSubtitle(matchingSubtitle);
+				dispatchTextData(matchingSubtitle);
 			}
 		}
 		
+		/**
+		 * Is the specified subtitle the correct one for the specified PTS?
+		 */
 		private function isSubtitleAt(subtitle:Subtitle, pts:Number):Boolean
 		{
 			return subtitle
@@ -154,9 +183,12 @@ package org.mangui.hls.utils {
 				&& subtitle.endPTS >= pts;
 		}
 		
-		protected function dispatchSubtitle(subtitle:Subtitle):void {
-			var client:HLSNetStreamClient = _hls.stream.hls_internal::client;
-			client.onTextData(subtitle.toJSON());
+		/**
+		 * Dispatch an onTextData event via the client object to emulate an FLVTag
+		 */
+		protected function dispatchTextData(subtitle:Subtitle):void {
+			var stream:HLSNetStream = _hls.stream;
+			stream.$dispatchClientEvent("onTextData", subtitle.toJSON());
 		}
 		
 		/**
@@ -166,6 +198,9 @@ package org.mangui.hls.utils {
 			_currentIndex = 0;
 		}
 		
+		/**
+		 * When the player is idle, stop
+		 */
 		protected function playbackStateHandler(event:HLSEvent):void {
 			if (event.state == HLSPlayStates.IDLE) {
 				stop();

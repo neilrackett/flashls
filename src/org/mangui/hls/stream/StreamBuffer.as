@@ -4,7 +4,6 @@
 package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.TimerEvent;
-    import flash.utils.Dictionary;
     import flash.utils.Timer;
     import flash.utils.getTimer;
     
@@ -19,6 +18,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
+    import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
@@ -26,6 +26,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -85,10 +86,9 @@ package org.mangui.hls.stream {
         private var _overlappingTags : Vector.<FLVTag>;
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
-		
-		// Experimental fix for NaN tag positions issue
-		private var _deferredTags:Dictionary = new Dictionary(true);
-
+        
+        use namespace hls_internal;
+        
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
@@ -151,9 +151,7 @@ package org.mangui.hls.stream {
                     order at the nominal playback rate), the client SHOULD NOT
                     choose a segment which starts less than three target durations from
                     the end of the Playlist file */
-                
-                _seekPositionRequested = Math.max(0, loadLevel.duration - 3*loadLevel.averageduration);
-//                _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
+                _seekPositionRequested = Math.max(11, loadLevel.duration - 2*loadLevel.averageduration);
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
@@ -193,22 +191,18 @@ package org.mangui.hls.stream {
             _timer.start();
         }
         
-		
+        
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
-			
+            
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number;
             var nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000;
             var headerAppended : Boolean = false, metaAppended : Boolean = false;
             // compute sliding in case of live playlist, or in case of VoD playlist that slided in the past (live sliding ended playlist)
             var computeSliding : Boolean = (_hls.type == HLSTypes.LIVE  || _liveSlidingMain || _liveSlidingAltAudio);
-
             var fragIdx : int;
+			
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
-				if (_deferredTags[fragSN]) {
-					tags = _deferredTags[fragSN].concat(tags);
-					delete _deferredTags[fragSN];
-				}
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
@@ -339,19 +333,22 @@ package org.mangui.hls.stream {
                    useful to compute sliding when discontinuity occurs
                 */
                 _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
-				
+                
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
-				
-				if (_hls.type == HLSTypes.LIVE) {
-					if (fragSN != _fragMainSN) {
-						_deferredTags[fragSN] = tags;
-					} else {
-						appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO, fragLevel, fragSN, tags, min_pts, max_pts, continuity, startPosition);
-					}
-					return;
-				}
-				
-			}
+                
+                if (_fragMainLevel == -1 
+                    || (_hls.type == HLSTypes.LIVE && (!_fragMainSN || isNaN(_fragMainInitialPTS)))
+                    || !_hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN)) {
+                    // Too soon!
+                    _overlappingTags = _overlappingTags.concat(tags);
+                    _overlappingMinPTS = Math.min(_overlappingMinPTS, Math.max(tags[0].pts, min_pts));
+                    return;
+                } 
+//                else if (fragSN >= _fragMainSN) {
+//                    appendTags(HLSLoaderTypes.FRAGMENT_MAIN, fragLevel, _fragMainSN, tags, min_pts, max_pts, continuity, startPosition);
+//                    return;
+//                }
+            }
 
             for each (var tag : FLVTag in tags) {
 //                CONFIG::LOGGING {
@@ -413,29 +410,29 @@ package org.mangui.hls.stream {
                     return pos;
             }
         }
-		
-		/** Experimental: return the current PTS */
-		public function get pts() : Number {
-			if (_hls.type == HLSTypes.VOD) { 
-				return position*1000;
-			} else if (_fragMainLevel != -1 && _fragMainSN != -1) {
-				return _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN).data.pts_start_computed + (position%10)*1000;
-			} else {
-				return 0;
-			}
-		}
-		
-		/** Experimental: return the current program date as a timestamp */
-		public function get programDate() : Number {
-			if (_hls.type == HLSTypes.VOD) { 
-				return position*1000;
-			} else if (_fragMainLevel != -1 && _fragMainSN != -1) {
-				return _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN).program_date + (position%10)*1000;
-			} else {
-				return 0;
-			}
-		}
-		
+        
+        /** Experimental: return the current PTS */
+        public function get pts() : Number {
+            if (_hls.type == HLSTypes.VOD) { 
+                return position*1000;
+            } else if (_fragMainLevel != -1) {
+                var frag:Fragment = _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN);
+                if (frag) return frag.data.pts_start_computed + (position%10)*1000;
+            }
+            return 0;
+        }
+        
+        /** Experimental: return the current program date as a timestamp */
+        public function get programDate() : Number {
+            if (_hls.type == HLSTypes.VOD) { 
+                return position*1000;
+            } else if (_fragMainLevel != -1) {
+                var frag:Fragment = _hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN);
+                if (frag) return frag.program_date + (position%10)*1000;
+            }
+            return 0;
+        }
+        
         public function get liveSlidingMain() : Number {
             return _liveSlidingMain;
         }
@@ -467,10 +464,47 @@ package org.mangui.hls.stream {
             _reachedEnd = false;
             _liveSlidingMain = _liveSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
-			_deferredTags = new Dictionary(true);
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer flushed");
             }
+        }
+
+        private function partiallyFlushAudio() : void {
+            
+            if (!_hls.watched) {
+                flushAudio();
+                return;
+            }
+            
+            // flush audio buffer and AAC HEADER tags (if any)
+            
+            var i:uint;
+            var data:FLVData;
+            var metrics:HLSPlayMetrics = _hls.stream.playMetrics;
+            var frag:Fragment = _hls.levels[metrics.level].getFragmentfromSeqNum(metrics.seqnum);
+//            var maxPts:Number = frag.data.pts_max;
+                        
+            for (i=0; i<_audioTags.length; i++) {
+                data = _audioTags[i];
+                if (data.fragSN > metrics.seqnum) {
+                    _audioTags.splice(i, 1);
+                }
+            }
+            
+//            for (i=0; i<_headerTags.length; i++) {
+//                data = _headerTags[i];
+//                if (data.fragSN > metrics.seqnum) {
+//                    _headerTags.splice(i, 1);
+//                }
+//            }
+            
+//            _audioTags = new Vector.<FLVData>();
+//            _audioIdx = 0;
+            FLVData.refPTSAltAudio = metrics.pts + metrics.duration*1000;
+            _nextExpectedAbsoluteStartPosAltAudio = -1;
+//            _liveSlidingAltAudio = 0;
+            var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
+            _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
         }
 
         private function flushAudio() : void {
@@ -570,11 +604,14 @@ package org.mangui.hls.stream {
         }
 
         public function get bufferLength() : Number {
+            
+//            return Math.min(audioBufferLength, videoBufferLength); // NEIL
+            
             switch(_hls.seekState) {
                 case HLSSeekStates.SEEKING:
                     /* max_pos is a relative max, seekPositionRequested is absolute. we need to add _liveSlidingMain
                        in order to compare apple to apple */
-                    return  Math.max(0, max_pos + _liveSlidingMain - _seekPositionRequested);
+                    return Math.max(0, max_pos + _liveSlidingMain - _seekPositionRequested);
                 case HLSSeekStates.SEEKED:
                     if (audioExpected) {
                         if (videoExpected) {
@@ -680,7 +717,7 @@ package org.mangui.hls.stream {
         private function _checkBuffer(e : Event) : void {
             var pos : Number = position;
             var bufLen : Number = _hls.stream.bufferLength;
-            var watched : Number = (_hls.stream as HLSNetStream).watched;
+            var watched : Number = _hls.stream.watched;
             var currentTime : int = getTimer();
             var dispatchTimeUpdate : Boolean = (currentTime - _lastMediaTimeUpdate > HLSSettings.mediaTimePeriod);
             var duration : Number;
@@ -699,7 +736,7 @@ package org.mangui.hls.stream {
                 _lastMediaTimeUpdate = currentTime;
             }
 
-            var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
+            var netStreamBuffer : Number = _hls.stream.netStreamBufferLength;
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
              */
@@ -719,7 +756,7 @@ package org.mangui.hls.stream {
                  * max_pos is a relative max, here we need to compare against absolute max position, so
                  * we need to add _liveSlidingMain to convert from relative to absolute
                  */
-                if ((max_pos+_liveSlidingMain) >= _seekPositionRequested) {
+                if (max_pos+_liveSlidingMain >= _seekPositionRequested) {
                     // inject enough tags to reach seek position
                     tagDuration = _seekPositionRequested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
                 }
@@ -745,16 +782,16 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         var flvdata0 : FLVData = data[0];
                         Log.debug('appending first level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
-						if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
-							Log.warn(this+" First position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
-						}
+                        if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
+                            Log.warn(this+" First position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
+                        }
                         flvdata0 = data[data.length-1];
                         Log.debug('appending last  level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
-						if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
-							Log.warn(this+" Last position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
-						}
+                        if (isNaN(flvdata0.positionAbsolute - _liveSlidingMain)) {
+                            Log.warn(this+" Last position for level/sn/type "+flvdata0.fragLevel+"/"+flvdata0.fragSN+"/"+flvdata0.tag.typeString+" is NaN!");
+                        }
                     }
-                    (_hls.stream as HLSNetStream).appendTags(tags);
+                    _hls.stream.appendTags(tags);
                 }
             }
             // clip backbuffer if needed
@@ -1342,15 +1379,59 @@ package org.mangui.hls.stream {
             }
             _reachedEnd = true;
         }
-        
+
         private function _audioTrackChange(event : HLSEvent) : void {
-            if (HLSSettings.altAudioLazySwitching) {
-                // TODO Can we partially trim the buffer to switch faster?
-            } else {
-                CONFIG::LOGGING {
-                    Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
-                }
-                flushAudio();
+            var stream:HLSNetStream = _hls.stream;
+            var f:Function
+            switch (true)
+            {
+                case HLSSettings.altAudioActiveSwitching:
+                    CONFIG::LOGGING {
+                        Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
+                    }
+                    
+                    f = function(e:HLSEvent):void {
+//                        stream.$resume();
+//                        _hls.stream.seek(_hls.position+0.1);
+                        _hls.stream.seek(-1);
+                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);    
+                    };
+                    
+//                    flushBuffer();
+                    flushAudio();
+                    
+                    stream.$pause();
+                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
+                    
+                    break;
+
+                case HLSSettings.altAudioPassiveSwitching:
+                    CONFIG::LOGGING {
+                        Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
+                    }
+                    if (_hls.watched) {
+//                        partiallyFlushAudio();
+                        break;
+                    }
+
+                default:
+                    CONFIG::LOGGING {
+                        Log.debug("StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
+                    }
+                    
+                    // Experimental fix for default audio switch
+                    
+//                    f = function(e:HLSEvent):void {
+//                        stream.$resume();
+//                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);    
+//                    };
+                    
+                    flushAudio();
+                    
+//                    stream.$pause();
+//                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
+                    
+                    break;
             }
         }
 

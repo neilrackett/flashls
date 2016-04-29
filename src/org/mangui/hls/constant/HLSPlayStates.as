@@ -4,15 +4,17 @@
  package org.mangui.hls.constant {
     /** Identifiers for the different playback states. **/
     public class HLSPlayStates {
-        /** idle state. **/
+        /** idle state. */
         public static const IDLE : String = "IDLE";
-        /** playing state. **/
+		/** loading state */
+		public static const LOADING:String = "LOADING";
+        /** playing state. */
         public static const PLAYING : String = "PLAYING";
-        /** paused state. **/
+        /** paused state. */
         public static const PAUSED : String = "PAUSED";
-        /** playing/buffering state (playback is paused and will restart automatically as soon as buffer will contain enough data) **/
+        /** playing/buffering state (playback is paused and will restart automatically as soon as buffer will contain enough data) */
         public static const PLAYING_BUFFERING : String = "PLAYING_BUFFERING";
-        /** paused/buffering state (playback is paused, and buffer is in low condition) **/
+        /** paused/buffering state (playback is paused, and buffer is in low condition) */
         public static const PAUSED_BUFFERING : String = "PAUSED_BUFFERING";
     }
 }

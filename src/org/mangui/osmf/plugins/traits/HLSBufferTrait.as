@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.BufferTrait;
 
     CONFIG::LOGGING {
@@ -13,13 +13,15 @@
     
     public class HLSBufferTrait extends BufferTrait {
         private var _hls : HLS;
-
+		private var _pendingState : String;
+		
         public function HLSBufferTrait(hls : HLS) {
             CONFIG::LOGGING {
             Log.debug("HLSBufferTrait()");
             }
             super();
             _hls = hls;
+            _hls.addEventListener(HLSEvent.READY, _readyHandler);
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
         }
 
@@ -28,6 +30,7 @@
             Log.debug("HLSBufferTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
+			_hls = null;
             super.dispose();
         }
 
@@ -37,21 +40,35 @@
 
         /** state changed handler **/
         private function _stateChangedHandler(event : HLSEvent) : void {
-            switch(event.state) {
-                case HLSPlayStates.PLAYING_BUFFERING:
-                case HLSPlayStates.PAUSED_BUFFERING:
-                    CONFIG::LOGGING {
-                    Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
-                    }
-                    setBuffering(true);
-                    break;
-                default:
-                    CONFIG::LOGGING {
-                    Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(false)");
-                    }
-                    setBuffering(false);
-                    break;
-            }
+			_pendingState = event.state;
+			if (_hls.stream.isReady) {
+				setBufferingFromState(_pendingState);
+				return;
+			}
+			setBuffering(true);
         }
+		
+		private function _readyHandler(event : HLSEvent) : void {
+			setBufferingFromState(_pendingState);
+		}
+		
+		protected function setBufferingFromState(hlsState:String):void {
+			switch(hlsState) {
+				case HLSPlayStates.LOADING:
+				case HLSPlayStates.PLAYING_BUFFERING:
+				case HLSPlayStates.PAUSED_BUFFERING:
+					CONFIG::LOGGING {
+					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
+				}
+					setBuffering(true);
+					break;
+				default:
+					CONFIG::LOGGING {
+					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(false)");
+				}
+					setBuffering(false);
+					break;
+			}
+		}
     }
 }

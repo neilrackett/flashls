@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.utils {
-    import flash.utils.getTimer;
     import flash.display.DisplayObject;
-    import flash.utils.ByteArray;
     import flash.events.Event;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -32,7 +32,7 @@
         /** write position **/
         private var _writePosition : uint;
         /** chunk size to avoid blocking **/
-        private static const CHUNK_SIZE : uint = Math.pow(2, 16); // Original value: 2048
+        private static const CHUNK_SIZE : uint = Math.pow(2, 13); // Original value: 2048
         /** is bytearray full ? **/
         private var _dataComplete : Boolean;
         /** display object used for ENTER_FRAME listener */
@@ -87,13 +87,16 @@
                 } catch (e:Error) {
                     // If _decryptChunk fails, give up and move on
                     CONFIG::LOGGING {
-                        Log.error("Decryption error: "+e.message);
+                        Log.error(this+" Decryption error: "+e.message);
                     }
                     decrypted = false; 
                 }
             // dont spend more than 10ms in the decrypt timer to avoid blocking/freezing video
             // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
-            } while (decrypted && (getTimer() - start_time) < 10);
+            } while (decrypted && getTimer()-start_time < 10);
+//			CONFIG::LOGGING {
+//				Log.debug(this+" Decryption took "+(getTimer()-start_time)+"ms using "+CHUNK_SIZE+" byte chunks");
+//			}
         }
 
         /** decrypt a small chunk of packets each time to avoid blocking **/

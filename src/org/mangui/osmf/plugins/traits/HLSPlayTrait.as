@@ -32,6 +32,7 @@
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+			_hls = null;
             super.dispose();
         }
 
@@ -44,8 +45,7 @@
                     if (!streamStarted) {
                         _hls.stream.play();
                         streamStarted = true;
-                    }
-                    else {
+                    } else {
                         _hls.stream.resume();
                     }
                     break;
@@ -63,13 +63,14 @@
         private function _stateChangedHandler(event:HLSEvent):void {
             switch (event.state) {
                 case HLSPlayStates.PLAYING:
-                CONFIG::LOGGING {
-                    Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
-                }
+	                CONFIG::LOGGING {
+	                    Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
+	                }
                     if (!streamStarted) {
                         streamStarted = true;
-                        play();
+						play();
                     }
+					break;
                 default:
             }
         }

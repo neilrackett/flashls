@@ -240,8 +240,8 @@ package org.mangui.hls.loader {
 				subtitles = padSubtitles(subtitles);
 			}
 			
-			if (_hls.type == HLSTypes.LIVE 
-				|| HLSSettings.subtitlesUseFlvTagForVod) {
+			// Prepare FLVTag to be appended to the stream
+			if (_hls.type == HLSTypes.LIVE || HLSSettings.subtitlesUseFlvTagForVod) {
 				var tags:Vector.<FLVTag> = toTags(subtitles);
 				if (tags) {
 	                if (_hls.type == HLSTypes.VOD) {
@@ -249,6 +249,8 @@ package org.mangui.hls.loader {
 	                }
 	                appendTags(_fragment, tags);
 	            }
+
+			// ... or append them to the sequencer, if you prefer
 			} else {
 				_cache[_fragment] = true;
 				_sequencer.appendSubtitles(_fragment.level, subtitles);
@@ -294,7 +296,7 @@ package org.mangui.hls.loader {
             
             
             for each (subtitle in subtitles) {
-                tags.push(subtitle.toTag());
+                tags.push(subtitle.$toTag());
             }
             
             return tags;

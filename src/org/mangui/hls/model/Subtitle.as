@@ -137,7 +137,7 @@ package org.mangui.hls.model
             return '[Subtitles startPTS='+startPTS+' endPTS='+endPTS+' htmlText="'+htmlText+'"]';
         }
 		
-		hls_internal function toTag():FLVTag 
+		hls_internal function $toTag():FLVTag 
 		{
 			if (!_tag) 
 			{

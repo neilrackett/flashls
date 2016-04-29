@@ -32,6 +32,7 @@
             }
             _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+			_hls = null;
             super.dispose();
         }
 

@@ -87,7 +87,9 @@ package org.mangui.hls.event {
         public static const LIVE_LOADING_STALLED : String = "hlsLiveLoadingStalled";
         /** Identifier for a Stage set event */
         public static const STAGE_SET : String = "hlsStageSet";
-
+        /** The buffer has reached the required minimimum and the stream is ready to play */
+        public static const READY : String = "hlsReady";
+		
         /** The current url */
         public var url : String;
         /** The current quality level. */

@@ -31,6 +31,7 @@
             Log.debug("HLSClosedCaptionsTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+			_hls = null;
             super.dispose();
         }
 

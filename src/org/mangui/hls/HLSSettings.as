@@ -378,23 +378,40 @@ package org.mangui.hls {
          * subtitlesUseFlvTagForVod
          * 
          * Should VOD subtitles be appended directly into the stream or handled
-		 * using media time events? Live subtitles are always appended. 
+		 * using media time events? 
          * 
          * Default is false
          */
         public static var subtitlesUseFlvTagForVod:Boolean = false;
 		
 		/**
-		 * altAudioLazySwitching
+		 * altAudioActiveSwitching
 		 * 
-		 * If true, the audio buffer will not be cleared when switching between
-		 * audio tracks.  This is useful if you want to prevent the temporary loss
-		 * of audio or are experiencing a loss of audio or video corruption when 
-		 * switching audio tracks.
+		 * If true, flashls will attempt to prevent lost or corrupt audio following
+		 * a switch between alternative audio tracks by pausing the video and 
+		 * waiting until one or more set of audio tags has been loaded before
+		 * resuming playback. 
 		 * 
 		 * Default is false
 		 */
-		public static var altAudioLazySwitching:Boolean = false;
+		public static var altAudioActiveSwitching:Boolean = false;
+		
+		/**
+		 * altAudioPassiveSwitching
+		 * 
+		 * If true, the audio buffer will not be completely cleared when switching 
+		 * between audio tracks. This is useful if you want to prevent the 
+		 * temporary loss of audio or are experiencing a loss of audio or video 
+		 * corruption when switching audio tracks.
+		 * 
+		 * Default is false
+		 */
+		public static function get altAudioPassiveSwitching():Boolean {
+			return _altAudioPassiveSwitching && !altAudioActiveSwitching;
+		}
+		public static function set altAudioPassiveSwitching(value:Boolean):void {
+			_altAudioPassiveSwitching = value;
+		}
 		
 		/**
 		 * altAudioIgnoreSequence
@@ -471,5 +488,9 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logError : Boolean = true;
+		
+		/* Internal */
+		
+		private static var _altAudioPassiveSwitching:Boolean = false;
     }
 }

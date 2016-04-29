@@ -36,6 +36,7 @@
             Log.debug("HLSDisplayObjectTrait:dispose");
             }
             videoSurface.removeEventListener(Event.ENTER_FRAME, onFrame);
+			_hls = null;
             super.dispose();
         }
 

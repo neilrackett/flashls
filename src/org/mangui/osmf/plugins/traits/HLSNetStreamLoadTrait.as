@@ -34,6 +34,7 @@
             Log.debug("HLSNetStreamLoadTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+			_hls = null;
             super.dispose();
         }
 

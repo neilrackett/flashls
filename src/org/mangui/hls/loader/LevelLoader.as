@@ -257,7 +257,9 @@ package org.mangui.hls.loader {
                     _reloadInterval /= 2;
                 }
                 // keep at least 1s between requests, in case last one was really slow
-                var timeout : int = Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer());
+                var timeout : int = _hls.stream.isReady
+					? Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer())
+					: 1000; // NEIL: Experimental fix for live buffering isssues
                 CONFIG::LOGGING {
                     Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout + " ms");
                 }

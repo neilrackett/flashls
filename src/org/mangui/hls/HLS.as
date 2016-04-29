@@ -24,6 +24,7 @@ package org.mangui.hls {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
+    import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -49,6 +50,8 @@ package org.mangui.hls {
         /* overrided quality_manual_level level */
         private var _manual_level : int = -1;
 
+		use namespace hls_internal;
+		
         /** Create and connect all components. **/
         public function HLS() {
             _levelLoader = new LevelLoader(this);
@@ -95,7 +98,7 @@ package org.mangui.hls {
             _subtitlesLevelLoader.dispose();
             _subtitlesTrackController.dispose();
             _levelController.dispose();
-            _hlsNetStream.dispose_();
+            _hlsNetStream.$dispose();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
@@ -229,7 +232,6 @@ package org.mangui.hls {
         public function get watched() : Number {
             return _hlsNetStream.watched;
         };
-
 
         /** Return the total nb of dropped video frames since last call to hls.load() **/
         public function get droppedFrames() : Number {

@@ -34,7 +34,12 @@ package org.mangui.hls.controller {
         public function dispose() : void {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+			_hls = null;
         }
+		
+		public function get audioTrack() : int {
+			return _audioTrackId;
+		}
 
         public function set audioTrack(num : int) : void {
             if (_audioTrackId != num) {
@@ -46,10 +51,6 @@ package org.mangui.hls.controller {
                 ev.audioTrack = _audioTrackId;
                 _hls.dispatchEvent(ev);
             }
-        }
-
-        public function get audioTrack() : int {
-            return _audioTrackId;
         }
 
         public function get audioTracks() : Vector.<AudioTrack> {

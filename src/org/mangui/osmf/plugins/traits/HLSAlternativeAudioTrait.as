@@ -2,9 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.osmf.plugins.traits {
+    import flash.utils.getTimer;
+    
     import org.mangui.hls.HLS;
-    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.utils.hls_internal;
     import org.osmf.events.AlternativeAudioEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.net.StreamingItem;
@@ -19,9 +24,11 @@ package org.mangui.osmf.plugins.traits {
         private var _media : MediaElement;
         private var _audioTrackList : Vector.<AudioTrack>;
         private var _numAlternativeAudioStreams : int;
-        private var _activeTransitionIndex : int = DEFAULT_TRANSITION_INDEX;
-        private var _lastTransitionIndex : int = INVALID_TRANSITION_INDEX;
+        private var _activeTransitionIndex : int = -1; //DEFAULT_TRANSITION_INDEX;
+        private var _lastTransitionIndex : int = -1; //INVALID_TRANSITION_INDEX;
 
+		use namespace hls_internal;
+		
         public function HLSAlternativeAudioTrait(hls : HLS, media : MediaElement) {
             CONFIG::LOGGING {
             Log.debug("HLSAlternativeAudioTrait()");
@@ -41,6 +48,7 @@ package org.mangui.osmf.plugins.traits {
             }
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+			_hls = null;
             super.dispose();
         }
 
@@ -83,8 +91,8 @@ package org.mangui.osmf.plugins.traits {
             Log.debug("HLSDynamicStreamTrait:executeSwitching(" + indexToSwitchTo + ")");
             }
             if (_lastTransitionIndex != indexToSwitchTo) {
-                _activeTransitionIndex = indexToSwitchTo;
-                _hls.audioTrack = indexToSwitchTo + 1;
+				_activeTransitionIndex = indexToSwitchTo;
+				_hls.audioTrack = indexToSwitchTo + 1;
             }
         }
 

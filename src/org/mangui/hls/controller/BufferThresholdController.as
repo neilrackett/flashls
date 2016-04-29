@@ -31,6 +31,7 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+			_hls = null;
         }
 
         public function get minBufferLength() : Number {

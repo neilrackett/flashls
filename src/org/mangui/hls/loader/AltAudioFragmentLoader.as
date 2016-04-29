@@ -202,7 +202,7 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.start();
         }
-
+		
         /** key load completed. **/
         private function _keyLoadCompleteHandler(event : Event) : void {
             if (_loadingState == LOADING_IDLE)

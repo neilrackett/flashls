@@ -278,7 +278,7 @@ package org.mangui.hls.controller {
             
 			// Test fix for blank/frozen video at start of playback
 //            if (_hls.watched < 10 && rsft < 0) return current_level;
-            if (rsft < 0) return current_level;
+//            if (rsft < 0) return current_level;
             
             /* to switch level up :
             rsft should be greater than switch up condition
