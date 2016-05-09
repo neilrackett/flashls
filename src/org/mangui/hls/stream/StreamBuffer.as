@@ -48,9 +48,9 @@ package org.mangui.hls.stream {
         private var _fragMainLevel : int, _fragMainSN : int;
         // last main frag injected in NetStream
         private var _fragMainLevelNetStream : int, _fragMainSNNetStream : int;
-        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number;
+        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number,_fragMainInitialSN : Number;
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
-        private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
+        private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number,_fragAltAudioInitialSN : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
         private var _filteringStartIdx : uint;
         /** playlist duration **/
@@ -121,6 +121,11 @@ package org.mangui.hls.stream {
             _hls = null;
             _timer = null;
         }
+		
+		public function get fragmentsLoaded():Number
+		{
+			return Math.min(_fragMainSN-_fragMainInitialSN, _fragAltAudioSN-_fragAltAudioInitialSN);
+		}
 
         public function stop() : void {
             _fragmentLoader.stop();
@@ -144,14 +149,19 @@ package org.mangui.hls.stream {
                     maxPosition = loadLevel.duration-1;
                 }
             }
-            if (position == -1 && loadLevel && _hls.type == HLSTypes.LIVE) {
+			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
+			if (_hls.type == HLSTypes.LIVE && position == -2) { // NEIL
+				trace(">>>>>>>>>>>>>> _seekPositionRequested =", _seekPositionRequested, loadLevel.duration, loadLevel.averageduration, loadLevel.targetduration);
+				_seekPositionRequested = Math.max(1, loadLevel.duration - 3*loadLevel.averageduration); // NEIL
+				trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
+			} else if (_hls.type == HLSTypes.LIVE && position == -1 && loadLevel) {
                 /*  If start position not specified for a live stream, follow HLS spec :
                     If the EXT-X-ENDLIST tag is not present
                     and the client intends to play the media regularly (i.e. in playlist
                     order at the nominal playback rate), the client SHOULD NOT
                     choose a segment which starts less than three target durations from
                     the end of the Playlist file */
-                _seekPositionRequested = Math.max(11, loadLevel.duration - 2*loadLevel.averageduration);
+				_seekPositionRequested = 0;
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
@@ -162,10 +172,10 @@ package org.mangui.hls.stream {
             if (_seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
                 _seekPositionReached = false;
                 _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
+				// seek position requested is an absolute position, add sliding main to make it absolute
+				_seekPositionRequested += _liveSlidingMain;
                 CONFIG::LOGGING {
                     Log.debug("seek in buffer");
-                    // seek position requested is an absolute position, add sliding main to make it absolute
-                    _seekPositionRequested+= _liveSlidingMain;
                 }
             } else {
                 // stop any load in progress ...
@@ -191,9 +201,11 @@ package org.mangui.hls.stream {
             _timer.start();
         }
         
-        
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             
+//			trace(this, ">>> _fragAltAudioInitialSN / _fragMainInitialSN =", _fragAltAudioInitialSN, "/", _fragMainInitialSN);
+			// TODO Can we delay appending of tags until we know they align?
+			
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number;
             var nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000;
@@ -290,6 +302,7 @@ package org.mangui.hls.stream {
                             _fragMainInitialStartPosition = startPosition;
                             _fragMainInitialPTS = min_pts;
                             _fragMainInitialContinuity = continuity;
+                            _fragMainInitialSN = fragSN;
                         }
                     }
                     CONFIG::LOGGING {
@@ -322,6 +335,7 @@ package org.mangui.hls.stream {
                             _fragAltAudioInitialStartPosition = startPosition;
                             _fragAltAudioInitialPTS = min_pts;
                             _fragAltAudioInitialContinuity = continuity;
+                            _fragAltAudioInitialSN = fragSN;
                         }
                     }
                     CONFIG::LOGGING {
@@ -1390,19 +1404,27 @@ package org.mangui.hls.stream {
                         Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
                     }
                     
-                    f = function(e:HLSEvent):void {
-//                        stream.$resume();
-//                        _hls.stream.seek(_hls.position+0.1);
-                        _hls.stream.seek(-1);
-                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);    
-                    };
-                    
-//                    flushBuffer();
-                    flushAudio();
-                    
-                    stream.$pause();
-                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
-                    
+					if (_hls.watched) {
+						// Current implementation is effectively a hard reset of the current stream...
+						// It generally works, but probably isn't the best solution
+						
+						var position:Number = _hls.position;
+						
+	                    f = function(e:HLSEvent):void {
+//                        	stream.$resume();
+	                        _hls.stream.seek(position+0.1);
+	                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
+	                    };
+	                    
+//						stream.$pause();
+	                    flushBuffer();
+//                    	flushAudio();
+	                    
+	                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f, false, -999);
+					} else {
+						flushAudio();
+					}
+					
                     break;
 
                 case HLSSettings.altAudioPassiveSwitching:

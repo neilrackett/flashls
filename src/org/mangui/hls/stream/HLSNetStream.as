@@ -239,8 +239,11 @@ package org.mangui.hls.stream {
                     super.pause();
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                 }
+				
+				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > 1;
+				
                 // if buffer len is above minBufferLength, get out of buffering state
-                if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
+                if ((fragsAppended && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
 					
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
@@ -271,15 +274,15 @@ package org.mangui.hls.stream {
 						if (autoPlay) {
 							if (_hls.type == HLSTypes.LIVE) {
 								$pause();
-								_setPlaybackState( HLSPlayStates.PLAYING_BUFFERING);
+								_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
 								setTimeout(function():void {
 									$resume();
-									_setPlaybackState( HLSPlayStates.PLAYING);
-									seek(_hls.position+1);
+									_setPlaybackState(HLSPlayStates.PLAYING);
+									seek(-2);
 								}, 1);
 							} else {
 								$resume();
-								_setPlaybackState( HLSPlayStates.PLAYING);
+								_setPlaybackState(HLSPlayStates.PLAYING);
 							}
 						} else {
 							pause();
@@ -447,6 +450,8 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:play(" + _playStart + ")");
             }
             _isReady = false;
+			super.play(null);
+			super.pause();
             seek(_playStart);
             _setPlaybackState(HLSPlayStates.LOADING);
         }
@@ -514,6 +519,10 @@ package org.mangui.hls.stream {
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
 			switch(_playbackState) {
+				case HLSPlayStates.LOADING:
+					_setPlaybackState(autoPlay
+						? HLSPlayStates.PLAYING_BUFFERING
+						: HLSPlayStates.PAUSED_BUFFERING);
 				case HLSPlayStates.IDLE:
 				case HLSPlayStates.PAUSED:
 				case HLSPlayStates.PAUSED_BUFFERING:

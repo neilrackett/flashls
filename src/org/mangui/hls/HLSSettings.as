@@ -6,6 +6,9 @@ package org.mangui.hls {
     import org.mangui.hls.constant.HLSSeekMode;
 
     public final class HLSSettings extends Object {
+		
+		public static var startupFixEnabled:Boolean = true;
+		
         /**
          * autoStartLoad
          *
@@ -18,6 +21,7 @@ package org.mangui.hls {
          *
          * Default is true
          */
+		
         public static var autoStartLoad : Boolean = true;
         /**
          * capLevelToStage
