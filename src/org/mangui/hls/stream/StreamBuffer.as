@@ -150,18 +150,23 @@ package org.mangui.hls.stream {
                 }
             }
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
-			if (_hls.type == HLSTypes.LIVE && position == -2) { // NEIL
-				trace(">>>>>>>>>>>>>> _seekPositionRequested =", _seekPositionRequested, loadLevel.duration, loadLevel.averageduration, loadLevel.targetduration);
-				_seekPositionRequested = Math.max(1, loadLevel.duration - 3*loadLevel.averageduration); // NEIL
-				trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
-			} else if (_hls.type == HLSTypes.LIVE && position == -1 && loadLevel) {
-                /*  If start position not specified for a live stream, follow HLS spec :
-                    If the EXT-X-ENDLIST tag is not present
-                    and the client intends to play the media regularly (i.e. in playlist
-                    order at the nominal playback rate), the client SHOULD NOT
-                    choose a segment which starts less than three target durations from
-                    the end of the Playlist file */
-				_seekPositionRequested = 0;
+			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) { // NEIL
+				switch (position) {
+					case -2:// NEIL
+						trace(">>>>>>>>>>>>>> _seekPositionRequested =", _seekPositionRequested, loadLevel.duration, loadLevel.averageduration, loadLevel.targetduration);
+						/* If start position not specified for a live stream, follow HLS spec :
+						 * If the EXT-X-ENDLIST tag is not present and client intends to play 
+						 * the media regularly (i.e. in playlist order at the nominal playback 
+						 * rate), the client SHOULD NOT choose a segment which starts less than 
+						 * three target durations from the end of the Playlist file 
+						 */
+						_seekPositionRequested = Math.max(5, loadLevel.duration - 3*loadLevel.targetduration);
+						trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
+						break;
+					default:
+						_seekPositionRequested = 0;
+						break;
+				}
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }

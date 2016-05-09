@@ -240,7 +240,7 @@ package org.mangui.hls.stream {
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                 }
 				
-				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > 1;
+				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > 0;
 				
                 // if buffer len is above minBufferLength, get out of buffering state
                 if ((fragsAppended && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
