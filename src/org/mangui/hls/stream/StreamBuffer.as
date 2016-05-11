@@ -152,19 +152,19 @@ package org.mangui.hls.stream {
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
 			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) { // NEIL
 				switch (position) {
-					case -2:// NEIL
+					case -2:// NEIL: Part of workaround for blank/frozen image at start of live stream
 						trace(">>>>>>>>>>>>>> _seekPositionRequested =", _seekPositionRequested, loadLevel.duration, loadLevel.averageduration, loadLevel.targetduration);
+						_seekPositionRequested += loadLevel.averageduration/2;
+						trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
+						break;
+					default:
 						/* If start position not specified for a live stream, follow HLS spec :
 						 * If the EXT-X-ENDLIST tag is not present and client intends to play 
 						 * the media regularly (i.e. in playlist order at the nominal playback 
 						 * rate), the client SHOULD NOT choose a segment which starts less than 
 						 * three target durations from the end of the Playlist file 
 						 */
-						_seekPositionRequested = Math.max(5, loadLevel.duration - 3*loadLevel.targetduration);
-						trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
-						break;
-					default:
-						_seekPositionRequested = 0;
+						_seekPositionRequested = Math.max(0, loadLevel.duration - 3*loadLevel.averageduration);
 						break;
 				}
             } else {

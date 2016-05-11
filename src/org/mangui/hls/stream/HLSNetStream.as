@@ -93,8 +93,9 @@ package org.mangui.hls.stream {
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
-            super.bufferTime = 1.0;
+            super.bufferTime = 0.1;
             _hls = hls;
+			_hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
             _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
@@ -111,7 +112,15 @@ package org.mangui.hls.stream {
             _client.registerCallback("onTextData", onTextData);
             super.client = _client;
         }
-
+		
+		protected function _audioTrackSwitch(event:HLSEvent):void
+		{
+			if (_isReady && HLSSettings.altAudioActiveSwitching) {
+				$pause();
+				_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+			}
+		}
+		
         protected function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, pts:Number, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug(this+" playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
@@ -240,33 +249,35 @@ package org.mangui.hls.stream {
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                 }
 				
-				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > 0;
+				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > (_isReady ? 1 : 0);
 				
                 // if buffer len is above minBufferLength, get out of buffering state
                 if ((fragsAppended && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
 					
-                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
-                        CONFIG::LOGGING {
-                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
-                        }
-                        super.resume(); // NEIL: This resume is where we see blank/frozen video
-                        _setPlaybackState(HLSPlayStates.PLAYING);
+					if (_isReady) {
 						
-					// Experimental fixes for frozen/blank video at start
-						
-                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
-						if (_hls.type == HLSTypes.LIVE) {
-							CONFIG::LOGGING {
-								Log.debug(this+" LIVE stream is PAUSED_BUFFERING, resuming regardless...");
+	                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
+	                        CONFIG::LOGGING {
+	                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
+	                        }
+	                        super.resume(); // NEIL: This resume is where we see blank/frozen video
+	                        _setPlaybackState(HLSPlayStates.PLAYING);
+							
+						// Experimental fixes for frozen/blank video at start
+							
+	                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
+							if (_hls.type == HLSTypes.LIVE) {
+								CONFIG::LOGGING {
+									Log.debug(this+" LIVE stream is PAUSED_BUFFERING, resuming regardless...");
+								}
+								resume();
+							} else {
+			                    super.pause();
+			                    _setPlaybackState(HLSPlayStates.PAUSED);
 							}
-							resume();
-						} else {
-		                    super.pause();
-		                    _setPlaybackState(HLSPlayStates.PAUSED);
 						}
-					}
 					
-                    if (!_isReady) {
+					} else {
 						
 						_isReady = true;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
@@ -279,13 +290,14 @@ package org.mangui.hls.stream {
 									$resume();
 									_setPlaybackState(HLSPlayStates.PLAYING);
 									seek(-2);
-								}, 1);
+								}, 1000/_hls.stage.frameRate);
 							} else {
 								$resume();
 								_setPlaybackState(HLSPlayStates.PLAYING);
 							}
 						} else {
-							pause();
+							$pause();
+							_setPlaybackState(HLSPlayStates.PAUSED);
 						}
 					}
                 }
@@ -326,7 +338,7 @@ package org.mangui.hls.stream {
                 _watchedDuration += super.time;
                 _droppedFrames += super.info.droppedFrames;
                 _skippedDuration = 0;
-                super.close();
+//                super.close();
 
                // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
@@ -450,8 +462,6 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:play(" + _playStart + ")");
             }
             _isReady = false;
-			super.play(null);
-			super.pause();
             seek(_playStart);
             _setPlaybackState(HLSPlayStates.LOADING);
         }
