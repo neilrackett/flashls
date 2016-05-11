@@ -112,12 +112,12 @@ package org.mangui.hls.event {
         public var streamType: String;
         /** The current audio track */
         public var audioTrack : int;
-        /** The current subtitles track */
-        public var subtitlesTrack : int;
         /** a complete ID3 payload from PES, as a hex dump */
         public var ID3Data : String;
+		/** The current subtitles track */
+		public var subtitlesTrack : int;
         /** a subtitles model */
-        public var subtitles:Subtitle;
+        public var subtitle:Subtitle;
 
         /** Assign event parameter and dispatch. */
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
@@ -139,7 +139,7 @@ package org.mangui.hls.event {
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
                 case SUBTITLES_CHANGE:
-                    subtitles = parameter as Subtitle;
+                    subtitle = parameter as Subtitle;
                     break;
                 case MANIFEST_PARSED:
                 case MANIFEST_LOADED:

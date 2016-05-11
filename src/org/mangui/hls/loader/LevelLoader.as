@@ -54,15 +54,15 @@ package org.mangui.hls.loader {
         private var _manifestLoading : Manifest;
         /** is this loader closed **/
         private var _closed : Boolean = false;
-        /* playlist retry timeout */
+        /** playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
         private var _redundantRetryCount:int;
-        /* alt audio tracks */
+        /** alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
-        /* subtitle tracks */
+        /** subtitle tracks */
         private var _subtitlesPlaylistTracks : Vector.<SubtitlesPlaylistTrack>;
-        /* manifest load metrics */
+        /** manifest load metrics */
         private var _metrics : HLSLoadMetrics;
 		
         /** Setup the loader. **/

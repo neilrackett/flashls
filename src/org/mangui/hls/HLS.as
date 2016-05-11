@@ -273,7 +273,7 @@ package org.mangui.hls {
             return _subtitlesTrackController.subtitlesTrack;
         };
         
-        /** select an audio track, based on its index in audio track lists**/
+		/** select a subtitles track, based on its index in subtitles track lists**/
         public function set subtitlesTrack(val : int) : void {
             _subtitlesTrackController.subtitlesTrack = val;
         }

@@ -993,7 +993,7 @@ package org.mangui.hls.stream {
                             case FLVTag.METADATA:
                                 if (data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
                                     metIdxMain = i;
-                                } else {
+                                } else if (data.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
                                     metIdxAltAudio = i;
                                 }
                                 break;

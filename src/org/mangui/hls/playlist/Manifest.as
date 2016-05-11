@@ -414,7 +414,7 @@ package org.mangui.hls.playlist {
             return altAudioTracks;
         };
 
-        /** Extract Alternate Audio Tracks from manifest data. **/
+        /** Extract subtitles tracks from manifest data. **/
         public static function extractSubtitlesTracks(data : String, base : String = '') : Vector.<SubtitlesPlaylistTrack> {
             var subtitlesTracks : Vector.<SubtitlesPlaylistTrack> = new Vector.<SubtitlesPlaylistTrack>();
 			var lines : Vector.<String> = StringUtil.toLines(data);
@@ -423,16 +423,14 @@ package org.mangui.hls.playlist {
                 var line : String = lines[i++];
                 if (line.indexOf(MEDIA) == 0) {
                     var params : Object = _parseAlternateRendition(line);
-
                     // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="eng",URI="captions.m3u8"
-
                     var uri : String = params['URI'];
                     if (uri) {
                         uri = _extractURL(uri, base);
                     }
                     if (params['TYPE'] == 'SUBTITLES') {
-                        var subtitle : SubtitlesPlaylistTrack = new SubtitlesPlaylistTrack(params['GROUP-ID'], params['LANGUAGE'], params['NAME'], params['AUTOSELECT'] == 'YES', params['DEFAULT'] == 'YES', params['FORCED'] == 'YES', uri);
-                        subtitlesTracks.push(subtitle);
+                        var track : SubtitlesPlaylistTrack = new SubtitlesPlaylistTrack(params['GROUP-ID'], params['LANGUAGE'], params['NAME'], params['AUTOSELECT'] == 'YES', params['DEFAULT'] == 'YES', params['FORCED'] == 'YES', uri);
+                        subtitlesTracks.push(track);
                     }
                 }
             }
