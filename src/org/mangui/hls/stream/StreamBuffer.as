@@ -355,14 +355,14 @@ package org.mangui.hls.stream {
                 
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
                 
-                if (_fragMainLevel == -1 
-                    || (_hls.type == HLSTypes.LIVE && (!_fragMainSN || isNaN(_fragMainInitialPTS)))
-                    || !_hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN)) {
-                    // Too soon!
-                    _overlappingTags = _overlappingTags.concat(tags);
-                    _overlappingMinPTS = Math.min(_overlappingMinPTS, Math.max(tags[0].pts, min_pts));
-                    return;
-                } 
+//                if (_fragMainLevel == -1 
+//                    || (_hls.type == HLSTypes.LIVE && (!_fragMainSN || isNaN(_fragMainInitialPTS)))
+//                    || !_hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN)) {
+//                    // Too soon!
+//                    _overlappingTags = _overlappingTags.concat(tags);
+//                    _overlappingMinPTS = Math.min(_overlappingMinPTS, Math.max(tags[0].pts, min_pts));
+//                    return;
+//                } 
 //                else if (fragSN >= _fragMainSN) {
 //                    appendTags(HLSLoaderTypes.FRAGMENT_MAIN, fragLevel, _fragMainSN, tags, min_pts, max_pts, continuity, startPosition);
 //                    return;
@@ -506,14 +506,14 @@ package org.mangui.hls.stream {
             for (i=0; i<_audioTags.length; i++) {
                 data = _audioTags[i];
                 if (data.fragSN > metrics.seqnum) {
-                    _audioTags.splice(i, 1);
+                    _audioTags.splice(i--, 1);
                 }
             }
             
 //            for (i=0; i<_headerTags.length; i++) {
 //                data = _headerTags[i];
 //                if (data.fragSN > metrics.seqnum) {
-//                    _headerTags.splice(i, 1);
+//                    _headerTags.splice(i--, 1);
 //                }
 //            }
             
@@ -979,7 +979,7 @@ package org.mangui.hls.stream {
                     // TODO Are NaN postitions caused by subtitle tags being appended?
                     if (isNaN(data.positionAbsolute)) {
                         //|| (data.positionAbsolute <= absoluteStartPosition && data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES)) {
-                        tags.splice(i,1);
+                        tags.splice(i--, 1);
                         continue;
                     }
                     if (data.positionAbsolute <= absoluteStartPosition) {
