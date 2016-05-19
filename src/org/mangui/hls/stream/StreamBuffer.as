@@ -48,7 +48,7 @@ package org.mangui.hls.stream {
         private var _fragMainLevel : int, _fragMainSN : int;
         // last main frag injected in NetStream
         private var _fragMainLevelNetStream : int, _fragMainSNNetStream : int;
-        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number,_fragMainInitialSN : Number;
+        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number,_fragMainInitialSN : Number, _fragMainMaxPTS : Number;
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
         private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number,_fragAltAudioInitialSN : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
@@ -61,6 +61,8 @@ package org.mangui.hls.stream {
         private var _seekPositionReal : Number;
         /** start position of first injected tag **/
         private var _seekPositionReached : Boolean;
+		/** are we currently seeking outside of the buffer? */
+		public var seekingOutsideBuffer : Boolean;
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
@@ -86,7 +88,7 @@ package org.mangui.hls.stream {
         private var _overlappingTags : Vector.<FLVTag>;
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
-        
+
         use namespace hls_internal;
         
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
@@ -138,7 +140,7 @@ package org.mangui.hls.stream {
          * and inject from that point
          * if seek position out of buffer, ask fragment loader to retrieve data
          */
-        public function seek(position : Number) : void {
+        public function seek(position : Number, forceReload : Boolean = false) : void {
             var loadLevel : Level;
             // cap max position if known playlist duration
             var maxPosition : Number = Number.POSITIVE_INFINITY;
@@ -152,10 +154,9 @@ package org.mangui.hls.stream {
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
 			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) { // NEIL
 				switch (position) {
-					case -2:// NEIL: Part of workaround for blank/frozen image at start of live stream
-						trace(">>>>>>>>>>>>>> _seekPositionRequested =", _seekPositionRequested, loadLevel.duration, loadLevel.averageduration, loadLevel.targetduration);
-						_seekPositionRequested += loadLevel.averageduration/2;
-						trace("<<<<<<<<<<<<<< _seekPositionRequested =", _seekPositionRequested);
+					case -2:
+						// NEIL: Part of workaround for blank/frozen image at start of live stream
+						_seekPositionRequested += 0.1;
 						break;
 					default:
 						/* If start position not specified for a live stream, follow HLS spec :
@@ -174,7 +175,8 @@ package org.mangui.hls.stream {
                 Log.debug("seek : requested position:" + position.toFixed(2) + ",seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
-            if (_seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
+            if (!forceReload && _seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
+				seekingOutsideBuffer = false;
                 _seekPositionReached = false;
                 _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
 				// seek position requested is an absolute position, add sliding main to make it absolute
@@ -183,6 +185,7 @@ package org.mangui.hls.stream {
                     Log.debug("seek in buffer");
                 }
             } else {
+				seekingOutsideBuffer = true;
                 // stop any load in progress ...
                 _fragmentLoader.stop();
                 _altaudiofragmentLoader.stop();
@@ -206,6 +209,8 @@ package org.mangui.hls.stream {
             _timer.start();
         }
         
+		private var _subsCache:Vector.<FLVTag>;
+		
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             
 //			trace(this, ">>> _fragAltAudioInitialSN / _fragMainInitialSN =", _fragAltAudioInitialSN, "/", _fragMainInitialSN);
@@ -218,8 +223,19 @@ package org.mangui.hls.stream {
             // compute sliding in case of live playlist, or in case of VoD playlist that slided in the past (live sliding ended playlist)
             var computeSliding : Boolean = (_hls.type == HLSTypes.LIVE  || _liveSlidingMain || _liveSlidingAltAudio);
             var fragIdx : int;
+			var i:uint;
 			
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
+				
+				// TODO Does this fix freezing issue with subtitles
+				for (i=0; i<_subsCache.length; i++) {
+					if (_subsCache[i].pts >= min_pts && _subsCache[i].pts >= max_pts) {
+						tags.push(_subsCache[i]);
+					}
+				}
+				_subsCache.splice(0,i);
+				_fragMainMaxPTS = Math.max(_fragMainMaxPTS, max_pts);			
+				
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
@@ -355,6 +371,19 @@ package org.mangui.hls.stream {
                 
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
                 
+				while (tags.length && tags[0].pts < _fragMainInitialPTS) {
+					tags.splice(0, 1);
+				}
+				
+				for (i=0; i<tags.length; i++) {
+					if (tags[i].pts > _fragMainMaxPTS) {
+						_subsCache.push(tags[i]);
+						tags.splice(i-- ,1);
+					}
+				}
+				
+				if (!tags.length) return;
+				
 //                if (_fragMainLevel == -1 
 //                    || (_hls.type == HLSTypes.LIVE && (!_fragMainSN || isNaN(_fragMainInitialPTS)))
 //                    || !_hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN)) {
@@ -483,6 +512,8 @@ package org.mangui.hls.stream {
             _reachedEnd = false;
             _liveSlidingMain = _liveSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
+			_subsCache = new Vector.<FLVTag>();
+			_fragMainMaxPTS = -1;
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer flushed");
             }
@@ -1240,7 +1271,10 @@ package org.mangui.hls.stream {
          * retrieve next tag and update pointer, using the following priority :
          * smallest continuity
          * then smallest dts
-         * then header  then video then audio then metadata tags
+         * then header  
+		 * then video 
+		 * then audio 
+		 * then metadata tags
          */
         private function getNextTag(shift : Boolean) : FLVData {
             var mtag : FLVData ,vtag : FLVData,atag : FLVData, htag : FLVData;
@@ -1413,15 +1447,12 @@ package org.mangui.hls.stream {
 						// Current implementation is effectively a hard reset of the current stream...
 						// It generally works, but probably isn't the best solution
 						
-						var position:Number = _hls.position;
-						
 	                    f = function(e:HLSEvent):void {
-//                        	stream.$resume();
-	                        _hls.stream.seek(position+0.1);
+	                        _hls.stream.seek2(position, true);
 	                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
 	                    };
 	                    
-//						stream.$pause();
+						stream.$pause();
 	                    flushBuffer();
 //                    	flushAudio();
 	                    

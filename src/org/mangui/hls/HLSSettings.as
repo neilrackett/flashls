@@ -259,7 +259,7 @@ package org.mangui.hls {
          *
          * Default is false
          */
-        public static var flushLiveURLCache : Boolean = false;
+        public static var flushLiveURLCache : Boolean = true;
 
         /**
          * initialLiveManifestSize

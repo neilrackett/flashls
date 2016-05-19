@@ -55,7 +55,15 @@
 		}
 		
         protected function createVideo() : Video {
-            return new Video();
+			
+			var video:Video = new Video();
+			video.visible = false;
+			
+			_hls.addEventListener(HLSEvent.READY, function(e:HLSEvent):void {
+				video.visible = true;
+			}, false, 0, true);
+			
+            return video;
         }
 
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {

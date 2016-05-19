@@ -12,6 +12,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
@@ -108,10 +109,9 @@ package org.mangui.hls.loader {
 				audioLevel.updateFragments(frags);
 				audioLevel.targetduration = Manifest.getTargetDuration(string);
 				// if stream is live, arm a timer to periodically reload playlist
-				if (!Manifest.hasEndlist(string)) {
-					var timeout : int = _hls.stream.isReady
-						? Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer())
-						: 1000; // NEIL: Experimental fix for live buffering isssues
+//				if (!Manifest.hasEndlist(string)) {
+				if (_hls.type == HLSTypes.LIVE) {
+					var timeout : int = Math.max(1000, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
 					CONFIG::LOGGING {
 						Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
 					}

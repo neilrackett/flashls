@@ -92,6 +92,8 @@ package org.mangui.hls.loader {
         /** parse a playlist **/
         private function _parseSubtitlesPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
             
+			if (_currentTrack < 0) return;
+			
             if (string != null && string.length != 0) {
                 CONFIG::LOGGING {
                     Log.debug("subtitles level " + level + " playlist:\n" + string);

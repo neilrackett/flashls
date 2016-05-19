@@ -70,6 +70,7 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
             _levels = new Vector.<Level>();
         }
 
@@ -257,9 +258,7 @@ package org.mangui.hls.loader {
                     _reloadInterval /= 2;
                 }
                 // keep at least 1s between requests, in case last one was really slow
-                var timeout : int = _hls.stream.isReady
-					? Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer())
-					: 1000; // NEIL: Experimental fix for live buffering isssues
+                var timeout : int = 1000; //Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer());
                 CONFIG::LOGGING {
                     Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout + " ms");
                 }
@@ -383,7 +382,7 @@ package org.mangui.hls.loader {
             // load active M3U8 playlist only
             _manifestLoading = new Manifest();
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, _loadLevel));
-            _manifestLoading.loadPlaylist(_hls,_levels[_loadLevel].url, _parseLevelPlaylist, _errorHandler, _loadLevel, _type, HLSSettings.flushLiveURLCache);
+            _manifestLoading.loadPlaylist(_hls, _levels[_loadLevel].url, _parseLevelPlaylist, _errorHandler, _loadLevel, _type, HLSSettings.flushLiveURLCache);
         }
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
@@ -407,7 +406,18 @@ package org.mangui.hls.loader {
                 }
             }
         }
-
+		
+		private function _audioTrackSwitchHandler(event : HLSEvent) : void {
+			if (HLSSettings.altAudioActiveSwitching) {
+				if(_manifestLoading) {
+					_manifestLoading.close();
+					_manifestLoading = null;
+				}
+				clearTimeout(_timeoutID);
+				_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
+			}
+		}
+		
         private function _close() : void {
             CONFIG::LOGGING {
                 Log.debug("cancel any manifest load in progress");

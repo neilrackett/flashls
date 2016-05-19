@@ -189,10 +189,10 @@ package org.mangui.hls.stream {
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
             
             CONFIG::LOGGING {
-            Log.debug(this+" NetStream + StreamBuffer (audio, video) = total --> " 
+            Log.debug(this+" "+_hls.playbackState+" --> NetStream + StreamBuffer (audio, video) = total --> " 
                 + super.bufferLength.toFixed(1) 
-                + " / " + _streamBuffer.bufferLength.toFixed(1) + " ("+_streamBuffer.audioBufferLength.toFixed(1)+", "+_streamBuffer.videoBufferLength.toFixed(1)+")"
-                + " / " + this.bufferLength.toFixed(1));
+                + " + " + _streamBuffer.bufferLength.toFixed(1) + " ("+_streamBuffer.audioBufferLength.toFixed(1)+", "+_streamBuffer.videoBufferLength.toFixed(1)+")"
+                + " = " + this.bufferLength.toFixed(1));
             }
 			
             if (_seekState != HLSSeekStates.SEEKING) {
@@ -243,41 +243,68 @@ package org.mangui.hls.stream {
                     }
                     _lastNetStreamTime = super.time;
                 }
+				
                 // if buffer len is below lowBufferLength, get into buffering state
                 if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     super.pause();
-                    _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
+                    _setPlaybackState(_hls.playbackState == HLSPlayStates.PAUSED
+						? HLSPlayStates.PAUSED_BUFFERING
+						: HLSPlayStates.PLAYING_BUFFERING);
                 }
 				
-				var fragsAppended:Boolean = _hls.type == HLSTypes.VOD ? true : _streamBuffer.fragmentsLoaded > (_isReady ? 1 : 0);
+				var fragsReady:Boolean = _hls.type == HLSTypes.VOD || _streamBuffer.fragmentsLoaded > 0;
 				
                 // if buffer len is above minBufferLength, get out of buffering state
-                if ((fragsAppended && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
+                if ((fragsReady && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
 					
-					if (_isReady) {
+					if (_streamBuffer.seekingOutsideBuffer && _hls.type == HLSTypes.LIVE) {
+						
+						_streamBuffer.seekingOutsideBuffer = false;
+						_timer.stop();
+						
+						$pause();
+						
+						setTimeout(function():void {
+							_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+							seek(!_isReady ? -2 : _hls.position+1);
+						}, 100);
+						
+						return;
+						
+					} else {
+						
+						if (!_isReady)
+						{
+							_isReady = true;
+							_hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
+						}
 						
 	                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
 	                        CONFIG::LOGGING {
 	                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
 	                        }
+							
 	                        super.resume(); // NEIL: This resume is where we see blank/frozen video
 	                        _setPlaybackState(HLSPlayStates.PLAYING);
 							
 						// Experimental fixes for frozen/blank video at start
-							
+						
 	                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
-							if (_hls.type == HLSTypes.LIVE) {
-								CONFIG::LOGGING {
-									Log.debug(this+" LIVE stream is PAUSED_BUFFERING, resuming regardless...");
-								}
-								resume();
-							} else {
+//							if (_hls.type == HLSTypes.LIVE) {
+//								CONFIG::LOGGING {
+//									Log.debug(this+" LIVE stream is PAUSED_BUFFERING, resuming regardless...");
+//								}
+//								resume();
+//							} else {
 			                    super.pause();
 			                    _setPlaybackState(HLSPlayStates.PAUSED);
-							}
+//							}
 						}
+					} 
 					
-					} else {
+					/*else {
+						
+						trace(this, "2 ????????????????????????? _streamBuffer.seekingOutsideBuffer =", _streamBuffer.seekingOutsideBuffer);
 						
 						_isReady = true;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
@@ -299,7 +326,7 @@ package org.mangui.hls.stream {
 							$pause();
 							_setPlaybackState(HLSPlayStates.PAUSED);
 						}
-					}
+					}*/
                 }
             }
         }
@@ -463,7 +490,9 @@ package org.mangui.hls.stream {
             }
             _isReady = false;
             seek(_playStart);
-            _setPlaybackState(HLSPlayStates.LOADING);
+            _setPlaybackState(autoPlay
+				? HLSPlayStates.PLAYING_BUFFERING
+				: HLSPlayStates.PAUSED_BUFFERING);
         }
         
         override public function play2(param : NetStreamPlayOptions) : void {
@@ -472,7 +501,9 @@ package org.mangui.hls.stream {
             }
             _isReady = false;
             seek(param.start);
-			_setPlaybackState(HLSPlayStates.LOADING);
+			_setPlaybackState(autoPlay
+				? HLSPlayStates.PLAYING_BUFFERING
+				: HLSPlayStates.PAUSED_BUFFERING);
         }
 
         /** Pause playback. **/
@@ -523,16 +554,16 @@ package org.mangui.hls.stream {
 
         /** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
+			seek2(position);
+		}
+		
+		public function seek2(position : Number, forceReload : Boolean = false) : void {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
-            _streamBuffer.seek(position);
+            _streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);
 			switch(_playbackState) {
-				case HLSPlayStates.LOADING:
-					_setPlaybackState(autoPlay
-						? HLSPlayStates.PLAYING_BUFFERING
-						: HLSPlayStates.PAUSED_BUFFERING);
 				case HLSPlayStates.IDLE:
 				case HLSPlayStates.PAUSED:
 				case HLSPlayStates.PAUSED_BUFFERING:

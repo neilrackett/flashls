@@ -176,7 +176,7 @@ package org.mangui.hls.loader {
          * Load the next subtitles fragment 
          */
         protected function loadNextFragment():void {
-            if (_fragments.length) {
+			if (_fragments.length) {
 				CONFIG::LOGGING {
 					Log.debug(this+" Loading next subtitles fragment");
 				}
@@ -184,8 +184,6 @@ package org.mangui.hls.loader {
                 _retryDelay = 1000;
                 _fragment = _fragments.shift();
                 loadFragment();
-            } else if (_hls.type == HLSTypes.VOD) {
-                _appended[_hls.subtitlesTrack] = true;
             }
         }
         
@@ -196,19 +194,18 @@ package org.mangui.hls.loader {
 			
 			clearTimeout(_retryTimeout);
             
-			if (_appended[_hls.subtitlesTrack]) {
+			if (_appended[_fragment.url]) {
                 CONFIG::LOGGING {
-                    Log.debug(this+" Subtitles fragments for track "+_hls.subtitlesTrack+" already loaded");
+                    Log.debug(this+" "+_fragment.url+" already loaded");
                 }
-                return;
-            }
+				loadNextFragment();
+				return;
+			}
 			
-            if (_fragment) {
-				
+			if (_fragment) {
 				CONFIG::LOGGING {
 					Log.debug(this+" Loading subtitles fragment: "+_fragment.url);
 				}
-				
 				// Have we already loaded the fragment?
 				if (_cache[_fragment]) {
 	                var cached:Vector.<FLVTag> = _cache[_fragment] as Vector.<FLVTag>;
@@ -219,7 +216,6 @@ package org.mangui.hls.loader {
 				} else {
 					_loader.load(new URLRequest(_fragment.url));
 				}
-				
             } else {
                 loadNextFragment();
             }
@@ -320,6 +316,7 @@ package org.mangui.hls.loader {
                     fragment.continuity,
                     fragment.start_time
                 );
+				_appended[fragment.url] = true;
             }
         }
         

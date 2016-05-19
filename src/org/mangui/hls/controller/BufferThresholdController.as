@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.constant.HLSLoaderTypes;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSLoaderTypes;
+    import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -36,7 +37,7 @@ package org.mangui.hls.controller {
 
         public function get minBufferLength() : Number {
             if (HLSSettings.minBufferLength == -1) {
-                return _minBufferLength;
+                return Math.max(_absoluteMinBufferLength, _minBufferLength);
             } else {
                 return HLSSettings.minBufferLength;
             }
@@ -45,12 +46,18 @@ package org.mangui.hls.controller {
         public function get lowBufferLength() : Number {
             if (HLSSettings.minBufferLength == -1) {
                 // in automode, low buffer threshold should be less than min auto buffer
-                return Math.min(minBufferLength / 2, HLSSettings.lowBufferLength);
+				return Math.max(_absoluteMinBufferLength, Math.min(minBufferLength / 2, HLSSettings.lowBufferLength));
             } else {
                 return HLSSettings.lowBufferLength;
             }
         }
-
+		
+		// Part of blank/frozen video workaround
+		private function get _absoluteMinBufferLength():Number
+		{
+			return 0; //(_hls.type == HLSTypes.LIVE) ? /*Math.max(15, 2*_targetduration)*/ 15 : 0;  
+		}
+		
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;

@@ -13,7 +13,6 @@
     
     public class HLSBufferTrait extends BufferTrait {
         private var _hls : HLS;
-		private var _pendingState : String;
 		
         public function HLSBufferTrait(hls : HLS) {
             CONFIG::LOGGING {
@@ -40,32 +39,28 @@
 
         /** state changed handler **/
         private function _stateChangedHandler(event : HLSEvent) : void {
-			_pendingState = event.state;
 			if (_hls.stream.isReady) {
-				setBufferingFromState(_pendingState);
-				return;
+				setBufferingFromState(_hls.playbackState);
 			}
-			setBuffering(true);
         }
 		
 		private function _readyHandler(event : HLSEvent) : void {
-			setBufferingFromState(_pendingState);
+			setBufferingFromState(_hls.playbackState);
 		}
 		
 		protected function setBufferingFromState(hlsState:String):void {
 			switch(hlsState) {
-				case HLSPlayStates.LOADING:
 				case HLSPlayStates.PLAYING_BUFFERING:
 				case HLSPlayStates.PAUSED_BUFFERING:
 					CONFIG::LOGGING {
 					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
-				}
+					}
 					setBuffering(true);
 					break;
 				default:
 					CONFIG::LOGGING {
 					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(false)");
-				}
+					}
 					setBuffering(false);
 					break;
 			}
