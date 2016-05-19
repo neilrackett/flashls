@@ -27,6 +27,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Subtitle;
+    import org.mangui.hls.utils.Log;
     import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
@@ -252,7 +253,13 @@ package org.mangui.hls.stream {
 						: HLSPlayStates.PLAYING_BUFFERING);
                 }
 				
-				var fragsReady:Boolean = _hls.type == HLSTypes.VOD || _streamBuffer.fragmentsLoaded > 0;
+				var fragsReady:Boolean = _hls.type == HLSTypes.VOD || _streamBuffer.fragsAppended >= Math.max(1,HLSSettings.initialLiveManifestSize-1);
+				
+				CONFIG::LOGGING {
+					if (!fragsReady) {
+						Log.debug(this+" Too few fragments appended to begin playback: "+_streamBuffer.fragsAppended+" < "+Math.max(1,HLSSettings.initialLiveManifestSize-1));
+					}
+				}
 				
                 // if buffer len is above minBufferLength, get out of buffering state
                 if ((fragsReady && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
@@ -266,7 +273,7 @@ package org.mangui.hls.stream {
 						
 						setTimeout(function():void {
 							_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-							seek(!_isReady ? -2 : _hls.position+1);
+							seek(-2);
 						}, 100);
 						
 						return;

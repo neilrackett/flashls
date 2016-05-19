@@ -6,6 +6,7 @@
     import flash.net.NetStream;
     
     import org.mangui.hls.HLS;
+    import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
@@ -57,11 +58,15 @@
         protected function createVideo() : Video {
 			
 			var video:Video = new Video();
-			video.visible = false;
 			
-			_hls.addEventListener(HLSEvent.READY, function(e:HLSEvent):void {
-				video.visible = true;
-			}, false, 0, true);
+			function showVideo(e:HLSEvent=null):void { video.alpha = 1.0; }
+			function hideVideo(e:HLSEvent=null):void { video.alpha = 0.3; }
+			
+			_hls.addEventListener(HLSEvent.SEEK_STATE, hideVideo);
+			_hls.addEventListener(HLSEvent.READY, showVideo);
+			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, function(e:HLSEvent):void {
+				if (e.state == HLSPlayStates.PLAYING) showVideo();
+			});
 			
             return video;
         }

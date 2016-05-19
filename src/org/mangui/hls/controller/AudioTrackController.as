@@ -17,9 +17,9 @@ package org.mangui.hls.controller {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         /** list of audio tracks from demuxed fragments **/
-        private var _audioTracksfromDemux : Vector.<AudioTrack>;
+        private var _audioTracksfromDemux : Vector.<AudioTrack> = new Vector.<AudioTrack>;
         /** list of audio tracks from Manifest, matching with current level **/
-        private var _audioTracksfromManifest : Vector.<AudioTrack>;
+        private var _audioTracksfromManifest : Vector.<AudioTrack> =  new Vector.<AudioTrack>;
         /** merged audio tracks list **/
         private var _audioTracks : Vector.<AudioTrack>;
         /** current audio track id **/

@@ -265,7 +265,8 @@ package org.mangui.hls.loader {
                 _timeoutID = setTimeout(_loadActiveLevelPlaylist, timeout);
             }
             if (!_canStart) {
-                _canStart = ((type == HLSTypes.VOD) && _levels[level].fragments.length > 0) || (_levels[level].fragments.length >= HLSSettings.initialLiveManifestSize);
+                _canStart = ((type == HLSTypes.VOD) && _levels[level].fragments.length > 0) 
+					|| (_levels[level].fragments.length >= HLSSettings.initialLiveManifestSize);
                 CONFIG::LOGGING {
                     if(!_canStart && (type == HLSTypes.LIVE)){
                         Log.warn("Can not start playback of level, reason: not enough segments " +

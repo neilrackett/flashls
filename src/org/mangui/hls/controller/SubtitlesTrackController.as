@@ -31,9 +31,9 @@ package org.mangui.hls.controller {
         /** stream buffer instance **/
         private var _streamBuffer : StreamBuffer;
         /** list of subtitles tracks from Manifest, matching with current level **/
-        private var _subtitlesTracksFromManifest : Vector.<SubtitlesTrack>;
+        private var _subtitlesTracksFromManifest : Vector.<SubtitlesTrack> = new Vector.<SubtitlesTrack>;
         /** merged subtitles tracks list **/
-        private var _subtitlesTracks : Vector.<SubtitlesTrack>;
+        private var _subtitlesTracks : Vector.<SubtitlesTrack> = new Vector.<SubtitlesTrack>;
         /** current subtitles track id **/
         private var _subtitlesTrackId : int;
         /** default subtitles track id **/
@@ -51,7 +51,6 @@ package org.mangui.hls.controller {
             _streamBuffer = streamBuffer;
             _levelLoader = levelLoader;
             
-            _subtitlesTracks = new Vector.<SubtitlesTrack>;
             _subtitlesTrackId = -1;
             _defaultTrackId = -1;
             _forcedTrackId = -1;

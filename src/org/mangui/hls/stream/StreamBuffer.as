@@ -45,12 +45,12 @@ package org.mangui.hls.stream {
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
         private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
-        private var _fragMainLevel : int, _fragMainSN : int;
+        private var _fragMainLevel : int, _fragMainSN : int, _fragMainInitialSN : int;
         // last main frag injected in NetStream
         private var _fragMainLevelNetStream : int, _fragMainSNNetStream : int;
-        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number,_fragMainInitialSN : Number, _fragMainMaxPTS : Number;
-        private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
-        private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number,_fragAltAudioInitialSN : Number;
+        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number, _fragMainMaxPTS : Number;
+        private var _fragAltAudioLevel : int, _fragAltAudioSN : int, _fragAltAudioInitialSN : int;
+        private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
         private var _filteringStartIdx : uint;
         /** playlist duration **/
@@ -124,9 +124,23 @@ package org.mangui.hls.stream {
             _timer = null;
         }
 		
-		public function get fragmentsLoaded():Number
+		public function get fragsAppended():Number
 		{
-			return Math.min(_fragMainSN-_fragMainInitialSN, _fragAltAudioSN-_fragAltAudioInitialSN);
+//			return Math.min(_fragMainSN-_fragMainInitialSN, _fragAltAudioSN-_fragAltAudioInitialSN);
+			
+			var numFrags:int = _useAltAudio 
+				? Math.min(_fragMainSN, _fragAltAudioSN) - Math.max(_fragMainInitialSN, _fragAltAudioInitialSN)
+				: _fragMainSN - _fragMainInitialSN;
+			
+			trace(this, 
+				"*** _fragMainInitialSN="+_fragMainInitialSN, 
+				"_fragMainSN="+_fragMainSN, 
+				"==> _fragAltAudioInitialSN ="+_fragAltAudioInitialSN,
+				"_fragAltAudioSN="+_fragAltAudioSN,
+				"==>", numFrags
+			);
+			
+			return numFrags;
 		}
 
         public function stop() : void {
@@ -156,7 +170,7 @@ package org.mangui.hls.stream {
 				switch (position) {
 					case -2:
 						// NEIL: Part of workaround for blank/frozen image at start of live stream
-						_seekPositionRequested += 0.1;
+						_seekPositionRequested = _liveSlidingMain + _hls.position + 0.1;
 						break;
 					default:
 						/* If start position not specified for a live stream, follow HLS spec :
@@ -165,7 +179,7 @@ package org.mangui.hls.stream {
 						 * rate), the client SHOULD NOT choose a segment which starts less than 
 						 * three target durations from the end of the Playlist file 
 						 */
-						_seekPositionRequested = Math.max(0, loadLevel.duration - 3*loadLevel.averageduration);
+						_seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
 						break;
 				}
             } else {

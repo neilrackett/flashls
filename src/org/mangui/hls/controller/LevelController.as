@@ -35,10 +35,10 @@ package org.mangui.hls.controller {
         private var _nbLevel : int = 0;
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
-        private var  lastBandwidth : int;
-        private var  _autoLevelCapping : int;
-        private var  _startLevel : int = -1;
-        private var  _fpsController : FPSController;
+        private var lastBandwidth : int;
+        private var _autoLevelCapping : int;
+        private var _startLevel : int = -1;
+        private var _fpsController : FPSController;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
@@ -256,7 +256,7 @@ package org.mangui.hls.controller {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level : int, buffer : Number) : int {
-            if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
+            if (!_hls.stream.isReady || _lastFetchDuration == 0 || _lastSegmentDuration == 0) {
                 return current_level;
             }
 
