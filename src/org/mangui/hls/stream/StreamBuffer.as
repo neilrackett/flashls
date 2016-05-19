@@ -89,6 +89,8 @@ package org.mangui.hls.stream {
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
 
+		private var _audioTrackSwitching : Boolean;
+		
         use namespace hls_internal;
         
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
@@ -170,7 +172,11 @@ package org.mangui.hls.stream {
 				switch (position) {
 					case -2:
 						// NEIL: Part of workaround for blank/frozen image at start of live stream
-						_seekPositionRequested = _liveSlidingMain + _hls.position + 0.1;
+						if (_audioTrackSwitching) {
+							_seekPositionRequested = loadLevel.targetduration + 0.1;
+						} else {
+							_seekPositionRequested = _hls.position + 0.1;
+						}
 						break;
 					default:
 						/* If start position not specified for a live stream, follow HLS spec :
@@ -179,7 +185,7 @@ package org.mangui.hls.stream {
 						 * rate), the client SHOULD NOT choose a segment which starts less than 
 						 * three target durations from the end of the Playlist file 
 						 */
-						_seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
+						_seekPositionRequested = loadLevel.targetduration; //Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
 						break;
 				}
             } else {
@@ -831,6 +837,7 @@ package org.mangui.hls.stream {
                     data = seekFilterTags(data, _seekPositionRequested);
                     if(data.length) {
                         _seekPositionReached = true;
+						_audioTrackSwitching = false;
                     }
                 }
 
@@ -1450,8 +1457,7 @@ package org.mangui.hls.stream {
         private function _audioTrackChange(event : HLSEvent) : void {
             var stream:HLSNetStream = _hls.stream;
             var f:Function
-            switch (true)
-            {
+            switch (true) {
                 case HLSSettings.altAudioActiveSwitching:
                     CONFIG::LOGGING {
                         Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
@@ -1461,16 +1467,18 @@ package org.mangui.hls.stream {
 						// Current implementation is effectively a hard reset of the current stream...
 						// It generally works, but probably isn't the best solution
 						
+						_audioTrackSwitching = true;
+						
 	                    f = function(e:HLSEvent):void {
-	                        _hls.stream.seek2(position, true);
+	                        _hls.stream.seek2(-2, true);
 	                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
 	                    };
 	                    
 						stream.$pause();
 	                    flushBuffer();
 //                    	flushAudio();
-	                    
 	                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f, false, -999);
+						
 					} else {
 						flushAudio();
 					}

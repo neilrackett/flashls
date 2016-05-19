@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.osmf.plugins {
+    import com.greensock.TweenLite;
+    
+    import flash.filters.BlurFilter;
     import flash.media.Video;
     import flash.net.NetStream;
     
@@ -42,6 +45,7 @@
         private var _defaultduration : Number;
         private var videoSurface : VideoSurface;
         private var _smoothing : Boolean;
+		private var _video : Video;
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
             _hls = hls;
@@ -57,20 +61,44 @@
 		
         protected function createVideo() : Video {
 			
-			var video:Video = new Video();
+			var el:HLSMediaElement = this;
 			
-			function showVideo(e:HLSEvent=null):void { video.alpha = 1.0; }
-			function hideVideo(e:HLSEvent=null):void { video.alpha = 0.3; }
+			_video = new Video();
 			
-			_hls.addEventListener(HLSEvent.SEEK_STATE, hideVideo);
+			function showVideo(e:HLSEvent=null):void {
+				_video.visible = true; 
+				if (videoBlur) TweenLite.to(el, 0.6, {videoBlur:0});
+			}
+			function hideVideo(e:HLSEvent=null):void { 
+				_video.visible = false;
+			}
+			function blurVideo(e:HLSEvent=null):void { 
+				if (_hls.stream.isReady) TweenLite.to(el, 0.6, {videoBlur:100});
+			}
+			
+			_hls.addEventListener(HLSEvent.SEEK_STATE, blurVideo);
 			_hls.addEventListener(HLSEvent.READY, showVideo);
 			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, function(e:HLSEvent):void {
 				if (e.state == HLSPlayStates.PLAYING) showVideo();
 			});
 			
-            return video;
+			hideVideo();
+			
+            return _video;
         }
 
+		public function get videoBlur():Number {
+			try { return _video.filters[0].blurX; }
+			catch (e:Error) {}
+			return 0;
+		}
+		
+		public function set videoBlur(value:Number):void {
+			_video.filters = value 
+				? [new BlurFilter(value, value, 3)]
+				: [];
+		}
+		
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {
             return new HLSNetStreamLoadTrait(_hls, _defaultduration, loader, resource);
         }
