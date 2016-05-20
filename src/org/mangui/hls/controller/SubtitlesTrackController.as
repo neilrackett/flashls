@@ -205,7 +205,7 @@ package org.mangui.hls.controller {
             
             // The code above breaks the stream, so we use script to achieve the same outcome
             var stream:HLSNetStream = _hls.stream;
-			stream.$dispatchClientEvent("onMetaData", tx3gMetaData);
+			stream.dispatchClientEvent("onMetaData", tx3gMetaData);
         }
         
         /**

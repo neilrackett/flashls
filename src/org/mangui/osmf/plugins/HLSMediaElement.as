@@ -67,16 +67,18 @@
 			
 			function showVideo(e:HLSEvent=null):void {
 				_video.visible = true; 
-				if (videoBlur) TweenLite.to(el, 0.6, {videoBlur:0});
+				if (videoBlur) TweenLite.to(el, 0.6, {videoBlur:0, videoAlpha:1});
 			}
 			function hideVideo(e:HLSEvent=null):void { 
 				_video.visible = false;
 			}
 			function blurVideo(e:HLSEvent=null):void { 
-				if (_hls.stream.isReady) TweenLite.to(el, 0.6, {videoBlur:100});
+				if (_hls.stream.isReady) TweenLite.to(el, 0.6, {videoBlur:64, videoAlpha:0});
 			}
 			
-			_hls.addEventListener(HLSEvent.SEEK_STATE, blurVideo);
+			_hls.addEventListener(HLSEvent.SEEK_STATE, function(e:HLSEvent):void {
+				if (_hls.stream.altAudioTrackSwitching) blurVideo();
+			});
 			_hls.addEventListener(HLSEvent.READY, showVideo);
 			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, function(e:HLSEvent):void {
 				if (e.state == HLSPlayStates.PLAYING) showVideo();
@@ -87,6 +89,13 @@
             return _video;
         }
 
+		public function get videoAlpha():Number {
+			return _video.alpha;
+		}
+		public function set videoAlpha(value:Number):void {
+			_video.alpha = value;
+		}
+		
 		public function get videoBlur():Number {
 			try { return _video.filters[0].blurX; }
 			catch (e:Error) {}
@@ -95,7 +104,7 @@
 		
 		public function set videoBlur(value:Number):void {
 			_video.filters = value 
-				? [new BlurFilter(value, value, 3)]
+				? [new BlurFilter(value, value, 1)]
 				: [];
 		}
 		

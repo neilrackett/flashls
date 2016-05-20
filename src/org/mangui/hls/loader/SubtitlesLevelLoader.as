@@ -12,6 +12,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
@@ -55,16 +56,32 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
+            _hls.addEventListener(HLSEvent.SEEK_STATE, _seekStateHandler);
 			
 			_levelLoader = levelLoader;
-        };
+		}
 
         public function dispose() : void {
             _close();
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
         }
+		
+		protected function _seekStateHandler(event:HLSEvent):void {
+			if (_hls.seekState == HLSSeekStates.SEEKED) {
+				_close();
+				_hls.addEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
+			}
+		}
         
+		protected function _resumeHandler(event:HLSEvent):void {
+			if (event.state == HLSPlayStates.PLAYING) {
+				_closed = false;
+				_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler);
+				_loadSubtitlesLevelPlaylist();
+			}
+		}
+		
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String;
@@ -150,7 +167,7 @@ package org.mangui.hls.loader {
         /** When subtitles track switch occurs, load subtitles level playlist **/
         private function _subtitlesTrackSwitchHandler(event : HLSEvent) : void {
             
-            _currentTrack = event.subtitlesTrack;
+            _currentTrack = _hls.subtitlesTrack;
             clearTimeout(_timeoutID);
             
             if (_currentTrack > -1 && _currentTrack < _hls.subtitlesTracks.length) {
@@ -188,13 +205,13 @@ package org.mangui.hls.loader {
                 Log.debug("Cancelling any subtitles level load in progress");
             }
             _closed = true;
+			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
             clearTimeout(_timeoutID);
             try {
                 if (_manifestLoading) {
                     _manifestLoading.close();
                 }
-            } catch(e : Error) {
-            }
+            } catch(e : Error) {}
         }
 
         /** When the framework idles out, stop reloading manifest **/

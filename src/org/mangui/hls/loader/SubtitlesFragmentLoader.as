@@ -17,11 +17,13 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Subtitle;
+    import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.SubtitlesSequencer;
     import org.mangui.hls.utils.WebVTTParser;
@@ -110,6 +112,10 @@ package org.mangui.hls.loader {
 			
             _fragments = new Vector.<Fragment>();
 			_sequencer.stop();
+			
+			if (_hls.subtitlesTrack != -1) {
+				_hls.stream.dispatchClientEvent("onTextData", _sequencer.emptySubtitle.toJSON());
+			}
         }
         
         /**
@@ -161,15 +167,21 @@ package org.mangui.hls.loader {
          * per fragment, so they should take care of themselves)
          */
         protected function seekStateHandler(event:HLSEvent):void {
-            if (HLSSettings.subtitlesUseFlvTagForVod 
-				&& _hls.type == HLSTypes.VOD 
-				&& _hls.watched) {
-				CONFIG::LOGGING {
-					Log.debug(this+" Re-appending subtitles after seek");
+			if (_hls.seekState == HLSSeekStates.SEEKING) {
+				if (_hls.type == HLSTypes.LIVE) {
+					stop();
 				}
-				_appended = new Dictionary(true);
-                subtitlesLevelLoadedHandler(event);
-            }
+			} else if (_hls.seekState == HLSSeekStates.SEEKED) {
+				if (HLSSettings.subtitlesUseFlvTagForVod 
+					&& _hls.type == HLSTypes.VOD 
+					&& _hls.stream.isReady) {
+					CONFIG::LOGGING {
+						Log.debug(this+" Re-appending subtitles after seek");
+					}
+					_appended = new Dictionary(true);
+	                subtitlesLevelLoadedHandler(event);
+	            }
+			}
         }
         
         /**

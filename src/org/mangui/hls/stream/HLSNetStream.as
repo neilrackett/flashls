@@ -11,6 +11,7 @@ package org.mangui.hls.stream {
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
+    import flash.utils.clearTimeout;
     import flash.utils.setTimeout;
     
     import by.blooddy.crypto.Base64;
@@ -27,7 +28,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Subtitle;
-    import org.mangui.hls.utils.Log;
     import org.mangui.hls.utils.hls_internal;
 
     CONFIG::LOGGING {
@@ -83,10 +83,13 @@ package org.mangui.hls.stream {
         
         // NEIL
         /** Play metrics for the current fragment */
-        private var _playMetrics:HLSPlayMetrics;
+        private var _playMetrics : HLSPlayMetrics;
         /** Is this the first time the stream has been resumed after buffering? */
-        private var _isReady:Boolean;
-        
+        private var _isReady : Boolean;
+		/** are we currently seeking outside of the buffer? */
+		private var _seekingOutsideBuffer : Boolean;
+		private var _fragsTimeout : uint;
+		
         public var autoPlay:Boolean = true;
         
         use namespace hls_internal;
@@ -114,6 +117,10 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 		
+		public function get altAudioTrackSwitching():Boolean {
+			return _streamBuffer.altAudioTrackSwitching;
+		}
+		
 		protected function _audioTrackSwitch(event:HLSEvent):void
 		{
 			if (_isReady && HLSSettings.altAudioActiveSwitching) {
@@ -126,7 +133,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug(this+" playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
-            _currentLevel = level;
             var customTagArray : Array = new Array();
             var id3TagArray : Array = new Array();
             for (var i : uint = 0; i < customTagNb; i++) {
@@ -142,8 +148,12 @@ package org.mangui.hls.stream {
                     Log.debug(this+" id3 tag:" + id3Tag);
                 }
             }
-            _playMetrics = new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, pts, customTagArray, id3TagArray);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, _playMetrics));
+			var playMetrics:HLSPlayMetrics = new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, pts, customTagArray, id3TagArray);
+			if (!audio_only) {
+				_currentLevel = level;
+				_playMetrics = playMetrics;
+			}
+			_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, playMetrics));
         }
 
         public function get playMetrics():HLSPlayMetrics {
@@ -253,90 +263,32 @@ package org.mangui.hls.stream {
 						: HLSPlayStates.PLAYING_BUFFERING);
                 }
 				
-				var fragsReady:Boolean = _hls.type == HLSTypes.VOD || _streamBuffer.fragsAppended >= Math.max(1,HLSSettings.initialLiveManifestSize-1);
-				
-				CONFIG::LOGGING {
-					if (!fragsReady) {
-						Log.debug(this+" Too few fragments appended to begin playback: "+_streamBuffer.fragsAppended+" < "+Math.max(1,HLSSettings.initialLiveManifestSize-1));
-					}
-				}
-				
                 // if buffer len is above minBufferLength, get out of buffering state
                 if ((fragsReady && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
 					
-					if (_streamBuffer.seekingOutsideBuffer && _hls.type == HLSTypes.LIVE) {
-						
-						_streamBuffer.seekingOutsideBuffer = false;
-						_timer.stop();
-						
-						$pause();
-						
-						setTimeout(function():void {
-							_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-							seek(-2);
-						}, 100);
-						
-						return;
-						
-					} else {
-						
-						if (!_isReady)
-						{
-							_isReady = true;
-							_hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
-						}
-						
-	                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
-	                        CONFIG::LOGGING {
-	                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
-	                        }
-							
-	                        super.resume(); // NEIL: This resume is where we see blank/frozen video
-	                        _setPlaybackState(HLSPlayStates.PLAYING);
-							
-						// Experimental fixes for frozen/blank video at start
-						
-	                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
-//							if (_hls.type == HLSTypes.LIVE) {
-//								CONFIG::LOGGING {
-//									Log.debug(this+" LIVE stream is PAUSED_BUFFERING, resuming regardless...");
-//								}
-//								resume();
-//							} else {
-			                    super.pause();
-			                    _setPlaybackState(HLSPlayStates.PAUSED);
-//							}
-						}
-					} 
-					
-					/*else {
-						
-						trace(this, "2 ????????????????????????? _streamBuffer.seekingOutsideBuffer =", _streamBuffer.seekingOutsideBuffer);
-						
+					if (!_isReady)
+					{
 						_isReady = true;
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
-						
-						if (autoPlay) {
-							if (_hls.type == HLSTypes.LIVE) {
-								$pause();
-								_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-								setTimeout(function():void {
-									$resume();
-									_setPlaybackState(HLSPlayStates.PLAYING);
-									seek(-2);
-								}, 1000/_hls.stage.frameRate);
-							} else {
-								$resume();
-								_setPlaybackState(HLSPlayStates.PLAYING);
-							}
-						} else {
-							$pause();
-							_setPlaybackState(HLSPlayStates.PAUSED);
-						}
-					}*/
+						_hls.dispatchEvent(new HLSEvent(HLSEvent.READY));
+					}
+					
+                    if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
+                        CONFIG::LOGGING {
+                            Log.debug(this+" resume playback, minBufferLength/buffer:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
+                        }
+                        super.resume(); // NEIL: This resume is where we see blank/frozen video
+                        _setPlaybackState(HLSPlayStates.PLAYING);
+                    } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
+	                    super.pause();
+	                    _setPlaybackState(HLSPlayStates.PAUSED);
+					}
                 }
             }
         }
+		
+		protected function get fragsReady() : Boolean {
+			return _hls.type == HLSTypes.VOD || _streamBuffer.fragsAppended >= Math.max(1,HLSSettings.initialLiveManifestSize-1);
+		}
 		
 		/** Is the stream ready for playback? */
 		public function get isReady() : Boolean {
@@ -442,12 +394,35 @@ package org.mangui.hls.stream {
                 }
             }
             if (_seekState == HLSSeekStates.SEEKING) {
-                // dispatch event to mimic NetStream behaviour
-                dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
-                _setSeekState(HLSSeekStates.SEEKED);
+				if (_hls.type == HLSTypes.LIVE && _seekingOutsideBuffer) {
+					_waitForFrags();
+				} else {
+	                // dispatch event to mimic NetStream behaviour
+	                dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
+	                _setSeekState(HLSSeekStates.SEEKED);
+				}
             }
         }
 
+		/**
+		 * Part of fix for blank/frozen video: ensures we have enough 
+		 * fragments appended to the stream buffer before we resume playback 
+		 */
+		private function _waitForFrags():void {
+			if (fragsReady) {
+				trace(this, "Frags ready!");
+				_seekingOutsideBuffer = false;
+				seek(-2);
+			} else if (_streamBuffer.fragsAppended < 0) {
+				trace(this, "Implementing workaround for negative fragment count...");
+				seek(-1);
+			} else {
+				trace(this, "Waiting for frags...");
+				clearTimeout(_fragsTimeout);
+				_fragsTimeout = setTimeout(_waitForFrags, 200);
+			}
+		}
+		
         /** Change playback state. **/
         private function _setPlaybackState(state : String) : void {
             if (state != _playbackState) {
@@ -568,7 +543,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
-            _streamBuffer.seek(position, forceReload);
+			_seekingOutsideBuffer = _streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);
 			switch(_playbackState) {
 				case HLSPlayStates.IDLE:
@@ -610,6 +585,14 @@ package org.mangui.hls.stream {
             _setPlaybackState(HLSPlayStates.IDLE);
             _setSeekState(HLSSeekStates.IDLE);
         }
+		
+		/**
+		 * Immediately dispatches an event via the client object to mimic
+		 * an FLVTag event from the stream 
+		 */
+		public function dispatchClientEvent(type:String, ...args):void {
+			$client[type].apply($client, args);
+		}
         
         /* hls_internal */
 
@@ -617,14 +600,6 @@ package org.mangui.hls.stream {
             close();
             _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
             _bufferThresholdController.dispose();
-        }
-        
-        /**
-         * Immediately dispatches an event via the client object to emulate
-         * an FLVTag event from the stream 
-         */
-        hls_internal function $dispatchClientEvent(type:String, ...args):void {
-            $client[type].apply($client, args);
         }
         
         hls_internal function get $client() : HLSNetStreamClient {

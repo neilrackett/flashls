@@ -188,7 +188,7 @@ package org.mangui.hls.utils {
 		 */
 		protected function dispatchTextData(subtitle:Subtitle):void {
 			var stream:HLSNetStream = _hls.stream;
-			stream.$dispatchClientEvent("onTextData", subtitle.toJSON());
+			stream.dispatchClientEvent("onTextData", subtitle.toJSON());
 		}
 		
 		/**

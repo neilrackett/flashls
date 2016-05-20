@@ -61,8 +61,6 @@ package org.mangui.hls.stream {
         private var _seekPositionReal : Number;
         /** start position of first injected tag **/
         private var _seekPositionReached : Boolean;
-		/** are we currently seeking outside of the buffer? */
-		public var seekingOutsideBuffer : Boolean;
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
@@ -89,7 +87,9 @@ package org.mangui.hls.stream {
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
 
-		private var _audioTrackSwitching : Boolean;
+		// NEIL
+		/** Is the alt audio track being switched? */
+		private var _altAudioTrackSwitching : Boolean;
 		
         use namespace hls_internal;
         
@@ -126,21 +126,23 @@ package org.mangui.hls.stream {
             _timer = null;
         }
 		
+		public function get altAudioTrackSwitching():Boolean {
+			return _altAudioTrackSwitching;
+		}
+		
 		public function get fragsAppended():Number
 		{
-//			return Math.min(_fragMainSN-_fragMainInitialSN, _fragAltAudioSN-_fragAltAudioInitialSN);
-			
 			var numFrags:int = _useAltAudio 
 				? Math.min(_fragMainSN, _fragAltAudioSN) - Math.max(_fragMainInitialSN, _fragAltAudioInitialSN)
 				: _fragMainSN - _fragMainInitialSN;
 			
-			trace(this, 
-				"*** _fragMainInitialSN="+_fragMainInitialSN, 
-				"_fragMainSN="+_fragMainSN, 
-				"==> _fragAltAudioInitialSN ="+_fragAltAudioInitialSN,
-				"_fragAltAudioSN="+_fragAltAudioSN,
-				"==>", numFrags
-			);
+//			trace(this, 
+//				"*** _fragMainInitialSN="+_fragMainInitialSN, 
+//				"_fragMainSN="+_fragMainSN, 
+//				"==> _fragAltAudioInitialSN ="+_fragAltAudioInitialSN,
+//				"_fragAltAudioSN="+_fragAltAudioSN,
+//				"==>", numFrags
+//			);
 			
 			return numFrags;
 		}
@@ -156,8 +158,9 @@ package org.mangui.hls.stream {
          * and inject from that point
          * if seek position out of buffer, ask fragment loader to retrieve data
          */
-        public function seek(position : Number, forceReload : Boolean = false) : void {
-            var loadLevel : Level;
+        public function seek(position : Number, forceReload : Boolean = false) : Boolean {
+			var seekingOutsideBuffer : Boolean;
+			var loadLevel : Level;
             // cap max position if known playlist duration
             var maxPosition : Number = Number.POSITIVE_INFINITY;
             if(_hls.loadLevel < _hls.levels.length) {
@@ -168,11 +171,11 @@ package org.mangui.hls.stream {
                 }
             }
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
-			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) { // NEIL
+			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) {
 				switch (position) {
 					case -2:
 						// NEIL: Part of workaround for blank/frozen image at start of live stream
-						if (_audioTrackSwitching) {
+						if (_altAudioTrackSwitching) {
 							_seekPositionRequested = loadLevel.targetduration + 0.1;
 						} else {
 							_seekPositionRequested = _hls.position + 0.1;
@@ -227,6 +230,7 @@ package org.mangui.hls.stream {
             _playbackCompleted = false;
             _lastMediaTimeUpdate = 0;
             _timer.start();
+			return seekingOutsideBuffer;
         }
         
 		private var _subsCache:Vector.<FLVTag>;
@@ -837,7 +841,7 @@ package org.mangui.hls.stream {
                     data = seekFilterTags(data, _seekPositionRequested);
                     if(data.length) {
                         _seekPositionReached = true;
-						_audioTrackSwitching = false;
+						_altAudioTrackSwitching = false;
                     }
                 }
 
@@ -1463,21 +1467,19 @@ package org.mangui.hls.stream {
                         Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
                     }
                     
-					if (_hls.watched) {
+					if (stream.isReady) {
 						// Current implementation is effectively a hard reset of the current stream...
-						// It generally works, but probably isn't the best solution
-						
-						_audioTrackSwitching = true;
 						
 	                    f = function(e:HLSEvent):void {
-	                        _hls.stream.seek2(-2, true);
+	                        stream.seek2(-1, true);
 	                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
 	                    };
-	                    
+						
 						stream.$pause();
 	                    flushBuffer();
-//                    	flushAudio();
-	                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f, false, -999);
+						
+						_altAudioTrackSwitching = true;
+						_hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f, false, -999);
 						
 					} else {
 						flushAudio();
