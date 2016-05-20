@@ -23,6 +23,7 @@ package org.mangui.hls {
          */
 		
         public static var autoStartLoad : Boolean = true;
+		
         /**
          * capLevelToStage
          *
@@ -35,7 +36,7 @@ package org.mangui.hls {
          *
          * Default is false
          */
-        public static var capLevelToStage : Boolean = false;
+        public static var capLevelToStage : Boolean = true;
 
         /**
          * maxLevelCappingMode

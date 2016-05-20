@@ -89,23 +89,15 @@
             return _video;
         }
 
-		public function get videoAlpha():Number {
-			return _video.alpha;
-		}
-		public function set videoAlpha(value:Number):void {
-			_video.alpha = value;
-		}
+		public function get videoAlpha():Number { return _video.alpha; }
+		public function set videoAlpha(value:Number):void { _video.alpha = value; }
 		
 		public function get videoBlur():Number {
-			try { return _video.filters[0].blurX; }
-			catch (e:Error) {}
+			try { return _video.filters[0].blurX; } catch (e:Error) {}
 			return 0;
 		}
-		
 		public function set videoBlur(value:Number):void {
-			_video.filters = value 
-				? [new BlurFilter(value, value, 1)]
-				: [];
+			_video.filters = value ? [new BlurFilter(value, value, 1)] : [];
 		}
 		
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {

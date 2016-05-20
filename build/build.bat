@@ -18,12 +18,14 @@ if not exist "%BIN_PATH%\debug" mkdir "%BIN_PATH%\debug"
 set OPT_DEBUG=-use-network=false ^
     -debug=true ^
     -library-path+=..\lib\blooddy_crypto.swc ^
+    -library-path+=..\lib\greensock.swc ^
     -define+=CONFIG::LOGGING,true
 
 set OPT_RELEASE=-use-network=false ^
     -debug=false ^
     -optimize=true ^
     -library-path+=..\lib\blooddy_crypto.swc ^
+    -library-path+=..\lib\greensock.swc ^
     -define+=CONFIG::LOGGING,false
 
 echo Compiling bin\debug\flashls.swc...
