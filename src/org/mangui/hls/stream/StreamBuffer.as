@@ -9,6 +9,7 @@ package org.mangui.hls.stream {
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
@@ -1461,8 +1462,8 @@ package org.mangui.hls.stream {
         private function _audioTrackChange(event : HLSEvent) : void {
             var stream:HLSNetStream = _hls.stream;
             var f:Function
-            switch (true) {
-                case HLSSettings.altAudioActiveSwitching:
+            switch (HLSSettings.altAudioSwitchMode) {
+                case HLSAltAudioSwitchMode.ACTIVE:
                     CONFIG::LOGGING {
                         Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
                     }
@@ -1487,7 +1488,7 @@ package org.mangui.hls.stream {
 					
                     break;
 
-                case HLSSettings.altAudioPassiveSwitching:
+                case HLSAltAudioSwitchMode.PASSIVE:
                     CONFIG::LOGGING {
                         Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
                     }
@@ -1496,23 +1497,12 @@ package org.mangui.hls.stream {
                         break;
                     }
 
+				case HLSAltAudioSwitchMode.DEFAULT:
                 default:
                     CONFIG::LOGGING {
                         Log.debug("StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
                     }
-                    
-                    // Experimental fix for default audio switch
-                    
-//                    f = function(e:HLSEvent):void {
-//                        stream.$resume();
-//                        _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);    
-//                    };
-                    
                     flushAudio();
-                    
-//                    stream.$pause();
-//                    _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, f);
-                    
                     break;
             }
         }

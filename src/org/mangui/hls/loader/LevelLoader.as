@@ -15,6 +15,7 @@ package org.mangui.hls.loader {
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
@@ -409,7 +410,7 @@ package org.mangui.hls.loader {
         }
 		
 		private function _audioTrackSwitchHandler(event : HLSEvent) : void {
-			if (HLSSettings.altAudioActiveSwitching) {
+			if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
 				if(_manifestLoading) {
 					_manifestLoading.close();
 					_manifestLoading = null;

@@ -2,12 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
+    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.constant.HLSSeekMode;
 
     public final class HLSSettings extends Object {
-		
-		public static var startupFixEnabled:Boolean = true;
 		
         /**
          * autoStartLoad
@@ -390,41 +389,14 @@ package org.mangui.hls {
         public static var subtitlesUseFlvTagForVod:Boolean = false;
 		
 		/**
-		 * altAudioActiveSwitching
+		 * altAudioSwitchMode
 		 * 
-		 * If true, flashls will attempt to prevent lost or corrupt audio following
-		 * a switch between alternative audio tracks by pausing the video and 
-		 * waiting until one or more set of audio tags has been loaded before
-		 * resuming playback. 
+		 * Selects which method to use when switching between alternative audio
+		 * streams.
 		 * 
-		 * Default is false
+		 * Default is HLSAltAudioSwitchMode.DEFAULT
 		 */
-		public static var altAudioActiveSwitching:Boolean = false;
-		
-		/**
-		 * altAudioPassiveSwitching
-		 * 
-		 * If true, the audio buffer will not be completely cleared when switching 
-		 * between audio tracks. This is useful if you want to prevent the 
-		 * temporary loss of audio or are experiencing a loss of audio or video 
-		 * corruption when switching audio tracks.
-		 * 
-		 * Default is false
-		 */
-		public static function get altAudioPassiveSwitching():Boolean {
-			return _altAudioPassiveSwitching && !altAudioActiveSwitching;
-		}
-		public static function set altAudioPassiveSwitching(value:Boolean):void {
-			_altAudioPassiveSwitching = value;
-		}
-		
-		/**
-		 * altAudioIgnoreSequence
-		 * 
-		 * If true, audio fragments are loaded using sequence numbers from the
-		 * main video stream, ignoring the numbers from the audio playlist 
-		 */
-		public static var altAudioIgnoreSequence:Boolean = true;
+		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT; 
 		
 		/**
 		 * When bandwidth availability increases, what is the maximum number 

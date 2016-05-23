@@ -18,6 +18,7 @@ package org.mangui.hls.stream {
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSTypes;
@@ -123,7 +124,7 @@ package org.mangui.hls.stream {
 		
 		protected function _audioTrackSwitch(event:HLSEvent):void
 		{
-			if (_isReady && HLSSettings.altAudioActiveSwitching) {
+			if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
 				$pause();
 				_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
 			}
@@ -409,6 +410,7 @@ package org.mangui.hls.stream {
 		 * fragments appended to the stream buffer before we resume playback 
 		 */
 		private function _waitForFrags():void {
+			clearTimeout(_fragsTimeout);
 			if (fragsReady) {
 				trace(this, "Frags ready!");
 				_seekingOutsideBuffer = false;
@@ -418,8 +420,7 @@ package org.mangui.hls.stream {
 				seek(-1);
 			} else {
 				trace(this, "Waiting for frags...");
-				clearTimeout(_fragsTimeout);
-				_fragsTimeout = setTimeout(_waitForFrags, 200);
+				_fragsTimeout = setTimeout(_waitForFrags, 333);
 			}
 		}
 		
