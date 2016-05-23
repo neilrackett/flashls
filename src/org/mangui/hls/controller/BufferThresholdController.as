@@ -19,6 +19,7 @@ package org.mangui.hls.controller {
         private var _hls : HLS;
         private var _targetduration : Number;
         private var _minBufferLength : Number;
+        private var _minLiveBufferLength : Number;
 
         /** Create the loader. **/
         public function BufferThresholdController(hls : HLS) : void {
@@ -36,31 +37,27 @@ package org.mangui.hls.controller {
         }
 
         public function get minBufferLength() : Number {
-            if (HLSSettings.minBufferLength == -1) {
-                return Math.max(_absoluteMinBufferLength, _minBufferLength);
-            } else {
-                return HLSSettings.minBufferLength;
-            }
+            var mbl : Number = HLSSettings.minBufferLength == -1
+				? _minBufferLength
+				: HLSSettings.minBufferLength;
+			return _hls.type == HLSTypes.LIVE
+				? Math.max(mbl, _minLiveBufferLength)
+				: mbl;
         }
-
+		
         public function get lowBufferLength() : Number {
             if (HLSSettings.minBufferLength == -1) {
                 // in automode, low buffer threshold should be less than min auto buffer
-				return Math.max(_absoluteMinBufferLength, Math.min(minBufferLength / 2, HLSSettings.lowBufferLength));
+				return Math.min(minBufferLength/2, HLSSettings.lowBufferLength);
             } else {
                 return HLSSettings.lowBufferLength;
             }
         }
 		
-		// Part of blank/frozen video workaround
-		private function get _absoluteMinBufferLength():Number
-		{
-			return 0; //(_hls.type == HLSTypes.LIVE) ? /*Math.max(15, 2*_targetduration)*/ 15 : 0;  
-		}
-		
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;
+			_minLiveBufferLength = _targetduration;
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {

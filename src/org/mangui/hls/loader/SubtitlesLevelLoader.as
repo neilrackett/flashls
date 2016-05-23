@@ -151,7 +151,7 @@ package org.mangui.hls.loader {
         /** load/reload active M3U8 playlist **/
         private function _loadSubtitlesLevelPlaylist() : void {
             
-            if (_closed) {
+            if (_closed || _hls.subtitlesTrack == -1) {
                 return;
             }
             

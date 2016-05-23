@@ -62,7 +62,6 @@ package org.mangui.hls {
          */
         public static var minBufferLength : Number = -1;
 
-
         /**
          * minBufferLengthCapping
          *

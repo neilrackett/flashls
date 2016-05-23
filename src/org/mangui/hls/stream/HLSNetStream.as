@@ -11,8 +11,6 @@ package org.mangui.hls.stream {
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
-    import flash.utils.clearTimeout;
-    import flash.utils.setTimeout;
     
     import by.blooddy.crypto.Base64;
     
@@ -89,7 +87,6 @@ package org.mangui.hls.stream {
         private var _isReady : Boolean;
 		/** are we currently seeking outside of the buffer? */
 		private var _seekingOutsideBuffer : Boolean;
-		private var _fragsTimeout : uint;
 		
         public var autoPlay:Boolean = true;
         
@@ -196,7 +193,7 @@ package org.mangui.hls.stream {
         private function _checkBuffer(e : Event) : void {
 			
             var buffer : Number = this.bufferLength,
-                minBufferLength : Number =_bufferThresholdController.minBufferLength,
+                minBufferLength : Number = _bufferThresholdController.minBufferLength,
                 reachedEnd : Boolean = _streamBuffer.reachedEnd,
                 liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
             
@@ -265,7 +262,7 @@ package org.mangui.hls.stream {
                 }
 				
                 // if buffer len is above minBufferLength, get out of buffering state
-                if ((fragsReady && buffer >= minBufferLength) || reachedEnd || liveLoadingStalled) {
+                if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
 					
 					if (!_isReady)
 					{
@@ -286,10 +283,6 @@ package org.mangui.hls.stream {
                 }
             }
         }
-		
-		protected function get fragsReady() : Boolean {
-			return _hls.type == HLSTypes.VOD || _streamBuffer.fragsAppended >= Math.max(1,HLSSettings.initialLiveManifestSize-1);
-		}
 		
 		/** Is the stream ready for playback? */
 		public function get isReady() : Boolean {
@@ -327,12 +320,9 @@ package org.mangui.hls.stream {
                 _skippedDuration = 0;
 //                super.close();
 
-               // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
-                try {
-                    super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
-                } catch(e : Error) {
-                   // Ignore errors, we're running in FP < 11.1
-                }
+                // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
+                try { super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder; }
+				catch(e : Error) {}
 
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
@@ -396,7 +386,18 @@ package org.mangui.hls.stream {
             }
             if (_seekState == HLSSeekStates.SEEKING) {
 				if (_hls.type == HLSTypes.LIVE && _seekingOutsideBuffer) {
-					_waitForFrags();
+					// NEIL: Part of fix for blank/frozen video to ensures we have enough 
+					// fragments appended to the stream buffer before we resume playback 
+					if (bufferLength >= _bufferThresholdController.minBufferLength) {
+						trace(this, "NetStream buffer ready:", bufferLength.toFixed(1));
+						_seekingOutsideBuffer = false;
+						seek(-2);
+					} else if (_streamBuffer.fragsAppended < 0) {
+						trace(this, "Implementing workaround for negative fragment count...");
+						seek(-1);
+					} else {
+						trace(this, "Waiting for NetStream buffer:", bufferLength.toFixed(1), "/", _bufferThresholdController.minBufferLength.toFixed(1));
+					}
 				} else {
 	                // dispatch event to mimic NetStream behaviour
 	                dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
@@ -404,25 +405,6 @@ package org.mangui.hls.stream {
 				}
             }
         }
-
-		/**
-		 * Part of fix for blank/frozen video: ensures we have enough 
-		 * fragments appended to the stream buffer before we resume playback 
-		 */
-		private function _waitForFrags():void {
-			clearTimeout(_fragsTimeout);
-			if (fragsReady) {
-				trace(this, "Frags ready!");
-				_seekingOutsideBuffer = false;
-				seek(-2);
-			} else if (_streamBuffer.fragsAppended < 0) {
-				trace(this, "Implementing workaround for negative fragment count...");
-				seek(-1);
-			} else {
-				trace(this, "Waiting for frags...");
-				_fragsTimeout = setTimeout(_waitForFrags, 333);
-			}
-		}
 		
         /** Change playback state. **/
         private function _setPlaybackState(state : String) : void {

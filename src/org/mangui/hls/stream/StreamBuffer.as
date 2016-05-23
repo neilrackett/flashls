@@ -173,24 +173,22 @@ package org.mangui.hls.stream {
             }
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
 			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) {
-				switch (position) {
-					case -2:
-						// NEIL: Part of workaround for blank/frozen image at start of live stream
-						if (_altAudioTrackSwitching) {
-							_seekPositionRequested = loadLevel.targetduration + 0.1;
-						} else {
-							_seekPositionRequested = _hls.position + 0.1;
-						}
-						break;
-					default:
-						/* If start position not specified for a live stream, follow HLS spec :
-						 * If the EXT-X-ENDLIST tag is not present and client intends to play 
-						 * the media regularly (i.e. in playlist order at the nominal playback 
-						 * rate), the client SHOULD NOT choose a segment which starts less than 
-						 * three target durations from the end of the Playlist file 
-						 */
-						_seekPositionRequested = loadLevel.targetduration; //Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
-						break;
+				/* If start position not specified for a live stream, follow HLS spec :
+				* If the EXT-X-ENDLIST tag is not present and client intends to play 
+				* the media regularly (i.e. in playlist order at the nominal playback 
+				* rate), the client SHOULD NOT choose a segment which starts less than 
+				* three target durations from the end of the Playlist file 
+				*/
+				_seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
+				if (position == -2) {
+					// NEIL: Part of workaround for blank/frozen image at start of live stream
+					if (_altAudioTrackSwitching) {
+						_seekPositionRequested += 0.1;
+					} else if (_useAltAudio) {
+						_seekPositionRequested = _hls.position + 0.1;
+					} else {
+						return false;
+					}
 				}
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);

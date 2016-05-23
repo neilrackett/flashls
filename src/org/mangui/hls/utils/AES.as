@@ -32,7 +32,7 @@
         /** write position **/
         private var _writePosition : uint;
         /** chunk size to avoid blocking **/
-        private static const CHUNK_SIZE : uint = 32768;
+        private static const CHUNK_SIZE : uint = 65536;
         /** is bytearray full ? **/
         private var _dataComplete : Boolean;
         /** display object used for ENTER_FRAME listener */
