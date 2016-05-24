@@ -109,7 +109,6 @@ package org.mangui.hls.loader {
 				audioLevel.updateFragments(frags);
 				audioLevel.targetduration = Manifest.getTargetDuration(string);
 				// if stream is live, arm a timer to periodically reload playlist
-//				if (!Manifest.hasEndlist(string)) {
 				if (_hls.type == HLSTypes.LIVE) {
 					var timeout : int = Math.max(1000, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
 					CONFIG::LOGGING {
@@ -120,7 +119,7 @@ package org.mangui.hls.loader {
 			}
 			metrics.id  = audioLevel.start_seqnum;
 			metrics.id2 = audioLevel.end_seqnum;
-			//trace(this, ">>>>>>> A:", metrics.id);
+			trace(this, ">>>>>>> A:", metrics.id);
 			_hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, metrics));
 			_manifestLoading = null;
 		};

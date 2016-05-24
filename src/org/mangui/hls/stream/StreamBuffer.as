@@ -137,14 +137,6 @@ package org.mangui.hls.stream {
 				? Math.min(_fragMainSN, _fragAltAudioSN) - Math.max(_fragMainInitialSN, _fragAltAudioInitialSN)
 				: _fragMainSN - _fragMainInitialSN;
 			
-//			trace(this, 
-//				"*** _fragMainInitialSN="+_fragMainInitialSN, 
-//				"_fragMainSN="+_fragMainSN, 
-//				"==> _fragAltAudioInitialSN ="+_fragAltAudioInitialSN,
-//				"_fragAltAudioSN="+_fragAltAudioSN,
-//				"==>", numFrags
-//			);
-			
 			return numFrags;
 		}
 
@@ -172,7 +164,9 @@ package org.mangui.hls.stream {
                 }
             }
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
-			if (_hls.type == HLSTypes.LIVE && position < 0 && loadLevel) {
+			if (_hls.type == HLSTypes.LIVE 
+				&& (position == -1 || position == -2) 
+				&& loadLevel) {
 				/* If start position not specified for a live stream, follow HLS spec :
 				* If the EXT-X-ENDLIST tag is not present and client intends to play 
 				* the media regularly (i.e. in playlist order at the nominal playback 
@@ -186,8 +180,6 @@ package org.mangui.hls.stream {
 						_seekPositionRequested += 0.1;
 					} else if (_useAltAudio) {
 						_seekPositionRequested = _hls.position + 0.1;
-					} else {
-						return false;
 					}
 				}
             } else {
@@ -457,10 +449,9 @@ package org.mangui.hls.stream {
                 _metaTags = _metaTags.sort(compareTags);
             }
 
-
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
-                _timer.start();
+//                _timer.start();
             }
         }
         
@@ -541,6 +532,10 @@ package org.mangui.hls.stream {
                 Log.debug("StreamBuffer flushed");
             }
         }
+		
+		public function get useAltAudio() : Boolean {
+			return _useAltAudio;
+		}
 
         private function partiallyFlushAudio() : void {
             
@@ -661,7 +656,7 @@ package org.mangui.hls.stream {
         }
 
         private function get audioExpected() : Boolean {
-            return (_fragmentLoader.audioExpected || _useAltAudio);
+            return _fragmentLoader.audioExpected || _useAltAudio;
         }
 
         private function get videoExpected() : Boolean {
@@ -677,9 +672,6 @@ package org.mangui.hls.stream {
         }
 
         public function get bufferLength() : Number {
-            
-//            return Math.min(audioBufferLength, videoBufferLength); // NEIL
-            
             switch(_hls.seekState) {
                 case HLSSeekStates.SEEKING:
                     /* max_pos is a relative max, seekPositionRequested is absolute. we need to add _liveSlidingMain
@@ -687,11 +679,9 @@ package org.mangui.hls.stream {
                     return Math.max(0, max_pos + _liveSlidingMain - _seekPositionRequested);
                 case HLSSeekStates.SEEKED:
                     if (audioExpected) {
-                        if (videoExpected) {
-                            return Math.min(audioBufferLength, videoBufferLength);
-                        } else {
-                            return audioBufferLength;
-                        }
+                        return videoExpected
+							? Math.min(audioBufferLength, videoBufferLength)
+							: audioBufferLength
                     } else {
                         return videoBufferLength;
                     }
@@ -944,11 +934,11 @@ package org.mangui.hls.stream {
                 }
             }
 
-            // only push tags, if we found more than 500ms of tags AND
-            // (audio not expected OR audio tags found) AND
-            // (video not expected OR video tags found)
-            if((!audioExpected || audioIdx>=0) &&
-               (!videoExpected || videoIdx>=0) &&
+            // only push tags, if we found more than 500ms of tags 
+			// AND (audio not expected OR audio tags found)
+            // AND (video not expected OR video tags found)
+            if((!audioExpected || audioIdx >= 0) &&
+               (!videoExpected || videoIdx >= 0) &&
                 filteredDuration > 500) {
                 // modify PTS for DISCONTINUITY/METADATA/AAC_HEADER/AVC_HEADER tag
                 // and push as filtered tag
@@ -956,7 +946,6 @@ package org.mangui.hls.stream {
                     tags[disIdx].pts = tags[disIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[disIdx]);
                 }
-
                 if(metIdx >=0) {
                     tags[metIdx].pts = tags[metIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[metIdx]);
@@ -1072,7 +1061,7 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         Log.warn("seekFilterTags: startPosition > first tag position:" + absoluteStartPosition.toFixed(3) + '/' + tags[0].positionAbsolute.toFixed(3));
                     }
-                    if(absoluteStartPosition != tags[0].positionAbsolute) {
+                    if(tags.length && absoluteStartPosition != tags[0].positionAbsolute) {
                         absoluteStartPosition = tags[0].positionAbsolute;
                     } else {
                         // nothing found yet, let's return empty an array
@@ -1392,11 +1381,9 @@ package org.mangui.hls.stream {
 
         private function get min_pos() : Number {
             if (audioExpected) {
-                if (videoExpected) {
-                    return Math.max(min_audio_pos, min_video_pos);
-                } else {
-                    return min_audio_pos;
-                }
+                return videoExpected
+					? Math.max(min_audio_pos, min_video_pos)
+					: min_audio_pos;
             } else {
                 return min_video_pos;
             }
@@ -1404,11 +1391,9 @@ package org.mangui.hls.stream {
 
         private function get min_min_pos() : Number {
             if (audioExpected) {
-                if (videoExpected) {
-                    return Math.min(min_audio_pos, min_video_pos);
-                } else {
-                    return min_audio_pos;
-                }
+                return videoExpected
+					? Math.min(min_audio_pos, min_video_pos)
+					: min_audio_pos;
             } else {
                 return min_video_pos;
             }
@@ -1428,11 +1413,9 @@ package org.mangui.hls.stream {
 
         private function get max_pos() : Number {
             if (audioExpected) {
-                if (videoExpected) {
-                    return Math.min(max_audio_pos, max_video_pos);
-                } else {
-                    return max_audio_pos;
-                }
+                return videoExpected
+					? Math.min(max_audio_pos, max_video_pos)
+					: max_audio_pos;
             } else {
                 return max_video_pos;
             }

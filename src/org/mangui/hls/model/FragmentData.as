@@ -42,7 +42,7 @@ package org.mangui.hls.model {
         private var tags_pts_max_video : Number;
         private var tags_audio_found : Boolean;
         private var tags_video_found : Boolean;
-        public var tags : Vector.<FLVTag>;
+        public var tags : Vector.<FLVTag> = new Vector.<FLVTag>;
         /* video dimension */
         public var video_width : int;
         public var video_height : int;
@@ -128,27 +128,27 @@ package org.mangui.hls.model {
         }
 
         public function get pts_min() : Number {
-            if (audio_found) {
-                return pts_min_audio;
+            if (video_found) {
+				return pts_min_video;
             } else {
-                return pts_min_video;
+				return pts_min_audio;
             }
         }
 
         public function get pts_max() : Number {
-            if (audio_found) {
-                return pts_max_audio;
+			if (video_found) {
+				return pts_max_video;
             } else {
-                return pts_max_video;
+				return pts_max_audio;
             }
         }
 
         public function get tag_duration() : Number {
             var duration : Number;
-            if (audio_found) {
-                duration = audio_tag_duration;
+            if (video_found) {
+				duration = video_tag_duration;
             } else {
-                duration = video_tag_duration;
+				duration = audio_tag_duration;
             }
             if(isNaN(duration)) {
                 duration = 0;
@@ -157,34 +157,34 @@ package org.mangui.hls.model {
         }
 
         public function get tag_pts_min() : Number {
-            if (audio_found) {
-                return tags_pts_min_audio;
+            if (video_found) {
+				return tags_pts_min_video;
             } else {
-                return tags_pts_min_video;
+				return tags_pts_min_audio;
             }
         }
 
         public function get tag_pts_max() : Number {
-            if (audio_found) {
-                return tags_pts_max_audio;
+            if (video_found) {
+				return tags_pts_max_video;
             } else {
-                return tags_pts_max_video;
+				return tags_pts_max_audio;
             }
         }
 
         public function get tag_pts_start_offset() : Number {
-            if (tags_audio_found) {
-                return tags_pts_min_audio - pts_min_audio;
+            if (tags_video_found) {
+				return tags_pts_min_video - pts_min_video;
             } else {
-                return tags_pts_min_video - pts_min_video;
+				return tags_pts_min_audio - pts_min_audio;
             }
         }
 
         public function get tag_pts_end_offset() : Number {
-            if (tags_audio_found) {
-                return tags_pts_max_audio - pts_min_audio;
+            if (tags_video_found) {
+				return tags_pts_max_video - pts_min_video;
             } else {
-                return tags_pts_max_video - pts_min_video;
+				return tags_pts_max_audio - pts_min_audio;
             }
         }
     }

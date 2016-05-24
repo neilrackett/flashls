@@ -525,7 +525,8 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug(this+" loadfirstaudiofragment(" + position + ")");
             }
-            var frag : Fragment = _level.getFragmentBeforePosition(position);
+			// NEIL: Workaround fragment misalignment by requesting fragment before the one we really want
+            var frag : Fragment = _level.getFragmentBeforePosition(position-_level.averageduration);
             _hasDiscontinuity = true;
             CONFIG::LOGGING {
                 Log.debug("Loading       " + frag.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");

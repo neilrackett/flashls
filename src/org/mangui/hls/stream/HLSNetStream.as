@@ -385,16 +385,16 @@ package org.mangui.hls.stream {
                 }
             }
             if (_seekState == HLSSeekStates.SEEKING) {
-				if (_hls.type == HLSTypes.LIVE && _seekingOutsideBuffer) {
+				if (_hls.type == HLSTypes.LIVE && _seekingOutsideBuffer && _streamBuffer.useAltAudio) {
 					// NEIL: Part of fix for blank/frozen video to ensures we have enough 
-					// fragments appended to the stream buffer before we resume playback 
+					// fragments appended to the stream buffer resuming playback 
 					if (bufferLength >= _bufferThresholdController.minBufferLength) {
 						trace(this, "NetStream buffer ready:", bufferLength.toFixed(1));
 						_seekingOutsideBuffer = false;
 						seek(-2);
 					} else if (_streamBuffer.fragsAppended < 0) {
-						trace(this, "Implementing workaround for negative fragment count...");
-						seek(-1);
+						trace(this, "Fragment misalignment detected!");
+						_hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_MISALIGNMENT));
 					} else {
 						trace(this, "Waiting for NetStream buffer:", bufferLength.toFixed(1), "/", _bufferThresholdController.minBufferLength.toFixed(1));
 					}

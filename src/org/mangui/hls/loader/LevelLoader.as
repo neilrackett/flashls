@@ -74,7 +74,7 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
             _levels = new Vector.<Level>();
         }
-
+		
         public function dispose() : void {
             _close();
             if(_urlloader) {
@@ -86,6 +86,8 @@ package org.mangui.hls.loader {
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+			_hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+			_hls = null;
         }
 
         /** Loading failed; return errors. **/
@@ -199,7 +201,6 @@ package org.mangui.hls.loader {
             }
         }
 
-
         /** Manifest loaded; check and parse it **/
         private function _loadCompleteHandler(event : Event) : void {
              _metrics.loading_end_time = getTimer();
@@ -283,7 +284,7 @@ package org.mangui.hls.loader {
             }
             metrics.id  = _levels[level].start_seqnum;
             metrics.id2 = _levels[level].end_seqnum;
-//			trace(this, ">>>>>>>>>>>>>>> V:", metrics.id);
+			trace(this, ">>>>>>>>>>>>>>> V:", metrics.id);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, metrics));
             _manifestLoading = null;
         }

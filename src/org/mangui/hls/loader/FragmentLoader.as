@@ -119,7 +119,7 @@ package org.mangui.hls.loader {
             _loadingState = LOADING_STOPPED;
             _manifestJustLoaded = false;
             _keymap = new Object();
-        };
+		}
 
         public function dispose() : void {
             stop();
@@ -467,25 +467,25 @@ package org.mangui.hls.loader {
                 }
                 // switch back to IDLE state to request new fragment at lowest level
                 _loadingState = LOADING_IDLE;
-            } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments  || HLSSettings.maxSkippedFragments < 0) {
-                CONFIG::LOGGING {
-                    Log.warn("error parsing fragment, skip it and load next one");
-                }
-                var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
-                tags.push(_fragCurrent.getSkippedTag());
-                // send skipped FLV tag to StreamBuffer
-                _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
-                _fragRetryCount = 0;
-                _fragRetryTimeout = 1000;
-                _fragPrevious = _fragCurrent;
-                _fragSkipping = true;
-                _fragSkipCount++;
-                CONFIG::LOGGING {
-                    Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
-                }
-                // set fragment first loaded to be true to ensure that we can skip first fragment as well
-                _fragmentFirstLoaded = true;
-                _loadingState = LOADING_IDLE;
+            } else if ((HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments) || HLSSettings.maxSkippedFragments < 0) {
+				CONFIG::LOGGING {
+					Log.warn("error parsing fragment, skip it and load next one");
+				}
+					var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
+				tags.push(_fragCurrent.getSkippedTag());
+				// send skipped FLV tag to StreamBuffer
+				_streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
+				_fragRetryCount = 0;
+				_fragRetryTimeout = 1000;
+				_fragPrevious = _fragCurrent;
+				_fragSkipping = true;
+				_fragSkipCount++;
+				CONFIG::LOGGING {
+					Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
+				}
+					// set fragment first loaded to be true to ensure that we can skip first fragment as well
+					_fragmentFirstLoaded = true;
+				_loadingState = LOADING_IDLE;
             } else {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -1029,8 +1029,9 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
-                
-                if ((_demux.audioExpected && fragData.audio_found) || (!_demux.audioExpected && fragData.video_found)) {
+                if ((_demux.audioExpected && fragData.audio_found) 
+					|| (!_demux.audioExpected && fragData.video_found) 
+					|| (_demux.videoExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
                         var levelObj : Level = _levels[_hls.loadLevel];
                         _ptsAnalyzing = false;

@@ -89,6 +89,8 @@ package org.mangui.hls.event {
         public static const STAGE_SET : String = "hlsStageSet";
         /** The buffer has reached the required minimimum and the stream is ready to play */
         public static const READY : String = "hlsReady";
+		/** AV fragment misalignment detected */
+		public static const FRAGMENT_MISALIGNMENT : String = "fragmentMisalignment";
 		
         /** The current url */
         public var url : String;

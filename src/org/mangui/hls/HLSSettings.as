@@ -246,9 +246,9 @@ package org.mangui.hls {
          *      0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false)
          *      -1 - no limit for skipping, skip till the end of the playlist 
          *
-         * Default is 5.
+         * Default is -1.
          */
-        public static var maxSkippedFragments : int = 5;
+        public static var maxSkippedFragments : int = -1;
 
         /**
          * flushLiveURLCache
