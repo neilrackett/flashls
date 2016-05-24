@@ -23,7 +23,6 @@ package org.mangui.hls.loader {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Subtitle;
-    import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.SubtitlesSequencer;
     import org.mangui.hls.utils.WebVTTParser;
@@ -168,6 +167,7 @@ package org.mangui.hls.loader {
          */
         protected function seekStateHandler(event:HLSEvent):void {
 			if (_hls.seekState == HLSSeekStates.SEEKING) {
+				_appended = new Dictionary(true);
 				if (_hls.type == HLSTypes.LIVE) {
 					stop();
 				}
@@ -178,7 +178,6 @@ package org.mangui.hls.loader {
 					CONFIG::LOGGING {
 						Log.debug(this+" Re-appending subtitles after seek");
 					}
-					_appended = new Dictionary(true);
 	                subtitlesLevelLoadedHandler(event);
 	            }
 			}

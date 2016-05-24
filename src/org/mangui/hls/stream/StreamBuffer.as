@@ -38,6 +38,8 @@ package org.mangui.hls.stream {
      *  output : provide muxed FLV tags to HLSNetStream
      */
     public class StreamBuffer {
+		private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
+		private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
         private var _altaudiofragmentLoader : AltAudioFragmentLoader;
@@ -49,7 +51,7 @@ package org.mangui.hls.stream {
         private var _fragMainLevel : int, _fragMainSN : int, _fragMainInitialSN : int;
         // last main frag injected in NetStream
         private var _fragMainLevelNetStream : int, _fragMainSNNetStream : int;
-        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number, _fragMainMaxPTS : Number;
+        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number;
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int, _fragAltAudioInitialSN : int;
         private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
@@ -62,8 +64,6 @@ package org.mangui.hls.stream {
         private var _seekPositionReal : Number;
         /** start position of first injected tag **/
         private var _seekPositionReached : Boolean;
-        private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
-        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reachedEnd : Boolean;
         /* are we using alt-audio ? */
@@ -186,7 +186,7 @@ package org.mangui.hls.stream {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
             CONFIG::LOGGING {
-                Log.debug("seek : requested position:" + position.toFixed(2) + ",seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
+                Log.debug("seek : requested position:" + position.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
             if (!forceReload && _seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
@@ -241,16 +241,6 @@ package org.mangui.hls.stream {
 			var i:uint;
 			
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
-				
-				// TODO Does this fix freezing issue with subtitles
-				for (i=0; i<_subsCache.length; i++) {
-					if (_subsCache[i].pts >= min_pts && _subsCache[i].pts >= max_pts) {
-						tags.push(_subsCache[i]);
-					}
-				}
-				_subsCache.splice(0,i);
-				_fragMainMaxPTS = Math.max(_fragMainMaxPTS, max_pts);			
-				
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
@@ -385,32 +375,11 @@ package org.mangui.hls.stream {
                 _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
                 
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
-                
+				// Remove anything that's scheduled to appear before the video starts
 				while (tags.length && tags[0].pts < _fragMainInitialPTS) {
 					tags.splice(0, 1);
 				}
-				
-				for (i=0; i<tags.length; i++) {
-					if (tags[i].pts > _fragMainMaxPTS) {
-						_subsCache.push(tags[i]);
-						tags.splice(i-- ,1);
-					}
-				}
-				
 				if (!tags.length) return;
-				
-//                if (_fragMainLevel == -1 
-//                    || (_hls.type == HLSTypes.LIVE && (!_fragMainSN || isNaN(_fragMainInitialPTS)))
-//                    || !_hls.levels[_fragMainLevel].getFragmentfromSeqNum(_fragMainSN)) {
-//                    // Too soon!
-//                    _overlappingTags = _overlappingTags.concat(tags);
-//                    _overlappingMinPTS = Math.min(_overlappingMinPTS, Math.max(tags[0].pts, min_pts));
-//                    return;
-//                } 
-//                else if (fragSN >= _fragMainSN) {
-//                    appendTags(HLSLoaderTypes.FRAGMENT_MAIN, fragLevel, _fragMainSN, tags, min_pts, max_pts, continuity, startPosition);
-//                    return;
-//                }
             }
 
             for each (var tag : FLVTag in tags) {
@@ -527,7 +496,6 @@ package org.mangui.hls.stream {
             _liveSlidingMain = _liveSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
 			_subsCache = new Vector.<FLVTag>();
-			_fragMainMaxPTS = -1;
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer flushed");
             }
@@ -766,9 +734,9 @@ package org.mangui.hls.stream {
             // we want to keep only if alt audio loader OR
             // index less than start filtering index (i.e. we want to keep backbuffer) OR
             // matching with current fragment appended tags
-            return (item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO 
+            return item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO 
                 || index < _filteringStartIdx 
-                || (item.fragLevel == _fragMainLevelNetStream && item.fragSN == _fragMainSNNetStream))
+                || (item.fragLevel == _fragMainLevelNetStream && item.fragSN == _fragMainSNNetStream)
                 ;
         }
         
@@ -1011,8 +979,8 @@ package org.mangui.hls.stream {
                 return filteredTags;
             }
             
-            var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
-            aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
+            var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, metIdxSubs : int, keyIdx : int,lastIdx : int;
+            aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = metIdxSubs = keyIdx = lastIdx = -1;
             var idx2Clone : Vector.<int> = new Vector.<int>();
             
             // loop through all tags and find index position of header tags located before start position
@@ -1039,7 +1007,9 @@ package org.mangui.hls.stream {
                                     metIdxMain = i;
                                 } else if (data.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
                                     metIdxAltAudio = i;
-                                }
+								} else if (data.loaderType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
+									metIdxSubs = i;
+								}
                                 break;
                             case FLVTag.AAC_HEADER:
                                 aacIdx = i;
@@ -1092,6 +1062,7 @@ package org.mangui.hls.stream {
             if (disIdx != -1)  idx2Clone.push(disIdx);
             if (metIdxMain != -1)  idx2Clone.push(metIdxMain);
             if (metIdxAltAudio != -1)  idx2Clone.push(metIdxAltAudio);
+            if (metIdxSubs != -1)  idx2Clone.push(metIdxSubs);
             if (aacIdx != -1)  idx2Clone.push(aacIdx);
             if (avcIdx != -1)  idx2Clone.push(avcIdx);
 

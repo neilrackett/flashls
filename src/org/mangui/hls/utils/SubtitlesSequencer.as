@@ -8,10 +8,10 @@ package org.mangui.hls.utils {
 	
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.constant.HLSPlayStates;
+	import org.mangui.hls.constant.HLSSeekStates;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
 	import org.mangui.hls.model.Subtitle;
-	import org.mangui.hls.stream.HLSNetStream;
 	
 	/**
 	 * MEDIA-TIME SUBTITLE SEQUENCER FOR VOD
@@ -187,15 +187,16 @@ package org.mangui.hls.utils {
 		 * Dispatch an onTextData event via the client object to emulate an FLVTag
 		 */
 		protected function dispatchTextData(subtitle:Subtitle):void {
-			var stream:HLSNetStream = _hls.stream;
-			stream.dispatchClientEvent("onTextData", subtitle.toJSON());
+			_hls.stream.dispatchClientEvent("onTextData", subtitle.toJSON());
 		}
 		
 		/**
 		 * When the media seeks, we reset the index from which we look for the next subtitles
 		 */
 		protected function seekStateHandler(event:Event):void {
-			_currentIndex = 0;
+			if (_hls.seekState == HLSSeekStates.SEEKING) {
+				_currentIndex = 0;
+			}
 		}
 		
 		/**

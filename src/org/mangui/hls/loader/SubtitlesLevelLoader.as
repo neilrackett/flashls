@@ -13,6 +13,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
@@ -69,17 +70,22 @@ package org.mangui.hls.loader {
 		
 		protected function _seekStateHandler(event:HLSEvent):void {
 			if (_hls.seekState == HLSSeekStates.SEEKED) {
-				_close();
-				_hls.addEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
+				_subtitlesTrackSwitchHandler(event);
+//				 if (!_resumeHandler()) {
+//					_close();
+//					_hls.addEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
+//				 }
 			}
 		}
         
-		protected function _resumeHandler(event:HLSEvent):void {
-			if (event.state == HLSPlayStates.PLAYING) {
+		protected function _resumeHandler(event:HLSEvent=null):Boolean {
+//			if (_hls.playbackState == HLSPlayStates.PLAYING) {
 				_closed = false;
 				_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler);
 				_loadSubtitlesLevelPlaylist();
-			}
+				return true;
+//			}
+//			return false;
 		}
 		
         /** Loading failed; return errors. **/
@@ -129,11 +135,8 @@ package org.mangui.hls.loader {
                 subtitlesLevel.targetduration = Manifest.getTargetDuration(string);
                 
                 // if stream is live, use a timer to periodically reload playlist
-                if (!Manifest.hasEndlist(string)) {
-                    //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.targetduration - getTimer());
-                    //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.averageduration - getTimer());
-                    var timeout : int = Math.max(10000, _reloadPlaylistTimer+1000*subtitlesLevel.averageduration-getTimer());
-                    
+                if (_hls.type == HLSTypes.LIVE) {
+                    var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*subtitlesLevel.averageduration - getTimer());
                     CONFIG::LOGGING {
                         Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");
                     }
