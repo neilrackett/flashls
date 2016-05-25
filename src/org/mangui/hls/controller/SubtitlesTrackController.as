@@ -11,7 +11,6 @@ package org.mangui.hls.controller {
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
-    import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.hls_internal;
 
@@ -190,22 +189,7 @@ package org.mangui.hls.controller {
          * Announce availability of subtitles tracks using TX3G metadata
          */
         protected function dispatchMetaData():void {
-            
-//            var tag:FLVTag = new FLVTag(FLVTag.METADATA, 1000, 1000, false);
-//            var bytes:ByteArray = new ByteArray();
-//            
-//            bytes.objectEncoding = ObjectEncoding.AMF0;
-//            bytes.writeObject("onMetaData");
-//            bytes.writeObject(tx3gMetaData);
-//            
-//            tag.push(bytes, 0, bytes.length);
-//            tag.build();
-//
-//            _hls.stream.appendTag(tag);
-            
-            // The code above breaks the stream, so we use script to achieve the same outcome
-            var stream:HLSNetStream = _hls.stream;
-			stream.dispatchClientEvent("onMetaData", tx3gMetaData);
+			_hls.stream.dispatchClientEvent("onMetaData", tx3gMetaData);
         }
         
         /**

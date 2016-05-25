@@ -85,6 +85,8 @@ package org.mangui.hls.stream {
         private var _lastMediaTimeUpdate : int;
         /* overlapping fragment stuff */
         private var _overlappingTags : Vector.<FLVTag>;
+		// Subtitles separated to prevent them being cleared when continuity changes
+		private var _overlappingSubtitlesTags : Vector.<FLVTag>;
         private var _overlappingStartPosition : Number;
         private var _overlappingMinPTS : Number;
 
@@ -223,13 +225,8 @@ package org.mangui.hls.stream {
             _timer.start();
 			return seekingOutsideBuffer;
         }
-        
-		private var _subsCache:Vector.<FLVTag>;
 		
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
-            
-//			trace(this, ">>> _fragAltAudioInitialSN / _fragMainInitialSN =", _fragAltAudioInitialSN, "/", _fragMainInitialSN);
-			// TODO Can we delay appending of tags until we know they align?
 			
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number;
@@ -241,6 +238,7 @@ package org.mangui.hls.stream {
 			var i:uint;
 			
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
+				addSubtitleTags(tags, min_pts, max_pts);
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
@@ -341,6 +339,7 @@ package org.mangui.hls.stream {
                 */
                 _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
+				addSubtitleTags(tags, min_pts, max_pts);
                 sliding = _liveSlidingAltAudio;
                 // if a new fragment is being appended
                 if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {
@@ -376,8 +375,13 @@ package org.mangui.hls.stream {
                 
             } else if (fragmentType == HLSLoaderTypes.FRAGMENT_SUBTITLES) {
 				// Remove anything that's scheduled to appear before the video starts
-				while (tags.length && tags[0].pts < _fragMainInitialPTS) {
-					tags.splice(0, 1);
+				for (i=0; i<tags.length; i++) {
+					// This should be handled by the _metaTags filter, but possibly causing video freeze without it?
+					if (!_videoTags.length || tags[i].pts > _videoTags[_videoTags.length-1].tag.pts) {
+						_overlappingSubtitlesTags.push(tags.splice(i--,1)[0]);
+					} else if (tags[i].pts < _videoTags[0].tag.pts) {
+						tags.splice(i--, 1);
+					}
 				}
 				if (!tags.length) return;
             }
@@ -420,10 +424,19 @@ package org.mangui.hls.stream {
 
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
-//                _timer.start();
+                _timer.start();
             }
         }
         
+		protected function addSubtitleTags(tags:Vector.<FLVTag>, min_pts:Number, max_pts:Number):Vector.<FLVTag> {
+			for (var i:uint=0; i<_overlappingSubtitlesTags.length; i++) {
+				if (_overlappingSubtitlesTags[i].pts >= min_pts || _overlappingSubtitlesTags[i].pts <= max_pts) {
+					tags.push(_overlappingSubtitlesTags.splice(i--,1)[0]);
+				}
+			}
+			return tags;
+		}
+		
         /** Return current media position **/
         public function get position() : Number {
             switch(_hls.seekState) {
@@ -486,6 +499,7 @@ package org.mangui.hls.stream {
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
             _overlappingTags = new Vector.<FLVTag>();
+			_overlappingSubtitlesTags = new Vector.<FLVTag>();
             _fragMainLevel = _fragAltAudioLevel = _fragMainLevelNetStream = -1;
             _fragMainSN = _fragAltAudioSN = _fragMainSNNetStream = 0;
             FLVData.refPTSMain = FLVData.refPTSAltAudio = NaN;
@@ -495,7 +509,6 @@ package org.mangui.hls.stream {
             _reachedEnd = false;
             _liveSlidingMain = _liveSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
-			_subsCache = new Vector.<FLVTag>();
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer flushed");
             }

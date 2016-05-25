@@ -71,21 +71,7 @@ package org.mangui.hls.loader {
 		protected function _seekStateHandler(event:HLSEvent):void {
 			if (_hls.seekState == HLSSeekStates.SEEKED) {
 				_subtitlesTrackSwitchHandler(event);
-//				 if (!_resumeHandler()) {
-//					_close();
-//					_hls.addEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
-//				 }
 			}
-		}
-        
-		protected function _resumeHandler(event:HLSEvent=null):Boolean {
-//			if (_hls.playbackState == HLSPlayStates.PLAYING) {
-				_closed = false;
-				_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler);
-				_loadSubtitlesLevelPlaylist();
-				return true;
-//			}
-//			return false;
 		}
 		
         /** Loading failed; return errors. **/
@@ -208,7 +194,6 @@ package org.mangui.hls.loader {
                 Log.debug("Cancelling any subtitles level load in progress");
             }
             _closed = true;
-			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _resumeHandler); 
             clearTimeout(_timeoutID);
             try {
                 if (_manifestLoading) {
