@@ -49,7 +49,7 @@ package org.mangui.hls {
         private var _level : int;
         /* overrided quality_manual_level level */
         private var _manual_level : int = -1;
-
+        
 		use namespace hls_internal;
 		
         /** Create and connect all components. **/
@@ -317,6 +317,14 @@ package org.mangui.hls {
             _audioTrackController.audioTrack = val;
         }
         
+		/** are we currently using an alternative audio track? */
+		public function get isAltAudio():Boolean {
+			return audioTracks 
+				&& audioTracks.length 
+				&& audioTrack >= 0 
+				&& audioTracks[audioTrack].source == AudioTrack.FROM_PLAYLIST
+		}
+		
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;

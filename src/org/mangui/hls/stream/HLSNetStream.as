@@ -19,7 +19,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekStates;
-    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.controller.BufferThresholdController;
     import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.event.HLSError;
@@ -205,7 +204,7 @@ package org.mangui.hls.stream {
             }
 			
             if (_seekState != HLSSeekStates.SEEKING) {
-                if (_playbackState == HLSPlayStates.PLAYING) {
+                if (_playbackState == HLSPlayStates.PLAYING || _playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                   /* check if play head reached end of stream.
                         this happens when
                             playstate is PLAYING
@@ -385,7 +384,7 @@ package org.mangui.hls.stream {
                 }
             }
             if (_seekState == HLSSeekStates.SEEKING) {
-				if (_hls.type == HLSTypes.LIVE && _seekingOutsideBuffer && _streamBuffer.useAltAudio) {
+				if (_seekingOutsideBuffer && _hls.isAltAudio) {
 					// NEIL: Part of fix for blank/frozen video to ensures we have enough 
 					// fragments appended to the stream buffer resuming playback 
 					if (bufferLength >= _bufferThresholdController.minBufferLength) {
@@ -399,6 +398,7 @@ package org.mangui.hls.stream {
 						trace(this, "Waiting for NetStream buffer:", bufferLength.toFixed(1), "/", _bufferThresholdController.minBufferLength.toFixed(1));
 					}
 				} else {
+					_seekingOutsideBuffer = false;
 	                // dispatch event to mimic NetStream behaviour
 	                dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
 	                _setSeekState(HLSSeekStates.SEEKED);

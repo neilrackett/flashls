@@ -24,7 +24,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.loader.SubtitlesFragmentLoader;
-    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.hls_internal;
@@ -166,9 +165,7 @@ package org.mangui.hls.stream {
                 }
             }
 			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
-			if (_hls.type == HLSTypes.LIVE 
-				&& (position == -1 || position == -2) 
-				&& loadLevel) {
+			if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
 				/* If start position not specified for a live stream, follow HLS spec :
 				* If the EXT-X-ENDLIST tag is not present and client intends to play 
 				* the media regularly (i.e. in playlist order at the nominal playback 
@@ -176,17 +173,22 @@ package org.mangui.hls.stream {
 				* three target durations from the end of the Playlist file 
 				*/
 				_seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
+				
+				// NEIL: Part of workaround for blank/frozen image at start of live stream
 				if (position == -2) {
-					// NEIL: Part of workaround for blank/frozen image at start of live stream
 					if (_altAudioTrackSwitching) {
 						_seekPositionRequested += 0.1;
 					} else if (_useAltAudio) {
 						_seekPositionRequested = _hls.position + 0.1;
 					}
 				}
-            } else {
-                _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
-            }
+			} else if (position == -2 && _useAltAudio) {
+				_seekPositionRequested = _hls.position + 0.1;
+			} else {
+				_seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
+			}
+			
+			
             CONFIG::LOGGING {
                 Log.debug("seek : requested position:" + position.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
@@ -209,7 +211,7 @@ package org.mangui.hls.stream {
                 _liveLoadingStalled = false;
                 _fragmentLoader.seek(_seekPositionRequested);
                 // check if we need to use alt audio fragment loader
-                if (_hls.audioTracks && _hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                if (_hls.isAltAudio) {
                     CONFIG::LOGGING {
                         Log.info("seek : need to load alt audio track");
                     }
@@ -513,47 +515,42 @@ package org.mangui.hls.stream {
                 Log.debug("StreamBuffer flushed");
             }
         }
-		
-		public function get useAltAudio() : Boolean {
-			return _useAltAudio;
-		}
 
         private function partiallyFlushAudio() : void {
             
-            if (!_hls.watched) {
+            if (!_hls.stream.isReady) {
                 flushAudio();
                 return;
             }
             
-            // flush audio buffer and AAC HEADER tags (if any)
+            // Trim audio buffer and AAC HEADER tags after currently playing fragment
             
             var i:uint;
             var data:FLVData;
             var metrics:HLSPlayMetrics = _hls.stream.playMetrics;
             var frag:Fragment = _hls.levels[metrics.level].getFragmentfromSeqNum(metrics.seqnum);
-//            var maxPts:Number = frag.data.pts_max;
-                        
+            var maxPts:Number = frag.data.pts_max;
+			var audioIdx:uint = 0;
+			
             for (i=0; i<_audioTags.length; i++) {
                 data = _audioTags[i];
-                if (data.fragSN > metrics.seqnum) {
+				if (data.tag.pts <= maxPts) {
+					audioIdx = i;
+				} else {
                     _audioTags.splice(i--, 1);
                 }
             }
             
-//            for (i=0; i<_headerTags.length; i++) {
-//                data = _headerTags[i];
-//                if (data.fragSN > metrics.seqnum) {
-//                    _headerTags.splice(i--, 1);
-//                }
-//            }
-            
-//            _audioTags = new Vector.<FLVData>();
-//            _audioIdx = 0;
-            FLVData.refPTSAltAudio = metrics.pts + metrics.duration*1000;
-            _nextExpectedAbsoluteStartPosAltAudio = -1;
-//            _liveSlidingAltAudio = 0;
-            var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
-            _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
+			function partiallyFilterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
+				return !(item.tag.type == FLVTag.AAC_HEADER && item.tag.pts > maxPts);
+			}
+			
+			_audioIdx = audioIdx;
+			FLVData.refPTSAltAudio = maxPts;
+			_nextExpectedAbsoluteStartPosAltAudio = -1;
+			_liveSlidingAltAudio = 0;
+			var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(partiallyFilterAACHeader);
+			_headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
         }
 
         private function flushAudio() : void {
@@ -565,6 +562,8 @@ package org.mangui.hls.stream {
             _liveSlidingAltAudio = 0;
             var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
             _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
+			
+			// TODO Do we need to force alt audio loader to start loading from earlier time?
         }
 
         private function filterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
@@ -1457,8 +1456,8 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
                     }
-                    if (_hls.watched) {
-//                        partiallyFlushAudio();
+                    if (_hls.stream.isReady) {
+                        partiallyFlushAudio();
                         break;
                     }
 

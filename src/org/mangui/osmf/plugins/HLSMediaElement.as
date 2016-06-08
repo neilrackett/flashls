@@ -9,7 +9,10 @@
     import flash.net.NetStream;
     
     import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
@@ -46,6 +49,7 @@
         private var videoSurface : VideoSurface;
         private var _smoothing : Boolean;
 		private var _video : Video;
+		private var _videoSurfaceVisible:Boolean;
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
             _hls = hls;
@@ -66,38 +70,40 @@
 			_video = new Video();
 			
 			function showVideo(e:HLSEvent=null):void {
-				_video.visible = true; 
-				if (videoBlur) TweenLite.to(el, 0.6, {videoBlur:0, videoAlpha:1});
+				videoSurfaceVisible = true;
 			}
-			function hideVideo(e:HLSEvent=null):void { 
-				_video.visible = false;
-			}
-			function blurVideo(e:HLSEvent=null):void { 
-				if (_hls.stream.isReady) TweenLite.to(el, 0.6, {videoBlur:64, videoAlpha:0});
+			function hideVideo(e:HLSEvent=null):void {
+				videoSurfaceVisible = false;
 			}
 			
 			_hls.addEventListener(HLSEvent.SEEK_STATE, function(e:HLSEvent):void {
-				if (_hls.stream.altAudioTrackSwitching) blurVideo();
+				if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE
+					&& _hls.seekState == HLSSeekStates.SEEKING 
+					&& _hls.stream.altAudioTrackSwitching) {
+					hideVideo();
+				}
 			});
+			
 			_hls.addEventListener(HLSEvent.READY, showVideo);
 			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, function(e:HLSEvent):void {
 				if (e.state == HLSPlayStates.PLAYING) showVideo();
 			});
 			
-			hideVideo();
-			
             return _video;
         }
 
-		public function get videoAlpha():Number { return _video.alpha; }
-		public function set videoAlpha(value:Number):void { _video.alpha = value; }
-		
-		public function get videoBlur():Number {
-			try { return _video.filters[0].blurX; } catch (e:Error) {}
-			return 0;
+		public function get videoSurfaceVisible():Boolean 
+		{
+			return _videoSurfaceVisible; 
 		}
-		public function set videoBlur(value:Number):void {
-			_video.filters = value ? [new BlurFilter(value, value, 1)] : [];
+		public function set videoSurfaceVisible(value:Boolean):void 
+		{ 
+			if (videoSurface)
+			{
+				videoSurface.attachNetStream(value ? _hls.stream : null);
+			}
+			
+			_videoSurfaceVisible = value; 
 		}
 		
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {
@@ -168,9 +174,10 @@
             videoSurface = new VideoSurface(OSMFSettings.enableStageVideo && OSMFSettings.supportsStageVideo, createVideo);
             videoSurface.smoothing = true;
             videoSurface.deblocking = 1;
-            videoSurface.width = videoSurface.height = 0;
-            videoSurface.attachNetStream(_stream);
-
+            videoSurface.width = 0;
+			videoSurface.height = 0;
+            //videoSurface.attachNetStream(_stream);
+			
             var audioTrait : AudioTrait = new NetStreamAudioTrait(_stream);
             addTrait(MediaTraitType.AUDIO, audioTrait);
 
@@ -183,7 +190,7 @@
             var timeTrait : TimeTrait = new HLSTimeTrait(_hls, _defaultduration);
             addTrait(MediaTraitType.TIME, timeTrait);
 
-            var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(_hls,videoSurface, NaN, NaN);
+            var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(_hls, videoSurface, NaN, NaN);
             addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
             // setup seek trait
