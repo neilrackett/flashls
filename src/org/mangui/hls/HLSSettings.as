@@ -71,7 +71,6 @@ package org.mangui.hls {
          */
         public static var minBufferLengthCapping : Number = -1;
 
-
         /**
          * maxBufferLength
          *
@@ -258,7 +257,7 @@ package org.mangui.hls {
          *
          * Default is false
          */
-        public static var flushLiveURLCache : Boolean = true;
+        public static var flushLiveURLCache : Boolean = false;
 
         /**
          * initialLiveManifestSize

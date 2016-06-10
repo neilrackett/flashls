@@ -182,7 +182,7 @@ package org.mangui.hls.stream {
 						_seekPositionRequested = _hls.position + 0.1;
 					}
 				}
-			} else if (position == -2 && _useAltAudio) {
+			} else if (position == -2) {
 				_seekPositionRequested = _hls.position + 0.1;
 			} else {
 				_seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);

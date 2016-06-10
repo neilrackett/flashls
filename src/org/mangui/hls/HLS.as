@@ -29,6 +29,48 @@ package org.mangui.hls {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
+	
+	[Event(name="hlsEventManifestLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventManifestParsed", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventManifestLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoadingAborted", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLevelEndList", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentLoadEmergencyAborted", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentPlaying", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventFragmentSkipped", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="audioTracksListChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="audioTrackSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventAudioLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventAudioLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="subtitlesTracksListChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesTrackSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesLevelLoading", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesLevelLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventSubtitlesChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventTagsLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventLastFragmentLoaded", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventWarning", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventError", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventMediaTime", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsPlaybackState", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsSeekState", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventStreamTypeDidChange", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsEventPlayBackComplete", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsPlayListDurationUpdated", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsID3Updated", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDrop", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDropLevelCapping", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsFPSDropSmoothLevelSwitch", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsLiveLoadingStalled", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsStageSet", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="hlsReady", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="fragmentMisalignment", type="org.mangui.hls.event.HLSEvent")]
+	
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
         private var _levelLoader : LevelLoader;

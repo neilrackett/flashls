@@ -2,9 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.osmf.plugins {
-    import com.greensock.TweenLite;
-    
-    import flash.filters.BlurFilter;
     import flash.media.Video;
     import flash.net.NetStream;
     
@@ -52,44 +49,43 @@
 		private var _videoSurfaceVisible:Boolean;
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
+			trace("*** HLSMediaElement ***");
             _hls = hls;
+			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+			_hls.addEventListener(HLSEvent.READY, showVideo);
+			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
 			_hls.stream.client = new NetClient();
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
 		
+		protected function playbackStateHandler(event:HLSEvent):void {
+			if (event.state == HLSPlayStates.PLAYING) showVideo();
+		}
+		
+		protected function seekStateHandler(event:HLSEvent):void {
+			if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE
+				&& _hls.seekState == HLSSeekStates.SEEKING 
+				&& _hls.stream.altAudioTrackSwitching) {
+				hideVideo();
+			}
+		}
+		
+		protected function showVideo(e:HLSEvent=null):void {
+			videoSurfaceVisible = true;
+		}
+		
+		protected function hideVideo(e:HLSEvent=null):void {
+			videoSurfaceVisible = false;
+		}
+		
 		public function get client():Object {
 			return _hls.stream.client;
 		}
 		
         protected function createVideo() : Video {
-			
-			var el:HLSMediaElement = this;
-			
-			_video = new Video();
-			
-			function showVideo(e:HLSEvent=null):void {
-				videoSurfaceVisible = true;
-			}
-			function hideVideo(e:HLSEvent=null):void {
-				videoSurfaceVisible = false;
-			}
-			
-			_hls.addEventListener(HLSEvent.SEEK_STATE, function(e:HLSEvent):void {
-				if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE
-					&& _hls.seekState == HLSSeekStates.SEEKING 
-					&& _hls.stream.altAudioTrackSwitching) {
-					hideVideo();
-				}
-			});
-			
-			_hls.addEventListener(HLSEvent.READY, showVideo);
-			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, function(e:HLSEvent):void {
-				if (e.state == HLSPlayStates.PLAYING) showVideo();
-			});
-			
-            return _video;
+			return new Video();
         }
 
 		public function get videoSurfaceVisible():Boolean 
@@ -176,7 +172,7 @@
             videoSurface.deblocking = 1;
             videoSurface.width = 0;
 			videoSurface.height = 0;
-            //videoSurface.attachNetStream(_stream);
+//            videoSurface.attachNetStream(_stream);
 			
             var audioTrait : AudioTrait = new NetStreamAudioTrait(_stream);
             addTrait(MediaTraitType.AUDIO, audioTrait);
