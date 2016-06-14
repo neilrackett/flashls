@@ -125,7 +125,6 @@ package org.mangui.hls.controller {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
         }
-        ;
 
         public function getAutoStartBestLevel(downloadBandwidth : int, initialDelay : int, lastSegmentDuration : int) : int {
             var bwFactor : Number;
@@ -148,7 +147,7 @@ package org.mangui.hls.controller {
             }
             for (var i : int = max_level; i >= 0; i--) {
                 if (_bitrate[i]*bwFactor <= downloadBandwidth) {
-                    return i;
+                    return Math.max(0, i-1);
                 }
             }
             return 0;
@@ -441,7 +440,8 @@ package org.mangui.hls.controller {
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
                 // keep last level, but don't exceed _maxLevel
-                return Math.min(_hls.loadLevel,_maxLevel);
+//                return Math.min(_hls.loadLevel,_maxLevel);
+				return Math.min(_hls.loadLevel-1, _maxLevel);
             }
 
             // set up seek level as being the lowest non-audio level.

@@ -173,7 +173,6 @@ package org.mangui.hls.stream {
                     maxPosition = loadLevel.duration-1;
                 }
             }
-			trace("seek: *** position loadLevel _hls.type ==>", position, loadLevel, _hls.type);
 			if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
 				trace(this, ">>> SEEK LIVE -1 / -2");
 				/* If start position not specified for a live stream, follow HLS spec :
@@ -792,7 +791,6 @@ package org.mangui.hls.stream {
 
 			// NEIL: Appending video with alt audio to the NetStream before reaching min buffer results in blank or frozen video
 			if (canAppendTags) {
-				trace(this, _hls.audioTrack, "!!!", _seekingOutsideBuffer, _hls.isAltAudio, bufferLength.toFixed(1), _hls.stream.bufferThresholdController.minBufferLength);
 	            var netStreamBuffer : Number = _hls.stream.netStreamBufferLength;
 	            /* only append tags if seek position has been reached, otherwise wait for more tags to come
 	             * this is to ensure that accurate seeking will work appropriately
