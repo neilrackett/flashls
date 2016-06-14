@@ -51,7 +51,7 @@
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
 			trace("*** HLSMediaElement ***");
             _hls = hls;
-			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+//			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls.addEventListener(HLSEvent.READY, showVideo);
 			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
 			_hls.stream.client = new NetClient();
@@ -172,7 +172,7 @@
             videoSurface.deblocking = 1;
             videoSurface.width = 0;
 			videoSurface.height = 0;
-//            videoSurface.attachNetStream(_stream);
+            videoSurface.attachNetStream(_stream);
 			
             var audioTrait : AudioTrait = new NetStreamAudioTrait(_stream);
             addTrait(MediaTraitType.AUDIO, audioTrait);

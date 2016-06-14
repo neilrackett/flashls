@@ -104,7 +104,7 @@ package org.mangui.hls.loader {
             _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         }
-
+		
         /** update state and level in case of audio level loaded event **/
         private function _audioLevelLoadedHandler(event : HLSEvent) : void {
             if (_loadingState == LOADING_WAITING_LEVEL_UPDATE || _loadingState == LOADING_IDLE) {
