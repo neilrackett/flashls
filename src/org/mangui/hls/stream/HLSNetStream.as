@@ -92,7 +92,7 @@ package org.mangui.hls.stream {
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
-            super.bufferTime = 3.0;
+            super.bufferTime = 0.1;
             _hls = hls;
 			_hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
             _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
