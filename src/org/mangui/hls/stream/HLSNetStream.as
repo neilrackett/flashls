@@ -121,6 +121,7 @@ package org.mangui.hls.stream {
 			if (_isReady && HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
 				$pause();
 				_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+				_setSeekState(HLSSeekStates.SEEKING);
 			}
 		}
 		

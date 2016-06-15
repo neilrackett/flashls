@@ -162,10 +162,11 @@ package org.mangui.hls.stream {
          * and inject from that point
          * if seek position out of buffer, ask fragment loader to retrieve data
          */
-        public function seek(position : Number, forceReload : Boolean = false) : Boolean {
+        public function seek(newPosition : Number, forceReload : Boolean = false) : Boolean {
 			var loadLevel : Level;
             // cap max position if known playlist duration
             var maxPosition : Number = Number.POSITIVE_INFINITY;
+			var oldPosition : Number = position;
             if(_hls.loadLevel < _hls.levels.length) {
                 loadLevel = _hls.levels[_hls.loadLevel];
                 // if defined, set max position as being end of playlist - 1 second
@@ -173,8 +174,7 @@ package org.mangui.hls.stream {
                     maxPosition = loadLevel.duration-1;
                 }
             }
-			if (_hls.type == HLSTypes.LIVE && (position == -1 || position == -2) && loadLevel) {
-				trace(this, ">>> SEEK LIVE -1 / -2");
+			if (_hls.type == HLSTypes.LIVE && (newPosition == -1 || newPosition == -2) && loadLevel) {
 				/* If start position not specified for a live stream, follow HLS spec :
 				* If the EXT-X-ENDLIST tag is not present and client intends to play 
 				* the media regularly (i.e. in playlist order at the nominal playback 
@@ -184,23 +184,24 @@ package org.mangui.hls.stream {
 				_seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
 				
 				// NEIL: Part of workaround for blank/frozen image at start of live stream
-//				if (position == -2) {
-//					if (_altAudioTrackSwitching) {
-//						_seekPositionRequested += 0.1;
-//					} else if (_useAltAudio) {
-//						_seekPositionRequested = _hls.position + 0.1;
-//					}
-//				}
-			} else if (position == -2) {
-				trace(this, ">>> SEEK VOD -2");
-				_seekPositionRequested = _hls.position + 0.1;
+				if (newPosition == -2) {
+					if (_altAudioTrackSwitching) {
+						_seekPositionRequested = Math.max(oldPosition, _seekPositionRequested);
+					} else if (_useAltAudio) {
+						_seekPositionRequested = oldPosition;
+					}
+				}
+				trace(this, ">>> SEEK LIVE", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
+			} else if (newPosition == -2) {
+				_seekPositionRequested = oldPosition;
+				trace(this, ">>> SEEK VOD", _hls.position, "=>", newPosition, "->", _seekPositionRequested);
 			} else {
-				_seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
+				_seekPositionRequested = Math.min(Math.max(newPosition, 0), maxPosition);
 			}
 			
 			
             CONFIG::LOGGING {
-                Log.debug("seek : requested position:" + position.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
+                Log.debug("seek : requested position:" + newPosition.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
             if (!forceReload && _seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
@@ -790,7 +791,7 @@ package org.mangui.hls.stream {
             }
 
 			// NEIL: Appending video with alt audio to the NetStream before reaching min buffer results in blank or frozen video
-			if (canAppendTags) {
+			if (!(_seekingOutsideBuffer && _hls.isAltAudio)) {
 	            var netStreamBuffer : Number = _hls.stream.netStreamBufferLength;
 	            /* only append tags if seek position has been reached, otherwise wait for more tags to come
 	             * this is to ensure that accurate seeking will work appropriately
@@ -822,7 +823,6 @@ package org.mangui.hls.stream {
 	                    data = seekFilterTags(data, _seekPositionRequested);
 	                    if(data.length) {
 	                        _seekPositionReached = true;
-							_altAudioTrackSwitching = false;
 	                    }
 	                }
 	
@@ -850,13 +850,25 @@ package org.mangui.hls.stream {
 						_seekingOutsideBuffer = false;
 	                    _hls.stream.appendTags(tags);
 	                }
+					// clip backbuffer if needed
+					if (HLSSettings.maxBackBufferLength > 0) {
+						_clipBackBuffer(HLSSettings.maxBackBufferLength);
+					}
 	            }
+			/*
+			 * NEIL:
+			 *
+			 * If we're seeking outside the buffer with alt audio and the buffer is full, 
+			 * we do an in-buffer seek to get things moving again.
+			 *
+			 * Appending tags without a seek works 99% or the time, but that still leaves
+			 * 1% of the time when we see blank or frozen video, or, if we're really
+			 * lucky, animated rainbow patterns.
+			 */
+			} else if (_seekingOutsideBuffer && _hls.isAltAudio && bufferLength >= _hls.stream.bufferThresholdController.minBufferLength) {
+				_altAudioTrackSwitching = false;
+				_hls.stream.seek(-2);
 			}
-			
-            // clip backbuffer if needed
-            if (HLSSettings.maxBackBufferLength > 0) {
-                _clipBackBuffer(HLSSettings.maxBackBufferLength);
-            }
         }
 
         /* filter incoming tags overlapping with existing buffer */
@@ -1449,8 +1461,9 @@ package org.mangui.hls.stream {
                     }
 					if (isReady) {
 						// Current implementation is effectively a hard reset of the current audio stream...
+						var oldPosition:Number = position;
 						function audioLevelLoadedHandler(e:HLSEvent):void {
-							stream.seek2(-2, true);
+							stream.seek2(_hls.type == HLSTypes.LIVE ? -2 : oldPosition, true);
 							_hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
 						}
 						flushBuffer();

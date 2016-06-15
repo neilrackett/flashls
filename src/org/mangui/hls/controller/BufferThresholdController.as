@@ -8,7 +8,6 @@ package org.mangui.hls.controller {
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -38,7 +37,8 @@ package org.mangui.hls.controller {
         }
 
         public function get minBufferLength() : Number {
-            var mbl : Number = HLSSettings.minBufferLength == -1
+            
+			var mbl : Number = HLSSettings.minBufferLength == -1
 				? _minBufferLength
 				: HLSSettings.minBufferLength;
 			
