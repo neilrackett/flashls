@@ -147,7 +147,7 @@ package org.mangui.hls.controller {
             }
             for (var i : int = max_level; i >= 0; i--) {
                 if (_bitrate[i]*bwFactor <= downloadBandwidth) {
-                    return Math.max(0, i-1);
+                    return Math.max(0, i);
                 }
             }
             return 0;
@@ -440,8 +440,7 @@ package org.mangui.hls.controller {
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
                 // keep last level, but don't exceed _maxLevel
-//                return Math.min(_hls.loadLevel,_maxLevel);
-				return Math.min(_hls.loadLevel-1, _maxLevel);
+				return Math.min(_hls.loadLevel, _maxLevel);
             }
 
             // set up seek level as being the lowest non-audio level.

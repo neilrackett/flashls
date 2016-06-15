@@ -391,6 +391,8 @@ package org.mangui.hls.stream {
                 }
                 _playbackState = state;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_STATE, _playbackState));
+				// Just to make sure it really is playing
+				if (state == HLSPlayStates.PLAYING) super.resume();
             }
         }
 
@@ -513,7 +515,7 @@ package org.mangui.hls.stream {
 		
 		public function seek2(position : Number, forceReload : Boolean = false) : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:seek(" + position + ")");
+                Log.info("HLSNetStream:seek2("+position+", "+forceReload+")");
             }
 			_streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);

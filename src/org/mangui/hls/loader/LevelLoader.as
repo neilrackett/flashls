@@ -15,7 +15,6 @@ package org.mangui.hls.loader {
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
@@ -71,7 +70,6 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
             _levels = new Vector.<Level>();
         }
 		
@@ -86,7 +84,6 @@ package org.mangui.hls.loader {
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-			_hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
 			_hls = null;
         }
 
@@ -260,7 +257,7 @@ package org.mangui.hls.loader {
                     _reloadInterval /= 2;
                 }
                 // keep at least 1s between requests, in case last one was really slow
-                var timeout : int = Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer());
+                var timeout : int = Math.min(5000, Math.max(1000,_reloadPlaylistTimer + 1000*_reloadInterval - getTimer()));
                 CONFIG::LOGGING {
                     Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout + " ms");
                 }
@@ -409,17 +406,6 @@ package org.mangui.hls.loader {
                 }
             }
         }
-		
-		private function _audioTrackSwitchHandler(event : HLSEvent) : void {
-			if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE) {
-				if(_manifestLoading) {
-					_manifestLoading.close();
-					_manifestLoading = null;
-				}
-				clearTimeout(_timeoutID);
-				_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
-			}
-		}
 		
         private function _close() : void {
             CONFIG::LOGGING {

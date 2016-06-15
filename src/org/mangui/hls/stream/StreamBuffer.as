@@ -92,6 +92,8 @@ package org.mangui.hls.stream {
 		// NEIL
 		/** Is the alt audio track being switched? */
 		private var _altAudioTrackSwitching : Boolean;
+		/** The time at the point alt audio was switched */
+		private var _altAudioTrackSwitchTimer : uint;
 		/** are we currently seeking outside of the buffer? */
 		private var _seekingOutsideBuffer : Boolean;
 		
@@ -164,9 +166,9 @@ package org.mangui.hls.stream {
          */
         public function seek(newPosition : Number, forceReload : Boolean = false) : Boolean {
 			var loadLevel : Level;
+			var oldPosition : Number = position;
             // cap max position if known playlist duration
             var maxPosition : Number = Number.POSITIVE_INFINITY;
-			var oldPosition : Number = position;
             if(_hls.loadLevel < _hls.levels.length) {
                 loadLevel = _hls.levels[_hls.loadLevel];
                 // if defined, set max position as being end of playlist - 1 second
@@ -186,12 +188,13 @@ package org.mangui.hls.stream {
 				// NEIL: Part of workaround for blank/frozen image at start of live stream
 				if (newPosition == -2) {
 					if (_altAudioTrackSwitching) {
-						_seekPositionRequested = Math.max(oldPosition, _seekPositionRequested);
-					} else if (_useAltAudio) {
-						_seekPositionRequested = oldPosition;
+						_seekPositionRequested = Math.max(oldPosition, _seekPositionRequested) + 0.1;
+						trace(this, ">>> SEEK LIVE/ALT", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
+					} else {
+						_seekPositionRequested = Math.max(0, min_pos, oldPosition);
+						trace(this, ">>> SEEK LIVE", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
 					}
 				}
-				trace(this, ">>> SEEK LIVE", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
 			} else if (newPosition == -2) {
 				_seekPositionRequested = oldPosition;
 				trace(this, ">>> SEEK VOD", _hls.position, "=>", newPosition, "->", _seekPositionRequested);
@@ -868,6 +871,10 @@ package org.mangui.hls.stream {
 			} else if (_seekingOutsideBuffer && _hls.isAltAudio && bufferLength >= _hls.stream.bufferThresholdController.minBufferLength) {
 				_altAudioTrackSwitching = false;
 				_hls.stream.seek(-2);
+			} else if (position < 0 || (!audioBufferLength && _altAudioTrackSwitching && getTimer()-_altAudioTrackSwitchTimer > 3000)) {
+				trace(this, "!!!!!!!!!!!!!!!!!!!!!!!! ALT AUDIO SWITCH TAKING TOO LONG: "+position+" / "+(getTimer()-_altAudioTrackSwitchTimer)+" !!!!!!!!!!!!!!!!!!!!!!!!");
+				_altAudioTrackSwitchTimer = getTimer();
+				_hls.stream.seek2(-1);
 			}
         }
 
@@ -1461,13 +1468,13 @@ package org.mangui.hls.stream {
                     }
 					if (isReady) {
 						// Current implementation is effectively a hard reset of the current audio stream...
-						var oldPosition:Number = position;
+						var newPosition:Number = _hls.type == HLSTypes.LIVE ? -2 : position;
 						function audioLevelLoadedHandler(e:HLSEvent):void {
-							stream.seek2(_hls.type == HLSTypes.LIVE ? -2 : oldPosition, true);
+							_altAudioTrackSwitchTimer = getTimer();
 							_hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
+							stream.seek2(newPosition, true);
 						}
-						flushBuffer();
-						_timer.stop();
+						stop();
 						_altAudioTrackSwitching = true;
 						_hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
 					} else {
