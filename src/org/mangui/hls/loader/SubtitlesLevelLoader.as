@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
     import flash.events.ErrorEvent;
+    import flash.events.Event;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
     import flash.utils.clearTimeout;
@@ -58,14 +59,22 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
             _hls.addEventListener(HLSEvent.SEEK_STATE, _seekStateHandler);
+			_hls.addEventListener(Event.CLOSE, closeHandler);
 			
 			_levelLoader = levelLoader;
 		}
-
+		
+		protected function closeHandler(event:Event):void
+		{
+			// TODO Auto-generated method stub
+			
+		}
+		
         public function dispose() : void {
             _close();
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
+			_hls.removeEventListener(Event.CLOSE, closeHandler);
         }
 		
 		protected function _seekStateHandler(event:HLSEvent):void {
@@ -83,7 +92,7 @@ package org.mangui.hls.loader {
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
             } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
-                    Log.warn("I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
+                    Log.warn(this+" I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
                 }
                 _timeoutID = setTimeout(_loadSubtitlesLevelPlaylist, _retryTimeout);
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
@@ -105,7 +114,7 @@ package org.mangui.hls.loader {
 			
             if (string != null && string.length != 0) {
                 CONFIG::LOGGING {
-                    Log.debug("subtitles level " + level + " playlist:\n" + string);
+                    Log.debug(this+" subtitles level " + level + " playlist:\n" + string);
                 }
                 
                 // Extract WebVTT subtitles fragments from the manifest
@@ -124,7 +133,7 @@ package org.mangui.hls.loader {
                 if (_hls.type == HLSTypes.LIVE) {
                     var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*subtitlesLevel.averageduration - getTimer());
                     CONFIG::LOGGING {
-                        Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");
+                        Log.debug(this+" Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");
                     }
                     _timeoutID = setTimeout(_loadSubtitlesLevelPlaylist, timeout);
                 }
@@ -170,7 +179,7 @@ package org.mangui.hls.loader {
                     if (subtitlesPlaylistTrack.url) {
                         
                         CONFIG::LOGGING {
-                            Log.debug("switch to subtitles track " + _currentTrack + ", load Playlist");
+                            Log.debug(this+" switch to subtitles track " + _currentTrack + ", load Playlist");
                         }
                         
                         _retryTimeout = 1000;
@@ -191,7 +200,7 @@ package org.mangui.hls.loader {
 
         private function _close() : void {
             CONFIG::LOGGING {
-                Log.debug("Cancelling any subtitles level load in progress");
+                Log.debug(this+" Cancelling any subtitles level load in progress");
             }
             _closed = true;
             clearTimeout(_timeoutID);

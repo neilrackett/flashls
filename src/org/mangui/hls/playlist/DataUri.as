@@ -49,7 +49,7 @@
          */
         private function _extractBase64Data(data : String) : String {
             CONFIG::LOGGING {
-            Log.warn("Base 64 encoded Data URIs are not supported.");
+            Log.warn(this+" Base 64 encoded Data URIs are not supported.");
             }
             return null;
         }
@@ -61,7 +61,7 @@
         private function _extractPlainData(data : String) : String {
             var decodedData : String = decodeURIComponent(data);
             CONFIG::LOGGING {
-            Log.debug2("Decoded data from data URI into: " + decodedData);
+            Log.debug2(this+" Decoded data from data URI into: " + decodedData);
             }
             return decodedData;
         }

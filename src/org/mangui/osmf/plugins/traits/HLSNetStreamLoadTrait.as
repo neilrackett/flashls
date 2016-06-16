@@ -19,7 +19,7 @@
 
         public function HLSNetStreamLoadTrait(hls : HLS, duration : Number, loader : LoaderBase, resource : MediaResourceBase) {
             CONFIG::LOGGING {
-            Log.debug("HLSNetStreamLoadTrait()");
+            Log.debug(this+" HLSNetStreamLoadTrait()");
             }
             super(loader, resource);
             _hls = hls;
@@ -31,7 +31,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSNetStreamLoadTrait:dispose");
+            Log.debug(this+" HLSNetStreamLoadTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
 			_hls = null;

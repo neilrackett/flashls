@@ -149,7 +149,7 @@ package org.mangui.hls.flv {
                 type == AVC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
                 // CompositionTime (in ms)
                 // CONFIG::LOGGING {
-                // Log.info("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
+                // Log.info(this+" pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
                 // }
                 var compositionTime : Number = (pts - dts);
                 array.writeByte(compositionTime >> 16);

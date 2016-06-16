@@ -8,6 +8,7 @@ package org.mangui.hls.controller {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
+    import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.model.Level;
@@ -39,6 +40,7 @@ package org.mangui.hls.controller {
         private var _autoLevelCapping : int;
         private var _startLevel : int = -1;
         private var _fpsController : FPSController;
+        private var _bandwidthTooLow : Boolean;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
@@ -50,8 +52,9 @@ package org.mangui.hls.controller {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
         }
-
+		
         public function dispose() : void {
             _fpsController.dispose();
             _fpsController = null;
@@ -68,8 +71,28 @@ package org.mangui.hls.controller {
                 lastBandwidth = metrics.bandwidth;
                 _lastSegmentDuration = metrics.duration;
                 _lastFetchDuration = metrics.processing_duration;
+				
+				// Do we have enough bandwidth available to continue playback?
+				var minBitrate:uint = _hls.levels[0].bitrate;
+				_bandwidthTooLow = lastBandwidth < minBitrate;
+				if (_bandwidthTooLow) {
+					CONFIG::LOGGING {
+						Log.warn(this+" Bandwidth too low to continue playback!");
+					}
+					_hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, new HLSError(HLSError.BANDWIDTH_TOO_LOW, _hls.levels[0].url, "bandwidthTooLow")));
+				}
             }
         }
+
+		protected function _liveLoadingStalledHandler(event:HLSEvent):void
+		{
+			if (_bandwidthTooLow && _hls.loadLevel == 0) {
+				CONFIG::LOGGING {
+					Log.error(this+" Live stall caused by low bandwidth");
+				}
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.LIVE_STALL, _hls.levels[0].url, "liveStall"))); 
+			}
+		}
 
         private function _manifestParsedHandler(event : HLSEvent) : void {
             if(HLSSettings.autoStartLoad) {
@@ -105,7 +128,7 @@ package org.mangui.hls.controller {
                 _switchup[i] = Math.min(maxswitchup, 2 * _switchup[i]);
 
                 CONFIG::LOGGING {
-                    Log.debug("_switchup[" + i + "]=" + _switchup[i]);
+                    Log.debug(this+" _switchup[" + i + "]=" + _switchup[i]);
                 }
             }
 
@@ -117,7 +140,7 @@ package org.mangui.hls.controller {
                 _switchdown[i] = Math.max(2 * minswitchdwown, _switchdown[i]);
 
                 CONFIG::LOGGING {
-                    Log.debug("_switchdown[" + i + "]=" + _switchdown[i]);
+                    Log.debug(this+" _switchdown[" + i + "]=" + _switchdown[i]);
                 }
             }
 
@@ -143,7 +166,7 @@ package org.mangui.hls.controller {
                 bwFactor = 1;
             }
             CONFIG::LOGGING {
-                Log.debug("getAutoStartBestLevel,initialDelay/max delay/bwFactor=" + initialDelay + "/" + HLSSettings.autoStartMaxDuration + "/" + bwFactor.toFixed(2));
+                Log.debug(this+" getAutoStartBestLevel,initialDelay/max delay/bwFactor=" + initialDelay + "/" + HLSSettings.autoStartMaxDuration + "/" + bwFactor.toFixed(2));
             }
             for (var i : int = max_level; i >= 0; i--) {
                 if (_bitrate[i]*bwFactor <= downloadBandwidth) {
@@ -217,7 +240,7 @@ package org.mangui.hls.controller {
                                 lWidth = maxLevel.width;
                                 lHeight = maxLevel.height;
                                 CONFIG::LOGGING {
-                                    Log.debug("stage size: " + sWidth + "x" + sHeight + " ,level" + maxLevelIdx + " size: " + lWidth + "x" + lHeight);
+                                    Log.debug(this+" stage size: " + sWidth + "x" + sHeight + " ,level" + maxLevelIdx + " size: " + lWidth + "x" + lHeight);
                                 }
                                 if (sWidth >= lWidth || sHeight >= lHeight) {
                                     break;
@@ -232,7 +255,7 @@ package org.mangui.hls.controller {
                                 lWidth = maxLevel.width;
                                 lHeight = maxLevel.height;
                                 CONFIG::LOGGING {
-                                    Log.debug("stage size: " + sWidth + "x" + sHeight + " ,level" + maxLevelIdx + " size: " + lWidth + "x" + lHeight);
+                                    Log.debug(this+" stage size: " + sWidth + "x" + sHeight + " ,level" + maxLevelIdx + " size: " + lWidth + "x" + lHeight);
                                 }
                                 if (sWidth <= lWidth || sHeight <= lHeight) {
                                     break;
@@ -242,7 +265,7 @@ package org.mangui.hls.controller {
                             break;
                     }
                     CONFIG::LOGGING {
-                        Log.debug("max capped level idx: " + maxLevelIdx);
+                        Log.debug(this+" max capped level idx: " + maxLevelIdx);
                     }
                 }
                 return maxLevelIdx;
@@ -256,7 +279,7 @@ package org.mangui.hls.controller {
 
 			// Experimental: does only using lastBandwidth enable quicker response to changing bandwidth?
 			if (!lastBandwidth) return current_level;
-
+			
 			var maxLevel:uint = Math.min(_maxLevel, current_level+HLSSettings.maxUpSwitchLimit);
 			var minLevel:uint = Math.max(0, current_level-HLSSettings.maxDownSwitchLimit);
 			var newLevel:int;
@@ -290,15 +313,15 @@ package org.mangui.hls.controller {
             var switch_to_level : int = current_level;
             
             CONFIG::LOGGING {
-                Log.info("rsft: " + rsft);
-                Log.info("sftm: " + sftm);
+                Log.info(this+" rsft: " + rsft);
+                Log.info(this+" sftm: " + sftm);
             }
             
             // to switch level up :
             // rsft should be greater than switch up condition
             if (current_level < max_level && sftm > 1+_switchup[current_level]) {
                 CONFIG::LOGGING {
-                    Log.debug("sftm > 1+_switchup[_level] = "+sftm+" > "+(1+_switchup[current_level]));
+                    Log.debug(this+" sftm > 1+_switchup[_level] = "+sftm+" > "+(1+_switchup[current_level]));
                 }
                 
                 var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
@@ -315,7 +338,7 @@ package org.mangui.hls.controller {
             // or the current level is greater than max level
             else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
                 CONFIG::LOGGING {
-                    Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
+                    Log.debug(this+" sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
                 }
                 var bufferratio : Number = 1000 * buffer / _lastSegmentDuration;
                 // find suitable level matching current bandwidth, starting from current level
@@ -339,7 +362,7 @@ package org.mangui.hls.controller {
             
             CONFIG::LOGGING {
                 if (switch_to_level != current_level) {
-                    Log.debug("switch to level " + switch_to_level);
+                    Log.debug(this+" switch to level " + switch_to_level);
                 }
             }
 
@@ -395,7 +418,7 @@ package org.mangui.hls.controller {
                     // in case of audio only playlist, force startLevel to 0
                     if (start_level == -1) {
                         CONFIG::LOGGING {
-                            Log.info("playlist is audio-only");
+                            Log.info(this+" playlist is audio-only");
                         }
                         start_level = 0;
                     } else {
@@ -407,7 +430,7 @@ package org.mangui.hls.controller {
                     }
                 }
                 CONFIG::LOGGING {
-                    Log.debug("start level: " + start_level);
+                    Log.debug(this+" start level: " + start_level);
                 }
             }
             return start_level;
@@ -460,7 +483,7 @@ package org.mangui.hls.controller {
                 }
             }
             CONFIG::LOGGING {
-                Log.debug("seek level :" + seek_level);
+                Log.debug(this+" seek level :" + seek_level);
             }
             return seek_level;
         }

@@ -98,7 +98,7 @@ package org.mangui.hls.playlist {
             }
             if (DataUri.isDataUri(url)) {
                 CONFIG::LOGGING {
-                    Log.debug("Identified playlist <" + url + "> as a data URI.");
+                    Log.debug(this+" Identified playlist <" + url + "> as a data URI.");
                 }
                 var data : String = new DataUri(url).extractData();
                 onLoadedData(data || "");
@@ -284,7 +284,7 @@ package org.mangui.hls.playlist {
                         }
 
                         CONFIG::LOGGING {
-                            Log.debug("sn/key/iv:" + seqnum + "/" + decrypt_url + "/" + Hex.fromArray(fragment_decrypt_iv));
+                            Log.debug("[Manifest] sn/key/iv:" + seqnum + "/" + decrypt_url + "/" + Hex.fromArray(fragment_decrypt_iv));
                         }
                     } else {
                         fragment_decrypt_iv = null;
@@ -304,7 +304,7 @@ package org.mangui.hls.playlist {
                 null;
                 // just to avoid compilation warnings if CONFIG::LOGGING is false
                 CONFIG::LOGGING {
-                    Log.warn("No TS fragments found in " + base);
+                    Log.warn("[Manifest] No TS fragments found in " + base);
                 }
             }
             return fragments;
@@ -370,7 +370,7 @@ package org.mangui.hls.playlist {
                         var redundantURL:String = _extractURL(line, base);
                         level.urls.push(redundantURL);
                        CONFIG::LOGGING {
-                            Log.debug("found failover level with url " + redundantURL);
+                            Log.debug("[Manifest] found failover level with url " + redundantURL);
                         }
                     }
                     level_found = false;

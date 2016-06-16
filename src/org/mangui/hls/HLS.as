@@ -70,11 +70,12 @@ package org.mangui.hls {
 	[Event(name="hlsStageSet", type="org.mangui.hls.event.HLSEvent")]
 	[Event(name="hlsReady", type="org.mangui.hls.event.HLSEvent")]
 	[Event(name="fragmentMisalignment", type="org.mangui.hls.event.HLSEvent")]
+	[Event(name="close", type="flash.events.Event")]
 	
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
 		
-		static public const VERSION:String = "1.0.42";
+		static public const VERSION:String = "1.0.43";
 		
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;

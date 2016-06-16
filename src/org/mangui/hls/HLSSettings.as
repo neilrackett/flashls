@@ -130,7 +130,14 @@ package org.mangui.hls {
          */
         public static var fpsDroppedMonitoringThreshold : Number = 0.2;
 
-
+		/**
+		 * If the dropped FPS threshold is reached, should we nudge the playhead position
+		 * forward slightly to try to kick start playback?
+		 * 
+		 * Default is false 
+		 */
+		public static var fpsDroppedNudgeEnabled : Boolean = false;
+		
         /**
          * capLevelonFPSDrop
          *
@@ -268,6 +275,24 @@ package org.mangui.hls {
          */
         public static var initialLiveManifestSize : uint = 2;
 
+		/**
+		 * liveStopLoadingOnPause
+		 * 
+		 * Should live streams stop loading when paused?
+		 * 
+		 * Default is true
+		 */
+		public static var liveStopLoadingOnPause : Boolean = true;
+		
+		/**
+		 * liveStopOnLiveStall
+		 * 
+		 * Should live streams stop when a live stall is detected?
+		 * 
+		 * Default is true
+		 */
+		public static var liveStopOnLiveStall : Boolean = true;
+		
         /**
          * manifestLoadMaxRetry
          *

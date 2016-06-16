@@ -21,10 +21,10 @@
             rect.x = Math.round((containerWidth - rect.width) / 2);
             rect.y = Math.round((containerHeight - rect.height) / 2);
             CONFIG::LOGGING {
-            Log.debug("width:" + rect.width);
-            Log.debug("height:" + rect.height);
-            Log.debug("x:" + rect.x);
-            Log.debug("y:" + rect.y);
+            Log.debug("[ScaleVideo] width:" + rect.width);
+            Log.debug("[ScaleVideo] height:" + rect.height);
+            Log.debug("[ScaleVideo] x:" + rect.x);
+            Log.debug("[ScaleVideo] y:" + rect.y);
             }
             return rect;
         }

@@ -6,9 +6,12 @@ package org.mangui.hls.model {
         import org.mangui.hls.utils.Log;
     }
     import org.mangui.hls.utils.PTS;
+    import flash.events.EventDispatcher;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSError;
 
     /** HLS streaming quality level. **/
-    public class Level {
+    public class Level extends EventDispatcher {
         /** audio only Level ? **/
         public var audio : Boolean;
         /** AAC codec signaled ? **/
@@ -135,7 +138,7 @@ package org.mangui.hls.model {
                 var end : Number = start + 1000*duration;
 
                 // CONFIG::LOGGING {
-                //     Log.debug("getSeqNumNearestPTS: pts/start/end/duration:" + pts + '/' + start + '/' + end + '/' + duration);
+                //     Log.debug(this+" getSeqNumNearestPTS: pts/start/end/duration:" + pts + '/' + start + '/' + end + '/' + duration);
                 // }
                 /* check nearest fragment */
                 if ( frag.data.valid &&
@@ -261,7 +264,7 @@ package org.mangui.hls.model {
             }
             if(continuity_offset) {
                 CONFIG::LOGGING {
-                    Log.debug("updateFragments: discontinuity sliding from live playlist, take into account discontinuity drift:" + continuity_offset);
+                    Log.debug(this+" updateFragments: discontinuity sliding from live playlist, take into account discontinuity drift:" + continuity_offset);
                 }
                 for (i = 0; i < len; i++) {
                      _fragments[i].continuity+= continuity_offset;
@@ -278,12 +281,12 @@ package org.mangui.hls.model {
                     frag = fragments[idx_with_metrics];
                     // if at least one fragment contains PTS info, recompute PTS information for all fragments
                     CONFIG::LOGGING {
-                        Log.debug("updateFragments: found PTS info from previous playlist,seqnum/PTS:" + frag.seqnum + "/" + frag.data.pts_start);
+                        Log.debug(this+" updateFragments: found PTS info from previous playlist,seqnum/PTS:" + frag.seqnum + "/" + frag.data.pts_start);
                     }
                     updateFragment(frag.seqnum, true, frag.data.pts_start, frag.data.pts_start + 1000 * frag.duration);
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug("updateFragments: unknown PTS info for this level");
+                        Log.debug(this+" updateFragments: unknown PTS info for this level");
                     }
                     duration = _fragments[len - 1].start_time + _fragments[len - 1].duration;
                 }
@@ -315,7 +318,7 @@ package org.mangui.hls.model {
 
         private function _updatePTS(from_index : int, to_index : int) : void {
             // CONFIG::LOGGING {
-            // Log.info("updateFragmentPTS from/to:" + from_index + "/" + to_index);
+            // Log.info(this+" updateFragmentPTS from/to:" + from_index + "/" + to_index);
             // }
             var frag_from : Fragment = fragments[from_index];
             var frag_to : Fragment = fragments[to_index];
@@ -333,14 +336,14 @@ package org.mangui.hls.model {
                         frag_from.duration = (frag_to.data.pts_start - from_pts) / 1000;
                         CONFIG::LOGGING {
                             if (frag_from.duration < 0) {
-                                Log.error("negative duration computed for " + frag_from + ", there should be some duration drift between playlist and fragment!");
+                                Log.error(this+" negative duration computed for " + frag_from + ", there should be some duration drift between playlist and fragment!");
                             }
                         }
                     } else {
                         frag_to.duration = ( from_pts - frag_to.data.pts_start) / 1000;
                         CONFIG::LOGGING {
                             if (frag_to.duration < 0) {
-                                Log.error("negative duration computed for " + frag_to + ", there should be some duration drift between playlist and fragment!");
+                                Log.error(this+" negative duration computed for " + frag_to + ", there should be some duration drift between playlist and fragment!");
                             }
                         }
                     }
@@ -357,7 +360,7 @@ package org.mangui.hls.model {
         public function updateFragment(seqnum : Number, valid : Boolean, min_pts : Number = 0, max_pts : Number = 0) : void {
             
             // CONFIG::LOGGING {
-            // Log.info("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
+            // Log.info(this+" updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
             // }
             // get fragment from seqnum
             
@@ -376,14 +379,14 @@ package org.mangui.hls.model {
                 }
                 frag.data.valid = valid;
                 // CONFIG::LOGGING {
-                // Log.info("SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
+                // Log.info(this+" SN["+fragments[fragIdx].seqnum+"]:pts/duration:" + fragments[fragIdx].start_pts_computed + "/" + fragments[fragIdx].duration);
                 // }
 
                 // adjust fragment PTS/duration from seqnum-1 to frag 0
                 for (var i : int = fragIdx; i > 0 && fragments[i - 1].continuity == frag.continuity; i--) {
                     _updatePTS(i, i - 1);
                     // CONFIG::LOGGING {
-                    // Log.info("SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
+                    // Log.info(this+" SN["+fragments[i-1].seqnum+"]:pts/duration:" + fragments[i-1].start_pts_computed + "/" + fragments[i-1].duration);
                     // }
                 }
 
@@ -391,7 +394,7 @@ package org.mangui.hls.model {
                 for (i = fragIdx; i < fragments.length - 1 && fragments[i + 1].continuity == frag.continuity; i++) {
                     _updatePTS(i, i + 1);
                     // CONFIG::LOGGING {
-                    // Log.info("SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
+                    // Log.info(this+" SN["+fragments[i+1].seqnum+"]:pts/duration:" + fragments[i+1].start_pts_computed + "/" + fragments[i+1].duration);
                     // }
                 }
 
@@ -402,14 +405,15 @@ package org.mangui.hls.model {
                     fragments[i].start_time = start_time_offset;
                     start_time_offset += fragments[i].duration;
                     // CONFIG::LOGGING {
-                    // Log.info("SN["+fragments[i].seqnum+"]:start_time/continuity/pts/duration:" + fragments[i].start_time + "/" + fragments[i].continuity + "/"+ fragments[i].start_pts_computed + "/" + fragments[i].duration);
+                    // Log.info(this+" SN["+fragments[i].seqnum+"]:start_time/continuity/pts/duration:" + fragments[i].start_time + "/" + fragments[i].continuity + "/"+ fragments[i].start_pts_computed + "/" + fragments[i].duration);
                     // }
                 }
                 duration = start_time_offset;
             } else {
                 CONFIG::LOGGING {
-                    Log.error("updateFragment:seqnum " + seqnum + " not found!");
+                    Log.error(this+" updateFragment:seqnum " + seqnum + " not found!");
                 }
+				dispatchEvent(new HLSEvent(HLSEvent.WARNING, new HLSError(HLSError.SEQUENCE_NOT_FOUND, "", "Sequence "+seqnum+" not found!")));
             }
         }
     }

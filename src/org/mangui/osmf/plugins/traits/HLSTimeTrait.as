@@ -17,7 +17,7 @@
 
         public function HLSTimeTrait(hls : HLS, duration : Number = 0) {
             CONFIG::LOGGING {
-            Log.debug("HLSTimeTrait()");
+            Log.debug(this+" HLSTimeTrait()");
             }
             super(duration);
             setCurrentTime(0);
@@ -28,7 +28,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSTimeTrait:dispose");
+            Log.debug(this+" HLSTimeTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);

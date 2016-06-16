@@ -14,7 +14,7 @@ package org.mangui.hls.utils {
             JS_METHODS[LEVEL_INFO] = 'info';
             JS_METHODS[LEVEL_DEBUG] = 'log';
             JS_METHODS[LEVEL_DEBUG_2] = 'debug';
-            JS_METHODS[LEVEL_WARN] = 'info';
+            JS_METHODS[LEVEL_WARN] = 'warn';
             JS_METHODS[LEVEL_ERROR] = 'error';
         }
         

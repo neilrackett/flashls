@@ -58,7 +58,7 @@ package org.mangui.hls.demux {
 
         public function notifycomplete() : void {
             CONFIG::LOGGING {
-                Log.debug("AAC: extracting AAC tags");
+                Log.debug("[AACDemuxer] AAC: extracting AAC tags");
             }
             var audioTags : Vector.<FLVTag> = new Vector.<FLVTag>();
             /* parse AAC, convert Elementary Streams to TAG */
@@ -97,7 +97,7 @@ package org.mangui.hls.demux {
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {
-                Log.debug("AAC: all tags extracted, callback demux");
+                Log.debug("[AACDemuxer] AAC: all tags extracted, callback demux");
             }
             _data = null;
             if(id3.tags.length) {
@@ -130,7 +130,7 @@ package org.mangui.hls.demux {
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
                         CONFIG::LOGGING {
-                            Log.debug2("AAC: found header " + short + "@ " + (data.position-2));
+                            Log.debug2("[AACDemuxer] AAC: found header " + short + "@ " + (data.position-2));
                         }
                         data.position = pos;
                         return true;
@@ -216,7 +216,7 @@ package org.mangui.hls.demux {
                     adts.position += frame_length + 1 + crc_len;
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug2("no ADTS header found, probing...");
+                        Log.debug2("[AACDemuxer] no ADTS header found, probing...");
                     }
                     adts.position--;
                 }
@@ -230,13 +230,13 @@ package org.mangui.hls.demux {
                 }
                 CONFIG::LOGGING {
                     if (overflow > 0) {
-                        Log.debug2("ADTS overflow at the end of PES packet, missing " + overflow + " bytes to complete the ADTS frame");
+                        Log.debug2("[AACDemuxer] ADTS overflow at the end of PES packet, missing " + overflow + " bytes to complete the ADTS frame");
                     }
                 }
             }
             CONFIG::LOGGING {
                 if (!frame_start && frames.length == 0) {
-                    Log.warn("No ADTS headers found in this stream.");
+                    Log.warn("[AACDemuxer] No ADTS headers found in this stream.");
                 }
             }
             adts.position = position;

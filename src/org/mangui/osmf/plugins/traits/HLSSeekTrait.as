@@ -17,7 +17,7 @@
 
         public function HLSSeekTrait(hls : HLS, timeTrait : TimeTrait) {
             CONFIG::LOGGING {
-            Log.debug("HLSSeekTrait()");
+            Log.debug(this+" HLSSeekTrait()");
             }
             super(timeTrait);
             _hls = hls;
@@ -26,7 +26,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSSeekTrait:dispose");
+            Log.debug(this+" HLSSeekTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
 			_hls = null;
@@ -42,7 +42,7 @@
         override protected function seekingChangeStart(newSeeking : Boolean, time : Number) : void {
             if (newSeeking) {
                 CONFIG::LOGGING {
-                Log.info("HLSSeekTrait:seekingChangeStart(newSeeking/time):(" + newSeeking + "/" + time + ")");
+                Log.info(this+" HLSSeekTrait:seekingChangeStart(newSeeking/time):(" + newSeeking + "/" + time + ")");
                 }
                 _hls.stream.seek(time);
             }
@@ -53,7 +53,7 @@
         private function _stateChangedHandler(event : HLSEvent) : void {
             if (seeking && event.state != HLSSeekStates.SEEKING) {
                 CONFIG::LOGGING {
-                Log.debug("HLSSeekTrait:setSeeking(false);");
+                Log.debug(this+" HLSSeekTrait:setSeeking(false);");
                 }
                 setSeeking(false, timeTrait.currentTime);
             }

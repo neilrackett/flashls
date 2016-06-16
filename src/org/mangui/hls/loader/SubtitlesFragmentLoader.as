@@ -66,7 +66,8 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
             _hls.addEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
             _hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-            
+			_hls.addEventListener(Event.CLOSE, closeHandler);
+
             _loader = new URLLoader();
             _loader.addEventListener(Event.COMPLETE, loader_completeHandler);
             _loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
@@ -75,7 +76,12 @@ package org.mangui.hls.loader {
 			// Alternative method of sequencing VOD subs until we work out why some streams f*** up 
 			_sequencer = new SubtitlesSequencer(hls);
         }
-        
+		
+		protected function closeHandler(event:Event):void
+		{
+			stop();
+		}
+		
         public function dispose():void {
             
             stop();
@@ -84,6 +90,7 @@ package org.mangui.hls.loader {
             _hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
             _hls.removeEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
             _hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+			_hls.removeEventListener(Event.CLOSE, closeHandler);
             _hls = null;
             
             _loader.removeEventListener(Event.COMPLETE, loader_completeHandler);
@@ -136,7 +143,7 @@ package org.mangui.hls.loader {
          */
         protected function subtitlesTrackSwitchHandler(event:HLSEvent):void {
             CONFIG::LOGGING {
-                Log.debug("Switching to subtitles track "+event.subtitlesTrack);
+                Log.debug(this+" Switching to subtitles track "+event.subtitlesTrack);
             }
             stop();
         }
@@ -295,7 +302,7 @@ package org.mangui.hls.loader {
         protected function toTags(subtitles:Vector.<Subtitle>):Vector.<FLVTag> {
             
             CONFIG::LOGGING {
-                Log.debug("Converting "+subtitles.length+" subtitles into tags");
+                Log.debug(this+" Converting "+subtitles.length+" subtitles into tags");
             }
             
             var subtitle:Subtitle;

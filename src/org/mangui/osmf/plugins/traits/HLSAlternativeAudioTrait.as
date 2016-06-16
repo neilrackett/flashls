@@ -31,7 +31,7 @@ package org.mangui.osmf.plugins.traits {
 		
         public function HLSAlternativeAudioTrait(hls : HLS, media : MediaElement) {
             CONFIG::LOGGING {
-            Log.debug("HLSAlternativeAudioTrait()");
+            Log.debug(this+" HLSAlternativeAudioTrait()");
             }
             _hls = hls;
             _audioTrackList = _hls.audioTracks;
@@ -44,7 +44,7 @@ package org.mangui.osmf.plugins.traits {
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSAlternativeAudioTrait:dispose");
+            Log.debug(this+" HLSAlternativeAudioTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
@@ -54,14 +54,14 @@ package org.mangui.osmf.plugins.traits {
 
         override public function get numAlternativeAudioStreams() : int {
             CONFIG::LOGGING {
-            Log.debug("HLSAlternativeAudioTrait:numAlternativeAudioStreams:" + _numAlternativeAudioStreams);
+            Log.debug(this+" HLSAlternativeAudioTrait:numAlternativeAudioStreams:" + _numAlternativeAudioStreams);
             }
             return _numAlternativeAudioStreams;
         }
 
         override public function getItemForIndex(index : int) : StreamingItem {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:getItemForIndex(" + index + ")");
+            Log.debug(this+" HLSDynamicStreamTrait:getItemForIndex(" + index + ")");
             }
             if (index <= INVALID_TRANSITION_INDEX || index >= numAlternativeAudioStreams) {
                 throw new RangeError(OSMFStrings.getString(OSMFStrings.ALTERNATIVEAUDIO_INVALID_INDEX));
@@ -78,7 +78,7 @@ package org.mangui.osmf.plugins.traits {
 
         override protected function endSwitching(index : int) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:endSwitching(" + index + ")");
+            Log.debug(this+" HLSDynamicStreamTrait:endSwitching(" + index + ")");
             }
             if (switching) {
                 executeSwitching(_indexToSwitchTo);
@@ -88,7 +88,7 @@ package org.mangui.osmf.plugins.traits {
 
         protected function executeSwitching(indexToSwitchTo : int) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:executeSwitching(" + indexToSwitchTo + ")");
+            Log.debug(this+" HLSDynamicStreamTrait:executeSwitching(" + indexToSwitchTo + ")");
             }
             if (_lastTransitionIndex != indexToSwitchTo) {
 				_activeTransitionIndex = indexToSwitchTo;
@@ -98,7 +98,7 @@ package org.mangui.osmf.plugins.traits {
 
         private function _audioTrackChangedHandler(event : HLSEvent) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:_audioTrackChangedHandler");
+            Log.debug(this+" HLSDynamicStreamTrait:_audioTrackChangedHandler");
             }
             setSwitching(false, _activeTransitionIndex);
             _lastTransitionIndex = _activeTransitionIndex;
@@ -106,14 +106,14 @@ package org.mangui.osmf.plugins.traits {
 
         private function _audioTrackListChangedHandler(event : HLSEvent) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:_audioTrackListChangedHandler");
+            Log.debug(this+" HLSDynamicStreamTrait:_audioTrackListChangedHandler");
             }
             _audioTrackList = _hls.audioTracks;
             if (_audioTrackList.length > 0) {
                 // try to change default Audio Track Title for GrindPlayer ...
                 if (_audioTrackList[0].title.indexOf("TS/") == -1) {
                     CONFIG::LOGGING {
-                    Log.debug("default audio track title:" + _audioTrackList[0].title);
+                    Log.debug(this+" default audio track title:" + _audioTrackList[0].title);
                     }
                     _media.resource.addMetadataValue("defaultAudioLabel", _audioTrackList[0].title);
                 }

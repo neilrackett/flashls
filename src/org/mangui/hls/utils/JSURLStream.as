@@ -47,7 +47,7 @@ package org.mangui.hls.utils {
             // Connect calls to JS.
             if (ExternalInterface.available) {
                 CONFIG::LOGGING {
-                    Log.debug("add callback resourceLoaded, id:" + _instanceCount);
+                    Log.debug(this+" add callback resourceLoaded, id:" + _instanceCount);
                 }
                 _callbackLoaded = "resourceLoaded" + _instanceCount;
                 _callbackFailure = "resourceLoadingError" + _instanceCount;
@@ -104,7 +104,7 @@ package org.mangui.hls.utils {
 
         override public function load(request : URLRequest) : void {
             CONFIG::LOGGING {
-            Log.debug("JSURLStream.load: " + request.url);
+            Log.debug(this+" JSURLStream.load: " + request.url);
             }
             if (ExternalInterface.available) {
                 _trigger('requestFragment', ExternalInterface.objectID, request.url, _callbackLoaded, _callbackFailure);
@@ -120,7 +120,7 @@ package org.mangui.hls.utils {
 
         protected function resourceLoaded(base64Resource : String, len : uint) : void {
             CONFIG::LOGGING {
-              Log.debug("resourceLoaded");
+              Log.debug(this+" resourceLoaded");
             }
             _resource = new ByteArray();
             _readPosition = 0;
@@ -133,7 +133,7 @@ package org.mangui.hls.utils {
 
         protected function resourceLoadingError() : void {
             CONFIG::LOGGING {
-            Log.debug("resourceLoadingError");
+            Log.debug(this+" resourceLoadingError");
             }
             if(_timer) {
                 _timer.stop();
@@ -143,7 +143,7 @@ package org.mangui.hls.utils {
 
         protected function resourceLoadingSuccess() : void {
             CONFIG::LOGGING {
-            Log.debug("resourceLoaded and decoded");
+            Log.debug(this+" resourceLoaded and decoded");
             }
          _timer.stop();
          this.dispatchEvent(new Event(Event.COMPLETE));

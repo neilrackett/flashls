@@ -43,7 +43,7 @@
                     var prf : int = sps.readByte();
                     sps.position = 3;
                     var lvl : int = sps.readByte();
-                    Log.debug("AVC: " + PROFILES[prf] + ' level ' + lvl);
+                    Log.debug("[AVC] " + PROFILES[prf] + ' level ' + lvl);
                 }
             }
             avcc.position = 0;

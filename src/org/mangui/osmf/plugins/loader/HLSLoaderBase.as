@@ -146,7 +146,7 @@
             var errorCode : int = ErrorManager.getMediaErrorCode(event);
             var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
             CONFIG::LOGGING {
-            Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
+            Log.warn(this+" HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
             }
             updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
             _loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(errorCode, errorMsg)));

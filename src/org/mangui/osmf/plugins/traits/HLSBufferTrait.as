@@ -16,7 +16,7 @@
 		
         public function HLSBufferTrait(hls : HLS) {
             CONFIG::LOGGING {
-            Log.debug("HLSBufferTrait()");
+            Log.debug(this+" HLSBufferTrait()");
             }
             super();
             _hls = hls;
@@ -26,7 +26,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSBufferTrait:dispose");
+            Log.debug(this+" HLSBufferTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
 			_hls = null;
@@ -53,13 +53,13 @@
 				case HLSPlayStates.PLAYING_BUFFERING:
 				case HLSPlayStates.PAUSED_BUFFERING:
 					CONFIG::LOGGING {
-					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
+					Log.debug(this+" HLSBufferTrait:_stateChangedHandler:setBuffering(true)");
 					}
 					setBuffering(true);
 					break;
 				default:
 					CONFIG::LOGGING {
-					Log.debug("HLSBufferTrait:_stateChangedHandler:setBuffering(false)");
+					Log.debug(this+" HLSBufferTrait:_stateChangedHandler:setBuffering(false)");
 					}
 					setBuffering(false);
 					break;

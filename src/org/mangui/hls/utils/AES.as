@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.utils {
-    import flash.display.DisplayObject;
+    import flash.display.Stage;
     import flash.events.Event;
     import flash.utils.ByteArray;
     import flash.utils.getTimer;
@@ -36,9 +36,9 @@
         /** is bytearray full ? **/
         private var _dataComplete : Boolean;
         /** display object used for ENTER_FRAME listener */
-        private var _displayObject : DisplayObject;
+        private var _stage : Stage;
 
-        public function AES(displayObject : DisplayObject, key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
+        public function AES(stage : Stage, key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
             // _keyArray = key;
             _key = new FastAESKey(key);
             iv.position = 0;
@@ -52,34 +52,37 @@
             _complete = notifycomplete;
             _readPosition = 0;
             _writePosition = 0;
-            _displayObject = displayObject;
+            _stage = stage;
         }
 
         public function append(data : ByteArray) : void {
             // CONFIG::LOGGING {
-            // Log.info("notify append");
+            // Log.info(this+" notify append");
             // }
             _data.position = _writePosition;
             _data.writeBytes(data);
             if (_writePosition == 0) {
-                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer);
+                _stage.addEventListener(Event.ENTER_FRAME, _decryptTimer);
             }
             _writePosition += data.length;
         }
 
         public function notifycomplete() : void {
             // CONFIG::LOGGING {
-            // Log.info("notify complete");
+            // Log.info(this+" notify complete");
             // }
             _dataComplete = true;
         }
 
         public function cancel() : void {
-            _displayObject.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
+            _stage.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
         }
 
         private function _decryptTimer(e : Event) : void {
             var start_time : int = getTimer();
+			// Limit the amount of time available per frame for decryption
+			// For example, at 60fps we have 1000/60 = 16.6ms budget total per frame
+			var max_time : uint = 1000/_stage.frameRate / 4;
             var decrypted : Boolean;
             do {
                 try {
@@ -91,9 +94,7 @@
                     }
                     decrypted = false; 
                 }
-            // dont spend more than 10ms in the decrypt timer to avoid blocking/freezing video
-            // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
-            } while (decrypted && getTimer()-start_time < 10);
+            } while (decrypted && getTimer()-start_time < max_time);
 //			CONFIG::LOGGING {
 //				Log.debug(this+" Decryption took "+(getTimer()-start_time)+"ms using "+CHUNK_SIZE+" byte chunks");
 //			}
@@ -107,7 +108,7 @@
                 if (_data.bytesAvailable <= CHUNK_SIZE) {
                     if (_dataComplete) {
                         // CONFIG::LOGGING {
-                        // Log.info("data complete, last chunk");
+                        // Log.info(this+" data complete, last chunk");
                         // }
                         _readPosition += _data.bytesAvailable;
                         decryptdata = _decryptCBC(_data, _data.bytesAvailable);
@@ -125,11 +126,11 @@
             } else {
                 if (_dataComplete) {
                     CONFIG::LOGGING {
-                        Log.debug("AES:data+decrypt completed, callback");
+                        Log.debug(this+" AES:data+decrypt completed, callback");
                     }
                     // callback
                     _complete();
-                    _displayObject.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
+                    _stage.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
                 }
                 return false;
             }

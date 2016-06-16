@@ -16,7 +16,7 @@
 
         public function HLSDynamicStreamTrait(hls : HLS) {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait()");
+            Log.debug(this+" HLSDynamicStreamTrait()");
             }
             _hls = hls;
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
@@ -25,7 +25,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:dispose");
+            Log.debug(this+" HLSDynamicStreamTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
 			_hls = null;
@@ -38,14 +38,14 @@
             }
             var bitrate : Number = _hls.levels[index].bitrate / 1000;
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:getBitrateForIndex(" + index + ")=" + bitrate);
+            Log.debug(this+" HLSDynamicStreamTrait:getBitrateForIndex(" + index + ")=" + bitrate);
             }
             return bitrate;
         }
 
         override public function switchTo(index : int) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:switchTo(" + index + ")/max:" + maxAllowedIndex);
+            Log.debug(this+" HLSDynamicStreamTrait:switchTo(" + index + ")/max:" + maxAllowedIndex);
             }
             if (index < 0 || index > maxAllowedIndex) {
                 throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
@@ -58,7 +58,7 @@
 
         override protected function autoSwitchChangeStart(value : Boolean) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:" + value);
+            Log.debug(this+" HLSDynamicStreamTrait:autoSwitchChangeStart:" + value);
             }
             if (value == true && _hls.autoLevel == false) {
                 _hls.nextLevel = -1;
@@ -67,7 +67,7 @@
 
         override protected function switchingChangeStart(newSwitching : Boolean, index : int) : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):" + newSwitching + "/" + index);
+            Log.debug(this+" HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):" + newSwitching + "/" + index);
             }
             if (newSwitching) {
                 _hls.currentLevel = index;
@@ -78,7 +78,7 @@
         private function _levelSwitchHandler(event : HLSEvent) : void {
             var newLevel : int = event.level;
             CONFIG::LOGGING {
-            Log.debug("HLSDynamicStreamTrait:_qualitySwitchHandler:" + newLevel);
+            Log.debug(this+" HLSDynamicStreamTrait:_qualitySwitchHandler:" + newLevel);
             }
             setCurrentIndex(newLevel);
             setSwitching(false, newLevel);

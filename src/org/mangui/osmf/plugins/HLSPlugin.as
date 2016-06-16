@@ -32,7 +32,7 @@
          */
         override public function initializePlugin(resource : MediaResourceBase) : void {
             CONFIG::LOGGING {
-            Log.debug("OSMF HLSPlugin init");
+            Log.debug(this+" OSMF HLSPlugin init");
             }
             metadataParamsToHLSSettings(resource);
         }

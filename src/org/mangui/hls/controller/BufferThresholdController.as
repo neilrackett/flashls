@@ -5,7 +5,6 @@ package org.mangui.hls.controller {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
-    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
 
@@ -79,7 +78,7 @@ package org.mangui.hls.controller {
                 }
 
                 CONFIG::LOGGING {
-                    Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
+                    Log.debug2(this+" AutoBufferController:minBufferLength:" + _minBufferLength);
                 }
             }
         }

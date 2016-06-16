@@ -19,6 +19,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.constant.HLSAltAudioSwitchMode;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.controller.BufferThresholdController;
     import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.event.HLSError;
@@ -84,6 +85,8 @@ package org.mangui.hls.stream {
         private var _playMetrics : HLSPlayMetrics;
         /** Is this the first time the stream has been resumed after buffering? */
         private var _isReady : Boolean;
+		/** Can we currently seek? */
+		private var _canSeek : Boolean = false;
 		
         public var autoPlay:Boolean = true;
         
@@ -95,6 +98,7 @@ package org.mangui.hls.stream {
             super.bufferTime = 0.1;
             _hls = hls;
 			_hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitch);
+			_hls.addEventListener(HLSEvent.FPS_DROP, _fpsDrop);
             _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
@@ -122,6 +126,17 @@ package org.mangui.hls.stream {
 				$pause();
 				_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
 				_setSeekState(HLSSeekStates.SEEKING);
+			}
+		}
+		
+		protected function _fpsDrop(event:HLSEvent):void
+		{
+			// NEIL: If we're dropping frames, see if we can nudge it back into action
+			if (HLSSettings.fpsDroppedNudgeEnabled && _hls.playbackState == HLSPlayStates.PLAYING) {
+				CONFIG::LOGGING {
+					Log.warn(this+" *** TOO MANY FRAMES DROPPED at "+_hls.position.toFixed(1)+"! ***");
+				}
+				seek(_hls.position+1.5);
 			}
 		}
 		
@@ -158,7 +173,7 @@ package org.mangui.hls.stream {
         
         protected function onHLSFragmentSkipped(level : int, seqnum : int,duration : Number) : void {
             CONFIG::LOGGING {
-                Log.warn("skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
+                Log.warn(this+" skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
             }
             _skippedDuration+=duration;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_SKIPPED, duration));
@@ -234,7 +249,7 @@ package org.mangui.hls.stream {
                         } else {
                             // live loading stalled : flush buffer and restart playback
                             CONFIG::LOGGING {
-                                Log.warn("loading stalled: restart playback");
+                                Log.warn(this+" loading stalled: restart playback");
                             }
                             // flush whole buffer before seeking
                             _streamBuffer.flushBuffer();
@@ -446,8 +461,9 @@ package org.mangui.hls.stream {
                 _playStart = -1;
             }
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:play(" + _playStart + ")");
+                Log.info(this+" HLSNetStream:play(" + _playStart + ")");
             }
+			_canSeek = true;
             _isReady = false;
             seek(_playStart);
             _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -455,8 +471,9 @@ package org.mangui.hls.stream {
         
         override public function play2(param : NetStreamPlayOptions) : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:play2(" + param.start + ")");
+                Log.info(this+" HLSNetStream:play2(" + param.start + ")");
             }
+			_canSeek = true;
             _isReady = false;
             seek(param.start);
 			_setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -465,9 +482,16 @@ package org.mangui.hls.stream {
         /** Pause playback. **/
         override public function pause() : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:pause");
+                Log.info(this+" HLSNetStream:pause");
             }
-            if (_playbackState == HLSPlayStates.PLAYING) {
+            if (HLSSettings.liveStopLoadingOnPause && (_playbackState == HLSPlayStates.PLAYING || (_playbackState == HLSPlayStates.PLAYING_BUFFERING && _hls.type == HLSTypes.LIVE))) {
+				super.pause();
+				_watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
+				_streamBuffer.stop();
+				_timer.stop();
+				_setPlaybackState(HLSPlayStates.IDLE);
+				_setSeekState(HLSSeekStates.IDLE);
+			} else if (_playbackState == HLSPlayStates.PLAYING) {
                 super.pause();
                 _setPlaybackState(HLSPlayStates.PAUSED);
             } else if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
@@ -479,15 +503,15 @@ package org.mangui.hls.stream {
         /** Resume playback. **/
         override public function resume() : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:resume");
+                Log.info(this+" HLSNetStream:resume");
             }
             if (_playbackState == HLSPlayStates.PAUSED) {
-                super.resume();
-                _setPlaybackState(HLSPlayStates.PLAYING);
+               	_setPlaybackState(HLSPlayStates.PLAYING);
             } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
                 // dont resume NetStream here, it will be resumed by Timer. this avoids resuming playback while seeking is in progress
                 _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
             }
+			if (_canSeek) _timer.start();
         }
 
         /** get Buffer Length  **/
@@ -515,8 +539,12 @@ package org.mangui.hls.stream {
 		
 		public function seek2(position : Number, forceReload : Boolean = false) : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:seek2("+position+", "+forceReload+")");
+                Log.info(this+" HLSNetStream:seek2("+position+", "+forceReload+")");
             }
+			// NEIL: Prevents OSMF continuing to fill the buffer after close()
+			if (!_canSeek || (_hls.type == HLSTypes.LIVE && _playbackState == HLSPlayStates.PAUSED)) {
+				return;
+			}
 			_streamBuffer.seek(position, forceReload);
             _setSeekState(HLSSeekStates.SEEKING);
 			switch(_playbackState) {
@@ -550,14 +578,16 @@ package org.mangui.hls.stream {
         /** Stop playback. **/
         override public function close() : void {
             CONFIG::LOGGING {
-                Log.info("HLSNetStream:close");
+                Log.info(this+" HLSNetStream:close");
             }
             super.close();
+			_canSeek = false;
             _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
             _setSeekState(HLSSeekStates.IDLE);
+			_hls.dispatchEvent(new Event(Event.CLOSE));
         }
 		
 		public function get bufferThresholdController() : BufferThresholdController {

@@ -91,18 +91,26 @@ package org.mangui.hls.loader {
         /** Create the loader. **/
         public function AltAudioFragmentLoader(hls : HLS, streamBuffer : StreamBuffer) : void {
             _hls = hls;
+			_hls.addEventListener(Event.CLOSE, closeHandler);
             _streamBuffer = streamBuffer;
-            _timer = new Timer(20, 0);
+            _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loadingState = LOADING_STOPPED;
             _keymap = new Object();
-        };
+		}
+		
+		protected function closeHandler(event:Event):void
+		{
+			stop();
+		}
 
         public function dispose() : void {
             stop();
             _timer.removeEventListener(TimerEvent.TIMER, _checkLoading);
             _loadingState = LOADING_STOPPED;
             _keymap = new Object();
+			_hls.removeEventListener(Event.CLOSE, closeHandler);
+			_hls = null;
         }
 		
         /** update state and level in case of audio level loaded event **/
@@ -141,7 +149,7 @@ package org.mangui.hls.loader {
                     } else {
                         // playlist not yet received
                         CONFIG::LOGGING {
-                            Log.debug("_checkLoading : playlist not received for audio level:" + _hls.audioTrack);
+                            Log.debug(this+" _checkLoading : playlist not received for audio level:" + _hls.audioTrack);
                         }
                         _loadingState = LOADING_WAITING_LEVEL_UPDATE;
                     }
@@ -153,7 +161,7 @@ package org.mangui.hls.loader {
                     - after long pause
                     */
                     CONFIG::LOGGING {
-                        Log.warn("loading stalled:stop fragment loading");
+                        Log.warn(this+" loading stalled:stop fragment loading");
                     }
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.LIVE_LOADING_STALLED));
                     stop();
@@ -184,7 +192,7 @@ package org.mangui.hls.loader {
                     break;
                 default:
                     CONFIG::LOGGING {
-                        Log.error("invalid audio loading state:" + _loadingState);
+                        Log.error(this+" invalid audio loading state:" + _loadingState);
                     }
                     break;
             }
@@ -208,7 +216,7 @@ package org.mangui.hls.loader {
             if (_loadingState == LOADING_IDLE)
                 return;
             CONFIG::LOGGING {
-                Log.debug("key loading completed");
+                Log.debug(this+" key loading completed");
             }
             var hlsError : HLSError;
             // Collect key data
@@ -243,13 +251,13 @@ package org.mangui.hls.loader {
 
         private function _keyhandleIOError(message : String) : void {
             CONFIG::LOGGING {
-                Log.error("I/O Error while loading key:" + message);
+                Log.error(this+" I/O Error while loading key:" + message);
             }
             if (HLSSettings.keyLoadMaxRetry == -1 || _keyRetryCount < HLSSettings.keyLoadMaxRetry) {
                 _loadingState = LOADING_KEY_IO_ERROR;
                 _keyLoadErrorDate = getTimer() + _keyRetryTimeout;
                 CONFIG::LOGGING {
-                    Log.warn("retry key load in " + _keyRetryTimeout + " ms, count=" + _keyRetryCount);
+                    Log.warn(this+" retry key load in " + _keyRetryTimeout + " ms, count=" + _keyRetryCount);
                 }
                 /* exponential increase of retry timeout, capped to keyLoadMaxRetryTimeout */
                 _keyRetryCount++;
@@ -274,13 +282,13 @@ package org.mangui.hls.loader {
             we need to report it.
              */
             CONFIG::LOGGING {
-                Log.error("I/O Error while loading fragment:" + message);
+                Log.error(this+" I/O Error while loading fragment:" + message);
             }
             if (HLSSettings.fragmentLoadMaxRetry == -1 || _fragRetryCount < HLSSettings.fragmentLoadMaxRetry) {
                 _loadingState = LOADING_FRAGMENT_IO_ERROR;
                 _fragLoadErrorDate = getTimer() + _fragRetryTimeout;
                 CONFIG::LOGGING {
-                    Log.warn("retry fragment load in " + _fragRetryTimeout + " ms, count=" + _fragRetryCount);
+                    Log.warn(this+" retry fragment load in " + _fragRetryTimeout + " ms, count=" + _fragRetryCount);
                 }
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                 _fragRetryCount++;
@@ -294,14 +302,14 @@ package org.mangui.hls.loader {
                         _loadingState = LOADING_FRAGMENT_IO_ERROR;
                         _fragLoadErrorDate = getTimer() + _fragRetryTimeout;
                         CONFIG::LOGGING {
-                            Log.warn("max load retry reached on last fragment of live playlist, retrying loading this one...");
+                            Log.warn(this+" max load retry reached on last fragment of live playlist, retrying loading this one...");
                         }
                         /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                         _fragRetryCount++;
                         _fragRetryTimeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _fragRetryTimeout);
                     } else {
                         CONFIG::LOGGING {
-                            Log.warn("max fragment load retry reached, skip fragment and load next one");
+                            Log.warn(this+" max fragment load retry reached, skip fragment and load next one");
                         }
                         _fragRetryCount = 0;
                         _fragRetryTimeout = 1000;
@@ -334,7 +342,7 @@ package org.mangui.hls.loader {
                     _metrics.decryption_begin_time = getTimer();
                     fragData.decryptAES = new AES(_hls.stage, _keymap[_fragCurrent.decrypt_url], _fragCurrent.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
-                        Log.debug("init AES context");
+                        Log.debug(this+" init AES context");
                     }
                 } else {
                     fragData.decryptAES = null;
@@ -346,7 +354,7 @@ package org.mangui.hls.loader {
                 _fragstreamloader.readBytes(data);
                 fragData.bytesLoaded += data.length;
                 // CONFIG::LOGGING {
-                // Log.debug2("bytesLoaded/bytesTotal:" + event.bytesLoaded + "/" + event.bytesTotal);
+                // Log.debug2(this+" bytesLoaded/bytesTotal:" + event.bytesLoaded + "/" + event.bytesTotal);
                 // }
                 if (fragData.decryptAES != null) {
                     fragData.decryptAES.append(data);
@@ -364,21 +372,21 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _fragCurrent.data;
             if (fragData.bytes == null) {
                 CONFIG::LOGGING {
-                    Log.warn("fragment size is null, invalid it and load next one");
+                    Log.warn(this+" fragment size is null, invalid it and load next one");
                 }
                 _level.updateFragment(_fragCurrent.seqnum, false);
                 _loadingState = LOADING_IDLE;
                 return;
             }
             CONFIG::LOGGING {
-                Log.debug("loading completed");
+                Log.debug(this+" loading completed");
             }
             _metrics.loading_end_time = getTimer();
             _metrics.size = fragData.bytesLoaded;
 
             var _loading_duration : uint = _metrics.loading_end_time - _metrics.loading_request_time;
             CONFIG::LOGGING {
-                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (_metrics.loading_begin_time - _metrics.loading_request_time) + "/" + _metrics.size + "/" + Math.round((8000 * _metrics.size / _loading_duration) / 1024) + " kb/s");
+                Log.debug(this+" Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (_metrics.loading_begin_time - _metrics.loading_request_time) + "/" + _metrics.size + "/" + Math.round((8000 * _metrics.size / _loading_duration) / 1024) + " kb/s");
             }
             if (fragData.decryptAES) {
                 fragData.decryptAES.notifycomplete();
@@ -428,7 +436,7 @@ package org.mangui.hls.loader {
                 _metrics.decryption_end_time = getTimer();
                 var decrypt_duration : Number = _metrics.decryption_end_time - _metrics.decryption_begin_time;
                 CONFIG::LOGGING {
-                    Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + Math.round((8000 * fragData.bytesLoaded / decrypt_duration) / 1024) + " kb/s");
+                    Log.debug(this+" Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + Math.round((8000 * fragData.bytesLoaded / decrypt_duration) / 1024) + " kb/s");
                 }
                 fragData.decryptAES = null;
             }
@@ -436,7 +444,7 @@ package org.mangui.hls.loader {
             // deal with byte range here
             if (_fragCurrent.byterange_start_offset != -1) {
                 CONFIG::LOGGING {
-                    Log.debug("trim byte range, start/end offset:" + _fragCurrent.byterange_start_offset + "/" + _fragCurrent.byterange_end_offset);
+                    Log.debug(this+" trim byte range, start/end offset:" + _fragCurrent.byterange_start_offset + "/" + _fragCurrent.byterange_end_offset);
                 }
                 var bytes : ByteArray = new ByteArray();
                 fragData.bytes.position = _fragCurrent.byterange_start_offset;
@@ -450,12 +458,12 @@ package org.mangui.hls.loader {
 
             if (_demux == null) {
                 CONFIG::LOGGING {
-                    Log.error("unknown audio fragment type");
+                    Log.error(this+" unknown audio fragment type");
                     if (HLSSettings.logDebug2) {
                         fragData.bytes.position = 0;
                         var bytes2 : ByteArray = new ByteArray();
                         fragData.bytes.readBytes(bytes2, 0, 512);
-                        Log.debug2("frag dump(512 bytes)");
+                        Log.debug2(this+" frag dump(512 bytes)");
                         Log.debug2(Hex.fromArray(bytes2));
                     }
                 }
@@ -529,7 +537,7 @@ package org.mangui.hls.loader {
             var frag : Fragment = _level.getFragmentBeforePosition(position-_level.averageduration);
             _hasDiscontinuity = true;
             CONFIG::LOGGING {
-                Log.debug("Loading       " + frag.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+                Log.debug(this+" Loading       " + frag.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
             }
             _loadfragment(frag);
             return LOADING_IN_PROGRESS;
@@ -538,7 +546,7 @@ package org.mangui.hls.loader {
         /** Load a fragment **/
         private function _loadnextfragment(frag_previous : Fragment) : int {
             CONFIG::LOGGING {
-                Log.debug("loadnextaudiofragment()");
+                Log.debug(this+" loadnextaudiofragment()");
             }
             var new_seqnum : Number;
             var last_seqnum : Number = -1;
@@ -565,14 +573,14 @@ package org.mangui.hls.loader {
             frag = _level.getFragmentfromSeqNum(new_seqnum);
             if (frag == null) {
                 CONFIG::LOGGING {
-                    Log.warn("error trying to load audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+                    Log.warn(this+" error trying to load audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
                 }
                 return LOADING_WAITING_LEVEL_UPDATE;
             } else {
               // check whether there is a discontinuity between last segment and new segment
               _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
                 CONFIG::LOGGING {
-                    Log.debug("Loading audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+                    Log.debug(this+" Loading audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
                 }
                 _loadfragment(frag);
                 return LOADING_IN_PROGRESS;
@@ -608,7 +616,7 @@ package org.mangui.hls.loader {
                 if (_keymap[frag.decrypt_url] == undefined) {
                     // load key
                     CONFIG::LOGGING {
-                        Log.debug("loading key:" + frag.decrypt_url);
+                        Log.debug(this+" loading key:" + frag.decrypt_url);
                     }
                     _keystreamloader.load(new URLRequest(frag.decrypt_url));
                     return;
@@ -617,7 +625,7 @@ package org.mangui.hls.loader {
             try {
                 frag.data.bytes = null;
                 CONFIG::LOGGING {
-                    Log.debug("loading fragment:" + frag.url);
+                    Log.debug(this+" loading fragment:" + frag.url);
                 }
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
                 _fragstreamloader.load(new URLRequest(frag.url));
@@ -674,17 +682,17 @@ package org.mangui.hls.loader {
             }
             CONFIG::LOGGING {
                 if (fragData.audio_found) {
-                    Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
+                    Log.debug(this+" m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }
             }
             // Calculate bandwidth
             _metrics.parsing_end_time = getTimer();
             CONFIG::LOGGING {
-                Log.debug("Total Process duration/length/bw:" + _metrics.processing_duration + "/" + _metrics.size + "/" + Math.round(_metrics.bandwidth / 1024) + " kb/s");
+                Log.debug(this+" Total Process duration/length/bw:" + _metrics.processing_duration + "/" + _metrics.size + "/" + Math.round(_metrics.bandwidth / 1024) + " kb/s");
             }
             try {
                 CONFIG::LOGGING {
-                    Log.debug("Loaded        " + _fragCurrent.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "],audio track " + _hls.audioTrack + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
+                    Log.debug(this+" Loaded        " + _fragCurrent.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "],audio track " + _hls.audioTrack + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
                 _level.updateFragment(_fragCurrent.seqnum, true, fragData.pts_min, fragData.pts_max + fragData.tag_duration);
                 // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist

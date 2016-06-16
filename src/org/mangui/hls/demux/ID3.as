@@ -34,7 +34,7 @@
                         tagSize = (byte1 << 21) + (byte2 << 14) + (byte3 << 7) + byte4;
                         var endPos : uint = data.position + tagSize;
                         CONFIG::LOGGING {
-                        Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + endPos);
+                        Log.debug2(this+" ID3 tag found, size/end pos:" + tagSize + "/" + endPos);
                         }
                         // read ID3 tags
                         _parseID3Frames(data, endPos);
@@ -43,16 +43,16 @@
                         // http://id3.org/id3v2.4.0-structure chapter 3.4.   ID3v2 footer
                         data.position += 7;
                         CONFIG::LOGGING {
-                            Log.debug2("3DI footer found, end pos:" + data.position);
+                            Log.debug2(this+" 3DI footer found, end pos:" + data.position);
                         }
                     } else {
                         data.position -= 3;
                         len = data.position - pos;
                         CONFIG::LOGGING {
                             if (len) {
-                                Log.debug2("ID3 len:" + len);
+                                Log.debug2(this+" ID3 len:" + len);
                                 if (!hasTimestamp) {
-                                    Log.warn("ID3 tag found, but no timestamp");
+                                    Log.warn(this+" ID3 tag found, but no timestamp");
                                 }
                             }
                         }
@@ -80,7 +80,7 @@
                 var tag_flags : int = data.readUnsignedShort();
 
                 CONFIG::LOGGING {
-                    Log.debug("ID3 tag id:" + tag_id);
+                    Log.debug(this+" ID3 tag id:" + tag_id);
                 }
                 switch(tag_id) {
                     case "PRIV":
@@ -98,7 +98,7 @@
                             }
                             timestamp = Math.round(timestamp);
                             CONFIG::LOGGING {
-                                Log.debug("ID3 timestamp found:" + timestamp);
+                                Log.debug(this+" ID3 timestamp found:" + timestamp);
                             }
                         }
                         break;
@@ -125,7 +125,7 @@
                             }
                             data.position = end_tag_pos;
                             CONFIG::LOGGING {
-                                Log.debug2("id/data:" + tag_id + "/" + tag_data);
+                                Log.debug2(this+" id/data:" + tag_id + "/" + tag_data);
                             }
                         } else {
                             base64 = true;

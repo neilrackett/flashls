@@ -59,14 +59,14 @@ package org.mangui.flowplayer {
 
         public function onConfig(model : PluginModel) : void {
             CONFIG::LOGGING {
-                Log.info("onConfig()");
+                Log.info(this+" onConfig()");
             }
             _model = model;
         }
 
         public function onLoad(player : Flowplayer) : void {
             CONFIG::LOGGING {
-                Log.info("onLoad()");
+                Log.info(this+" onLoad()");
             }
             Security.allowDomain("*");
             _player = player;
@@ -173,7 +173,7 @@ package org.mangui.flowplayer {
                 var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
                 if (changed) {
                     CONFIG::LOGGING {
-                        Log.info("video size changed to " + videoWidth + "/" + videoHeight);
+                        Log.info(this+" video size changed to " + videoWidth + "/" + videoHeight);
                     }
                     _videoWidth = videoWidth;
                     _videoHeight = videoHeight;
@@ -223,7 +223,7 @@ package org.mangui.flowplayer {
         public function load(event : ClipEvent, clip : Clip, pauseAfterStart : Boolean = true) : void {
             _clip = clip;
             CONFIG::LOGGING {
-                Log.info("load()" + clip.completeUrl);
+                Log.info(this+" load()" + clip.completeUrl);
             }
             _hls.load(clip.completeUrl);
             _pauseAfterStart = pauseAfterStart;
@@ -243,12 +243,12 @@ package org.mangui.flowplayer {
          */
         public function getVideo(clip : Clip) : DisplayObject {
             CONFIG::LOGGING {
-                Log.debug("getVideo()");
+                Log.debug(this+" getVideo()");
             }
             if (_video == null) {
                 if (clip.useStageVideo) {
                     CONFIG::LOGGING {
-                        Log.debug("useStageVideo");
+                        Log.debug(this+" useStageVideo");
                     }
                     _video = new StageVideoWrapper(clip);
                 } else {
@@ -266,7 +266,7 @@ package org.mangui.flowplayer {
          */
         public function attachStream(video : DisplayObject) : void {
             CONFIG::LOGGING {
-                Log.debug("attachStream()");
+                Log.debug(this+" attachStream()");
             }
             if(_streamAttached == false) {
                 Video(video).attachNetStream(_hls.stream);
@@ -281,7 +281,7 @@ package org.mangui.flowplayer {
          */
         public function pause(event : ClipEvent) : void {
             CONFIG::LOGGING {
-                Log.info("pause()");
+                Log.info(this+" pause()");
             }
             _hls.stream.pause();
             if (event) {
@@ -296,7 +296,7 @@ package org.mangui.flowplayer {
          */
         public function resume(event : ClipEvent) : void {
             CONFIG::LOGGING {
-                Log.info("resume()");
+                Log.info(this+" resume()");
             }
             _hls.stream.resume();
             if (event) {
@@ -311,7 +311,7 @@ package org.mangui.flowplayer {
          */
         public function stop(event : ClipEvent, closeStream : Boolean = false) : void {
             CONFIG::LOGGING {
-                Log.info("stop()");
+                Log.info(this+" stop()");
             }
             _hls.stream.close();
             return;
@@ -324,14 +324,14 @@ package org.mangui.flowplayer {
          */
         public function seek(event : ClipEvent, seconds : Number) : void {
             CONFIG::LOGGING {
-                Log.info("seek(" + seconds + ")");
+                Log.info(this+" seek(" + seconds + ")");
             }
             if (Math.abs(time - seconds) > 0.2) {
                 // real seek position : add clip.start offset
                 _hls.stream.seek(seconds + _clipStart);
             } else {
                 CONFIG::LOGGING {
-                    Log.warn("seek(" + seconds + ") to current position, discard");
+                    Log.warn(this+" seek(" + seconds + ") to current position, discard");
                 }
             }
             if (event) {
@@ -386,7 +386,7 @@ package org.mangui.flowplayer {
          */
         public function get allowRandomSeek() : Boolean {
             // CONFIG::LOGGING {
-            // Log.info("allowRandomSeek()");
+            // Log.info(this+" allowRandomSeek()");
             // }
             return _seekable;
         }
@@ -407,7 +407,7 @@ package org.mangui.flowplayer {
          */
         public function get stopping() : Boolean {
             CONFIG::LOGGING {
-                Log.info("stopping()");
+                Log.info(this+" stopping()");
             }
             return false;
         }
@@ -417,7 +417,7 @@ package org.mangui.flowplayer {
          */
         public function set playlist(playlist : Playlist) : void {
             // CONFIG::LOGGING {
-            // Log.debug("set playlist()");
+            // Log.debug(this+" set playlist()");
             // }
             _playlist = playlist;
             return;
@@ -425,7 +425,7 @@ package org.mangui.flowplayer {
 
         public function get playlist() : Playlist {
             CONFIG::LOGGING {
-                Log.debug("get playlist()");
+                Log.debug(this+" get playlist()");
             }
             return _playlist;
         }
@@ -440,7 +440,7 @@ package org.mangui.flowplayer {
          */
         public function addConnectionCallback(name : String, listener : Function) : void {
             CONFIG::LOGGING {
-                Log.debug("addConnectionCallback()");
+                Log.debug(this+" addConnectionCallback()");
             }
             return;
         }
@@ -456,7 +456,7 @@ package org.mangui.flowplayer {
          */
         public function addStreamCallback(name : String, listener : Function) : void {
             CONFIG::LOGGING {
-                Log.debug("addStreamCallback()");
+                Log.debug(this+" addStreamCallback()");
             }
             return;
         }
@@ -467,7 +467,7 @@ package org.mangui.flowplayer {
          */
         public function get streamCallbacks() : Dictionary {
             CONFIG::LOGGING {
-                Log.debug("get streamCallbacks()");
+                Log.debug(this+" get streamCallbacks()");
             }
             return null;
         }
@@ -478,7 +478,7 @@ package org.mangui.flowplayer {
          */
         public function get netStream() : NetStream {
             CONFIG::LOGGING {
-                Log.debug("get netStream()");
+                Log.debug(this+" get netStream()");
             }
             return _hls.stream;
         }
@@ -489,7 +489,7 @@ package org.mangui.flowplayer {
          */
         public function get netConnection() : NetConnection {
             CONFIG::LOGGING {
-                Log.debug("get netConnection()");
+                Log.debug(this+" get netConnection()");
             }
             return null;
         }
@@ -502,7 +502,7 @@ package org.mangui.flowplayer {
          */
         public function set timeProvider(timeProvider : TimeProvider) : void {
             CONFIG::LOGGING {
-                Log.debug("set timeProvider()");
+                Log.debug(this+" set timeProvider()");
             }
             _timeProvider = timeProvider;
             return;
@@ -524,7 +524,7 @@ package org.mangui.flowplayer {
          */
         public function switchStream(event : ClipEvent, clip : Clip, netStreamPlayOptions : Object = null) : void {
             CONFIG::LOGGING {
-                Log.info("switchStream()");
+                Log.info(this+" switchStream()");
             }
             return;
         }

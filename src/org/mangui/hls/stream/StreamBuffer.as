@@ -204,7 +204,7 @@ package org.mangui.hls.stream {
 			
 			
             CONFIG::LOGGING {
-                Log.debug("seek : requested position:" + newPosition.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
+                Log.debug(this+" seek : requested position:" + newPosition.toFixed(2) + ", seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
             if (!forceReload && _seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
@@ -214,7 +214,7 @@ package org.mangui.hls.stream {
 				// seek position requested is an absolute position, add sliding main to make it absolute
 				_seekPositionRequested += _liveSlidingMain;
                 CONFIG::LOGGING {
-                    Log.debug("seek in buffer");
+                    Log.debug(this+" seek in buffer");
                 }
             } else {
 				_seekingOutsideBuffer = true;
@@ -227,7 +227,7 @@ package org.mangui.hls.stream {
                 // check if we need to use alt audio fragment loader
                 if (_hls.isAltAudio) {
                     CONFIG::LOGGING {
-                        Log.info("seek : need to load alt audio track");
+                        Log.info(this+" seek : need to load alt audio track");
                     }
                     _altaudiofragmentLoader.seek(_seekPositionRequested);
                     _useAltAudio = true;
@@ -286,7 +286,7 @@ package org.mangui.hls.stream {
                             // check if any overlapping occurs, let 500ms tolerance
                             if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
                                 CONFIG::LOGGING {
-                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition.toFixed(3)+"/"+ end.toFixed(3) + "/" + max_audio_pos.toFixed(3)+"/"+max_video_pos.toFixed(3));
+                                    Log.warn(this+" fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition.toFixed(3)+"/"+ end.toFixed(3) + "/" + max_audio_pos.toFixed(3)+"/"+max_video_pos.toFixed(3));
                                 }
                                 _overlappingTags = _overlappingTags.concat(tags);
                                 // filter out overlapping tags
@@ -526,7 +526,7 @@ package org.mangui.hls.stream {
             _liveSlidingMain = _liveSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
             CONFIG::LOGGING {
-                Log.debug("StreamBuffer flushed");
+                Log.debug(this+" StreamBuffer flushed");
             }
         }
 
@@ -590,12 +590,12 @@ package org.mangui.hls.stream {
             */
             if(fragLevel == _fragMainLevelNetStream && fragSN == _fragMainSNNetStream) {
                 CONFIG::LOGGING {
-                    Log.debug("StreamBuffer.flushLastFragment, cannot flush, tag already pushed in NetStream");
+                    Log.debug(this+" StreamBuffer.flushLastFragment, cannot flush, tag already pushed in NetStream");
                 }
                 return false;
             } else if(fragLevel == _fragMainLevel && fragSN == _fragMainSN) {
                 CONFIG::LOGGING {
-                    Log.warn("StreamBuffer.flushLastFragment, clip end of StreamBuffer");
+                    Log.warn(this+" StreamBuffer.flushLastFragment, clip end of StreamBuffer");
                 }
                 // flush StreamBuffer if needed
                 _headerTags = _headerTags.filter(filterlastFragment);
@@ -705,7 +705,7 @@ package org.mangui.hls.stream {
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
             CONFIG::LOGGING {
-                Log.debug("StreamBuffer:set nextLevel:" + level);
+                Log.debug(this+" StreamBuffer:set nextLevel:" + level);
             }
             if(_videoIdx < _videoTags.length) {
                 /* remove tags not injected into NetStream,
@@ -718,7 +718,7 @@ package org.mangui.hls.stream {
                     var tagData : FLVData = _videoTags[i];
                     if(tagData.fragLevel != _fragMainLevelNetStream ||tagData.fragSN != _fragMainSNNetStream) {
                         CONFIG::LOGGING {
-                            Log.debug("first video FLV tag from next frag is @ " + i + " of [" + _videoIdx + "," + (_videoTags.length-1) + "]");
+                            Log.debug(this+" first video FLV tag from next frag is @ " + i + " of [" + _videoIdx + "," + (_videoTags.length-1) + "]");
                         }
                         var lastLevel : Number =  tagData.fragLevel;
                         var lastSN : Number =  tagData.fragSN;
@@ -726,7 +726,7 @@ package org.mangui.hls.stream {
                         var lastFrag : Fragment = _hls.levels[lastLevel].getFragmentfromSeqNum(lastSN-1);
                         if(lastFrag) {
                             CONFIG::LOGGING {
-                                Log.debug("StreamBuffer:lastFrag defined, flush buffer and seekFromLastFrag");
+                                Log.debug(this+" StreamBuffer:lastFrag defined, flush buffer and seekFromLastFrag");
                             }
                             // flush all video tags not injected into NetStream, from next fragment onwards
                             _videoTags.splice(i, _videoTags.length-i);
@@ -750,7 +750,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 CONFIG::LOGGING {
-                    Log.debug("StreamBuffer:can't find tags associated to next frag, don't flush anything");
+                    Log.debug(this+" StreamBuffer:can't find tags associated to next frag, don't flush anything");
                 }
             }
         };
@@ -800,7 +800,7 @@ package org.mangui.hls.stream {
 	             * this is to ensure that accurate seeking will work appropriately
 	             */
 	            CONFIG::LOGGING {
-	                Log.debug2("position/duration/buffer/backBuffer/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + duration.toFixed(2) + "/" + bufLen.toFixed(2) + "/" + backBufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
+	                Log.debug2(this+" position/duration/buffer/backBuffer/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + duration.toFixed(2) + "/" + bufLen.toFixed(2) + "/" + backBufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
 	            }
 	
 	            var tagDuration : Number = 0;
@@ -920,7 +920,7 @@ package org.mangui.hls.stream {
                             lastIdx = videoIdx = i;
                             video_dts = tag.dts;
                             CONFIG::LOGGING {
-                                Log.debug("found AVC_NALU_K after overlap @PTS:" + tag.pts);
+                                Log.debug(this+" found AVC_NALU_K after overlap @PTS:" + tag.pts);
                             }
                         } else if (videoIdx >=0) {
                             lastIdx = i;
@@ -944,7 +944,7 @@ package org.mangui.hls.stream {
             if(lastIdx >=0) {
                 filteredDuration = tags[lastIdx].pts - first_pts;
                 CONFIG::LOGGING {
-                    Log.debug("filterOverlappingTags : filtered duration:" + Math.round(filteredDuration));
+                    Log.debug(this+" filterOverlappingTags : filtered duration:" + Math.round(filteredDuration));
                 }
             }
 
@@ -974,7 +974,7 @@ package org.mangui.hls.stream {
                 }
 
                 CONFIG::LOGGING {
-                    Log.debug("filterOverlappingTags : header appended:" + filteredTags.length);
+                    Log.debug(this+" filterOverlappingTags : header appended:" + filteredTags.length);
                 }
 
                 for (i= 0; i < tags.length; i++) {
@@ -998,17 +998,17 @@ package org.mangui.hls.stream {
                     }
                 }
                 CONFIG::LOGGING {
-                    Log.debug("filterOverlappingTags : tags appended:" + filteredTags.length);
+                    Log.debug(this+" filterOverlappingTags : tags appended:" + filteredTags.length);
                 }
             } else {
                 CONFIG::LOGGING {
-                    Log.debug("filterOverlappingTags: only overlapping tags found");
+                    Log.debug(this+" filterOverlappingTags: only overlapping tags found");
                 }
             }
             CONFIG::LOGGING {
-                Log.debug("filterOverlappingTags: filtered " + filteredTags.length + " out of " + tags.length);
+                Log.debug(this+" filterOverlappingTags: filtered " + filteredTags.length + " out of " + tags.length);
                 // for (i= 0; i < filteredTags.length; i++) {
-                //     Log.debug("filteredOverlappingTags: filtered " + filteredTags[i].typeString + '/' + filteredTags[i].dts + '/' + filteredTags[i].pts);
+                //     Log.debug(this+" filteredOverlappingTags: filtered " + filteredTags[i].typeString + '/' + filteredTags[i].dts + '/' + filteredTags[i].pts);
                 // }
             }
             return filteredTags;
@@ -1075,7 +1075,7 @@ package org.mangui.hls.stream {
                 if(lastIdx == -1) {
                     // all filtered tags are located after seek position ... tweak start position
                     CONFIG::LOGGING {
-                        Log.warn("seekFilterTags: startPosition > first tag position:" + absoluteStartPosition.toFixed(3) + '/' + tags[0].positionAbsolute.toFixed(3));
+                        Log.warn(this+" seekFilterTags: startPosition > first tag position:" + absoluteStartPosition.toFixed(3) + '/' + tags[0].positionAbsolute.toFixed(3));
                     }
                     if(tags.length && absoluteStartPosition != tags[0].positionAbsolute) {
                         absoluteStartPosition = tags[0].positionAbsolute;
@@ -1186,7 +1186,7 @@ package org.mangui.hls.stream {
 
             // CONFIG::LOGGING {
             //     if (clipping_position != clipping_position0) {
-            //         Log.info("clipping_position/clipping_position0 " + clipping_position + '/' + clipping_position0);
+            //         Log.info(this+" clipping_position/clipping_position0 " + clipping_position + '/' + clipping_position0);
             //     }
             // }
 
@@ -1248,28 +1248,28 @@ package org.mangui.hls.stream {
             /* now push any DISCONTINUITY/AVC HEADER/AAC HEADER tag located before the clip position */
             if (_disHeader) {
                 headercounter--;
-                // Log.info("push DISCONTINUITY header tags/position:" + _disHeader.position);
+                // Log.info(this+" push DISCONTINUITY header tags/position:" + _disHeader.position);
                 _disHeader.position = clipping_position;
                 _disHeader.sliding = 0;
                 _newheaderTags.unshift(_disHeader);
             }
             if (_aacHeader) {
                 headercounter--;
-                // Log.info("push AAC header tags/position:" + _aacHeader.position);
+                // Log.info(this+" push AAC header tags/position:" + _aacHeader.position);
                 _aacHeader.position = clipping_position;
                 _aacHeader.sliding = 0;
                 _newheaderTags.unshift(_aacHeader);
             }
             if (_avcHeader) {
                 headercounter--;
-                // Log.info("push AVC header tags/position:" + _avcHeader.position);
+                // Log.info(this+" push AVC header tags/position:" + _avcHeader.position);
                 _avcHeader.position = clipping_position;
                 _avcHeader.sliding = 0;
                 _newheaderTags.unshift(_avcHeader);
             }
 
             if (headercounter != 0) {
-                // Log.info("clipped " + headercounter + " header tags");
+                // Log.info(this+" clipped " + headercounter + " header tags");
                 _headerTags = _newheaderTags;
                 // we need to adjust headerIdx, as the size of the Vector has been adjusted
                 _headerIdx -= headercounter;
@@ -1278,7 +1278,7 @@ package org.mangui.hls.stream {
 
             CONFIG::LOGGING {
                 if (clipped_tags > 0) {
-                    Log.debug2("clipped " + clipped_tags + " tags, clipping_position0/clipping_position/position/new backBufferLength :" + clipping_position0.toFixed(3) + '/' + clipping_position.toFixed(3) + '/' + position.toFixed(3) + '/'  + (position-clipping_position).toFixed(3));
+                    Log.debug2(this+" clipped " + clipped_tags + " tags, clipping_position0/clipping_position/position/new backBufferLength :" + clipping_position0.toFixed(3) + '/' + clipping_position.toFixed(3) + '/' + position.toFixed(3) + '/'  + (position-clipping_position).toFixed(3));
                 }
             }
         }
@@ -1452,7 +1452,7 @@ package org.mangui.hls.stream {
 
         private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
             CONFIG::LOGGING {
-                Log.debug("last fragment loaded");
+                Log.debug(this+" last fragment loaded");
             }
             _reachedEnd = true;
         }
@@ -1464,7 +1464,7 @@ package org.mangui.hls.stream {
             switch (HLSSettings.altAudioSwitchMode) {
                 case HLSAltAudioSwitchMode.ACTIVE:
                     CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
+                        Log.debug(this+" StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
                     }
 					if (isReady) {
 						// Current implementation is effectively a hard reset of the current audio stream...
@@ -1484,7 +1484,7 @@ package org.mangui.hls.stream {
 
                 case HLSAltAudioSwitchMode.PASSIVE:
                     CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
+                        Log.debug(this+" StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
                     }
                     if (isReady) {
                         //partiallyFlushAudio();
@@ -1494,7 +1494,7 @@ package org.mangui.hls.stream {
 				case HLSAltAudioSwitchMode.DEFAULT:
                 default:
                     CONFIG::LOGGING {
-                        Log.debug("StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
+                        Log.debug(this+" StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
                     }
                     flushAudio();
                     break;

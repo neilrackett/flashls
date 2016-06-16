@@ -18,7 +18,7 @@
 
         public function HLSPlayTrait(hls : HLS) {
             CONFIG::LOGGING {
-            Log.debug("HLSPlayTrait()");
+            Log.debug(this+" HLSPlayTrait()");
             }
             super();
             _hls = hls;
@@ -28,7 +28,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSPlayTrait:dispose");
+            Log.debug(this+" HLSPlayTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
@@ -38,7 +38,7 @@
 
         override protected function playStateChangeStart(newPlayState:String):void {
             CONFIG::LOGGING {
-            Log.info("HLSPlayTrait:playStateChangeStart:" + newPlayState);
+            Log.info(this+" HLSPlayTrait:playStateChangeStart:" + newPlayState);
             }
             switch (newPlayState) {
                 case PlayState.PLAYING:
@@ -64,7 +64,7 @@
             switch (event.state) {
                 case HLSPlayStates.PLAYING:
 	                CONFIG::LOGGING {
-	                    Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
+	                    Log.debug(this+" HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
 	                }
                     if (!streamStarted) {
                         streamStarted = true;

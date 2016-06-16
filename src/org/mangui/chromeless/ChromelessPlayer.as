@@ -538,11 +538,11 @@ package org.mangui.chromeless {
         };
 
         private function _onStageVideoStateChange(event : StageVideoEvent) : void {
-            Log.info("Video decoding:" + event.status);
+            Log.info(this+" Video decoding:" + event.status);
         }
 
         private function _onVideoStateChange(event : VideoEvent) : void {
-            Log.info("Video decoding:" + event.status);
+            Log.info(this+" Video decoding:" + event.status);
         }
 
         protected function _onStageResize(event : Event) : void {

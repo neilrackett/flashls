@@ -6,10 +6,6 @@
     import flash.net.NetStream;
     
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSAltAudioSwitchMode;
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
@@ -49,36 +45,12 @@
 		private var _videoSurfaceVisible:Boolean;
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
-			trace("*** HLSMediaElement ***");
             _hls = hls;
-//			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.addEventListener(HLSEvent.READY, showVideo);
-			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
 			_hls.stream.client = new NetClient();
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
-		
-		protected function playbackStateHandler(event:HLSEvent):void {
-			if (event.state == HLSPlayStates.PLAYING) showVideo();
-		}
-		
-		protected function seekStateHandler(event:HLSEvent):void {
-			if (HLSSettings.altAudioSwitchMode == HLSAltAudioSwitchMode.ACTIVE
-				&& _hls.seekState == HLSSeekStates.SEEKING 
-				&& _hls.stream.altAudioTrackSwitching) {
-				hideVideo();
-			}
-		}
-		
-		protected function showVideo(e:HLSEvent=null):void {
-			videoSurfaceVisible = true;
-		}
-		
-		protected function hideVideo(e:HLSEvent=null):void {
-			videoSurfaceVisible = false;
-		}
 		
 		public function get client():Object {
 			return _hls.stream.client;
@@ -87,20 +59,6 @@
         protected function createVideo() : Video {
 			return new Video();
         }
-
-		public function get videoSurfaceVisible():Boolean 
-		{
-			return _videoSurfaceVisible; 
-		}
-		public function set videoSurfaceVisible(value:Boolean):void 
-		{ 
-			if (videoSurface)
-			{
-				videoSurface.attachNetStream(value ? _hls.stream : null);
-			}
-			
-			_videoSurfaceVisible = value; 
-		}
 		
         override protected function createLoadTrait(resource : MediaResourceBase, loader : LoaderBase) : LoadTrait {
             return new HLSNetStreamLoadTrait(_hls, _defaultduration, loader, resource);
@@ -108,20 +66,20 @@
 
         override protected function processLoadingState() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSMediaElement:processLoadingState");
+            Log.debug(this+" HLSMediaElement:processLoadingState");
             }
         }
 
         override protected function processReadyState() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSMediaElement:processReadyState");
+            Log.debug(this+" HLSMediaElement:processReadyState");
             }
             initTraits();
         }
 
         override protected function processUnloadingState() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSMediaElement:processUnloadingState");
+            Log.debug(this+" HLSMediaElement:processUnloadingState");
             }
             removeTrait(MediaTraitType.AUDIO);
             removeTrait(MediaTraitType.BUFFER);
@@ -222,7 +180,7 @@
             var errorCode : int = ErrorManager.getMediaErrorCode(event);
             var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
             CONFIG::LOGGING {
-            Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
+            Log.warn(this+" HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
             }
             dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(errorCode, errorMsg)));
         }

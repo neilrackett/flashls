@@ -17,7 +17,7 @@
 
         public function HLSClosedCaptionsTrait(hls : HLS, closed_captions : String = "unknown") {
             CONFIG::LOGGING {
-            Log.debug("HLSClosedCaptionsTrait()");
+            Log.debug(this+" HLSClosedCaptionsTrait()");
             }
             super(HLSMediaTraitType.CLOSED_CAPTIONS);
 
@@ -28,7 +28,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSClosedCaptionsTrait:dispose");
+            Log.debug(this+" HLSClosedCaptionsTrait:dispose");
             }
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
 			_hls = null;

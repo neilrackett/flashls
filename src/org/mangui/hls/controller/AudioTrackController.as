@@ -85,7 +85,7 @@ package org.mangui.hls.controller {
                     if (altAudioTrack.group_id == streamId) {
                         var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
                         CONFIG::LOGGING {
-                            Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
+                            Log.debug(this+"  audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
                         }
                         audioTrackList.push(new AudioTrack(altAudioTrack.name, AudioTrack.FROM_PLAYLIST, idx, isDefault, true));
                     }
@@ -138,7 +138,7 @@ package org.mangui.hls.controller {
                 // if URL set, default audio track is not embedded into MPEG2-TS
                 if (_hls.altAudioTracks[audioTrack_.id].url || defaultDemux == -1) {
                     CONFIG::LOGGING {
-                        Log.debug("default audio track found in Manifest");
+                        Log.debug(this+" default audio track found in Manifest");
                     }
                     defaultFound = true;
                     _audioTracks.push(audioTrack_);
@@ -147,7 +147,7 @@ package org.mangui.hls.controller {
                     defaultTrackTitle = audioTrack_.title;
                     if (defaultDemux != -1) {
                         CONFIG::LOGGING {
-                            Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
+                            Log.debug(this+" default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
                         }
                         audioTrack_ = _audioTracksfromDemux[defaultDemux];
                         audioTrack_.title = defaultTrackTitle;
@@ -164,7 +164,7 @@ package org.mangui.hls.controller {
             for (i = 0; i < _audioTracksfromManifest.length; i++) {
                 if (i != defaultManifest) {
                     CONFIG::LOGGING {
-                        Log.debug("alternate audio track found in Manifest");
+                        Log.debug(this+" alternate audio track found in Manifest");
                     }
                     audioTrack_ = _audioTracksfromManifest[i];
                     _audioTracks.push(audioTrack_);
@@ -174,7 +174,7 @@ package org.mangui.hls.controller {
             for (i = 0; i < _audioTracksfromDemux.length; i++) {
                 if (i != defaultDemux) {
                     CONFIG::LOGGING {
-                        Log.debug("alternate audio track retrieved from demux");
+                        Log.debug(this+" alternate audio track retrieved from demux");
                     }
                     audioTrack_ = _audioTracksfromDemux[i];
                     _audioTracks.push(audioTrack_);

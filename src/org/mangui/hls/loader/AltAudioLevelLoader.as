@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
     import flash.events.ErrorEvent;
+    import flash.events.Event;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
     import flash.utils.clearTimeout;
@@ -49,14 +50,21 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+			_hls.addEventListener(Event.CLOSE, closeHandler);
         };
 
         public function dispose() : void {
             _close();
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+			_hls.removeEventListener(Event.CLOSE, closeHandler);
         }
-
+		
+		protected function closeHandler(event:Event):void
+		{
+			_close();
+		}
+		
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String;
@@ -66,7 +74,7 @@ package org.mangui.hls.loader {
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
             } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
-                    Log.warn("I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
+                    Log.warn(this+" I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
                 }
                 _timeoutID = setTimeout(_loadAudioLevelPlaylist, _retryTimeout);
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
@@ -97,7 +105,7 @@ package org.mangui.hls.loader {
 		private function _parseAudioPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
 			if (string != null && string.length != 0) {
 				CONFIG::LOGGING {
-					Log.debug("audio level " + level + " playlist ("+url+"):\n" + string);
+					Log.debug(this+" audio level " + level + " playlist ("+url+"):\n" + string);
 				}
 				var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
 				// set fragment and update sequence number range
@@ -110,9 +118,9 @@ package org.mangui.hls.loader {
 				audioLevel.targetduration = Manifest.getTargetDuration(string);
 				// if stream is live, arm a timer to periodically reload playlist
 				if (_hls.type == HLSTypes.LIVE) {
-					var timeout : int = Math.min(5000, Math.max(1000, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer()));
+					var timeout : int = Math.max(1000, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
 					CONFIG::LOGGING {
-						Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
+						Log.debug(this+" Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
 					}
 					_timeoutID = setTimeout(_loadAudioLevelPlaylist, timeout);
 				}
@@ -132,7 +140,7 @@ package org.mangui.hls.loader {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];
                 if (altAudioTrack.url && audioTrack.level == null) {
                     CONFIG::LOGGING {
-                        Log.debug("switch to audio track " + _currentTrack + ", load Playlist");
+                        Log.debug(this+" switch to audio track " + _currentTrack + ", load Playlist");
                     }
                     _retryTimeout = 1000;
                     _retryCount = 0;
@@ -149,7 +157,7 @@ package org.mangui.hls.loader {
 
         private function _close() : void {
             CONFIG::LOGGING {
-                Log.debug("cancel any audio level load in progress");
+                Log.debug(this+" cancel any audio level load in progress");
             }
             _closed = true;
             clearTimeout(_timeoutID);

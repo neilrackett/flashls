@@ -21,7 +21,7 @@
 
         public function HLSDisplayObjectTrait(hls : HLS, videoSurface : DisplayObject, mediaWidth : int = 0, mediaHeight : int = 0) {
             CONFIG::LOGGING {
-            Log.debug("HLSDisplayObjectTrait()");
+            Log.debug(this+" HLSDisplayObjectTrait()");
             }
             _hls = hls;
             super(videoSurface, mediaWidth, mediaHeight);
@@ -33,7 +33,7 @@
 
         override public function dispose() : void {
             CONFIG::LOGGING {
-            Log.debug("HLSDisplayObjectTrait:dispose");
+            Log.debug(this+" HLSDisplayObjectTrait:dispose");
             }
             videoSurface.removeEventListener(Event.ENTER_FRAME, onFrame);
 			_hls = null;
@@ -56,7 +56,7 @@
                     videoSurface.height = newHeight;
                 }
                 CONFIG::LOGGING {
-                Log.info("HLSDisplayObjectTrait:setMediaSize(" + newWidth + "," + newHeight + ")");
+                Log.info(this+" HLSDisplayObjectTrait:setMediaSize(" + newWidth + "," + newHeight + ")");
                 }
                 setMediaSize(newWidth, newHeight);
             }

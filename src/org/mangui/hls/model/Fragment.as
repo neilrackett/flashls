@@ -65,7 +65,7 @@ package org.mangui.hls.model {
             
             data = new FragmentData();
             // CONFIG::LOGGING {
-            // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
+            // Log.info(this+" Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
             // }
             
             // TODO Is there a better way to do this?

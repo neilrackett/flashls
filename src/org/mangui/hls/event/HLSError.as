@@ -15,6 +15,9 @@
         public static const KEY_LOADING_ERROR : int = 8;
         public static const KEY_PARSING_ERROR : int = 9;
         public static const TAG_APPENDING_ERROR : int = 10;
+        public static const SEQUENCE_NOT_FOUND : int = 11;
+		public static const BANDWIDTH_TOO_LOW : int = 12;
+		public static const LIVE_STALL : int = 13;
 
         private var _code : int;
         private var _url : String;

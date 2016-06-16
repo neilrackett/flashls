@@ -32,7 +32,7 @@ package org.mangui.hls.utils {
             // Connect calls to JS.
             if (ExternalInterface.available) {
                 CONFIG::LOGGING {
-                    Log.debug("add callback textLoaded, id:" + _instanceCount);
+                    Log.debug(this+" add callback textLoaded, id:" + _instanceCount);
                 }
                 _callbackLoaded = "textLoaded" + _instanceCount;
                 _callbackFailure = "textLoadingError" + _instanceCount;
@@ -52,12 +52,12 @@ package org.mangui.hls.utils {
         protected function _trigger(event : String, ...args) : void {
             if (ExternalInterface.available) {
 				CONFIG::LOGGING {
-					Log.debug("JSURLLoader._trigger: "+_callbackName+", "+event+", "+args.join(", "));
+					Log.debug(this+" JSURLLoader._trigger: "+_callbackName+", "+event+", "+args.join(", "));
 				}
 				ExternalInterface.call.apply(ExternalInterface, [_callbackName+"."+event].concat(args));
             } else {
 				CONFIG::LOGGING {
-					Log.debug("ExternalInterface not available!");
+					Log.debug(this+" ExternalInterface not available!");
 				}
 			}
         }
@@ -72,7 +72,7 @@ package org.mangui.hls.utils {
 
         override public function load(request : URLRequest) : void {
             CONFIG::LOGGING {
-            Log.debug("JSURLLoader.load: " + request.url);
+            Log.debug(this+" JSURLLoader.load: " + request.url);
             }
             bytesLoaded = bytesTotal = 0;
             data = null;
@@ -86,7 +86,7 @@ package org.mangui.hls.utils {
 
         protected function resourceLoaded(resource : String) : void {
             CONFIG::LOGGING {
-              Log.debug("resourceLoaded");
+              Log.debug(this+" resourceLoaded");
             }
             data = resource;
             bytesLoaded = bytesTotal = resource.length;
@@ -96,7 +96,7 @@ package org.mangui.hls.utils {
 
         protected function resourceLoadingError() : void {
             CONFIG::LOGGING {
-                Log.debug("resourceLoadingError");
+                Log.debug(this+" resourceLoadingError");
             }
             this.dispatchEvent(new IOErrorEvent(IOErrorEvent.IO_ERROR));
         }

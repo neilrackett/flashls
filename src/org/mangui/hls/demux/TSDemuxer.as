@@ -158,7 +158,7 @@ package org.mangui.hls.demux {
         /** cancel demux operation */
         public function cancel() : void {
             CONFIG::LOGGING {
-                Log.debug("TS: cancel demux");
+                Log.debug(this+" TS: cancel demux");
             }
             _dataVector = null;
             _curAudioPES = null;
@@ -213,7 +213,7 @@ package org.mangui.hls.demux {
                             }
                             // we should never reach this point
                             // if TS overlapping but next buffer not available or next buffer not full enough, return null
-                            //Log.error("TS overlapping but next buffer not full enough:" + _readPosition + "/" + _totalBytes + "/" + ba.length);
+                            //Log.error(this+" TS overlapping but next buffer not full enough:" + _readPosition + "/" + _totalBytes + "/" + ba.length);
                             return null;
                         }
                     }
@@ -301,7 +301,7 @@ package org.mangui.hls.demux {
 							else
 							{
 								CONFIG::LOGGING {
-									Log.warn("not enough bytes to extract caption!");
+									Log.warn(this+" not enough bytes to extract caption!");
 								}
 							}
 						}
@@ -344,7 +344,7 @@ package org.mangui.hls.demux {
                         // first check if TS parsing was successful
                         CONFIG::LOGGING {
                             if (_pmtParsed == false) {
-                                Log.error("TS: no PMT found, report parsing complete");
+                                Log.error(this+" TS: no PMT found, report parsing complete");
                             }
                         }
                         _timer.stop();
@@ -358,7 +358,7 @@ package org.mangui.hls.demux {
         /** flux demux **/
         private function _flush() : void {
             CONFIG::LOGGING {
-                Log.debug("TS: flushing demux");
+                Log.debug(this+" TS: flushing demux");
             }
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
@@ -366,7 +366,7 @@ package org.mangui.hls.demux {
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
-                        Log.debug2("TS: complete Audio PES found at end of segment, parse it");
+                        Log.debug2(this+" TS: complete Audio PES found at end of segment, parse it");
                     }
                     // complete PES, parse and push into the queue
                     if (_audioIsAAC) {
@@ -377,7 +377,7 @@ package org.mangui.hls.demux {
                     _curAudioPES = null;
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug("TS: partial audio PES at end of segment");
+                        Log.debug(this+" TS: partial audio PES at end of segment");
                     }
                     _curAudioPES.position = _curAudioPES.length;
                 }
@@ -388,7 +388,7 @@ package org.mangui.hls.demux {
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
-                        Log.debug2("TS: complete AVC PES found at end of segment, parse it");
+                        Log.debug2(this+" TS: complete AVC PES found at end of segment, parse it");
                     }
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
@@ -405,7 +405,7 @@ package org.mangui.hls.demux {
                     }
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug("TS: partial AVC PES at end of segment expected/current len:" + pes.payload_len + "/" + ( pes.data.length - pes.payload));
+                        Log.debug(this+" TS: partial AVC PES at end of segment expected/current len:" + pes.payload_len + "/" + ( pes.data.length - pes.payload));
                     }
                     _curVideoPES.position = _curVideoPES.length;
                 }
@@ -415,14 +415,14 @@ package org.mangui.hls.demux {
                 var pes3 : PES = new PES(_curId3PES);
                 if (pes3.len && (pes3.data.length - pes3.payload - pes3.payload_len) >= 0) {
                     CONFIG::LOGGING {
-                        Log.debug2("TS: complete ID3 PES found at end of segment, parse it");
+                        Log.debug2(this+" TS: complete ID3 PES found at end of segment, parse it");
                     }
                     // complete PES, parse and push into the queue
                     _parseID3PES(pes3);
                     _curId3PES = null;
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug("TS: partial ID3 PES at end of segment");
+                        Log.debug(this+" TS: partial ID3 PES at end of segment");
                     }
                     _curId3PES.position = _curId3PES.length;
                 }
@@ -430,25 +430,25 @@ package org.mangui.hls.demux {
             // push remaining tags and notify complete
             if (_tags.length) {
                 CONFIG::LOGGING {
-                    Log.debug2("TS: flush " + _tags.length + " tags");
+                    Log.debug2(this+" TS: flush " + _tags.length + " tags");
                 }
                 _callback_progress(_tags);
                 _tags = new Vector.<FLVTag>();
             }
             if(_avcId !=-1 && _videoPESfound == false) {
                 CONFIG::LOGGING {
-                    Log.warn("TS: dereference video PID, as no video found in this fragment");
+                    Log.warn(this+" TS: dereference video PID, as no video found in this fragment");
                 }
                 _avcId = -1;
             }
             if(_audioId !=-1 && _audioPESfound == false) {
                 CONFIG::LOGGING {
-                    Log.warn("TS: dereference audio PID, as no audio found in this fragment");
+                    Log.warn(this+" TS: dereference audio PID, as no audio found in this fragment");
                 }
                 _audioId = -1;
             }
             CONFIG::LOGGING {
-                Log.debug("TS: parsing complete");
+                Log.debug(this+" TS: parsing complete");
             }
         }
 
@@ -460,7 +460,7 @@ package org.mangui.hls.demux {
             if (_adtsFrameOverflow && _adtsFrameOverflow.length) {
                 // if overflowing, append remaining data from previous frame at the beginning of PES packet
                 CONFIG::LOGGING {
-                    Log.debug("TS/AAC: append overflowing " + _adtsFrameOverflow.length + " bytes to beginning of new PES packet");
+                    Log.debug(this+" TS/AAC: append overflowing " + _adtsFrameOverflow.length + " bytes to beginning of new PES packet");
                 }
                 var ba : ByteArray = new ByteArray();
                 ba.writeBytes(_adtsFrameOverflow);
@@ -471,7 +471,7 @@ package org.mangui.hls.demux {
             }
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                    Log.warn("TS/AAC: no PTS info in this PES packet,discarding it");
+                    Log.warn(this+" TS/AAC: no PTS info in this PES packet,discarding it");
                 }
                 return;
             }
@@ -480,7 +480,7 @@ package org.mangui.hls.demux {
                 var adifTag : FLVTag = new FLVTag(FLVTag.AAC_HEADER, pes.pts, pes.dts, true);
                 var adif : ByteArray = AACDemuxer.getADIF(pes.data, pes.payload);
                 CONFIG::LOGGING {
-                    Log.debug("TS/AAC: insert ADIF TAG");
+                    Log.debug(this+" TS/AAC: insert ADIF TAG");
                 }
                 adifTag.push(adif, 0, adif.length);
                 adifTag.build();
@@ -506,7 +506,7 @@ package org.mangui.hls.demux {
                     _adtsFrameOverflow = new ByteArray();
                     _adtsFrameOverflow.writeBytes(pes.data, frame.start + frame.length);
                     CONFIG::LOGGING {
-                        Log.debug("TS/AAC:ADTS frame overflow:" + adts_overflow);
+                        Log.debug(this+" TS/AAC:ADTS frame overflow:" + adts_overflow);
                     }
                 }
             } else {
@@ -514,7 +514,7 @@ package org.mangui.hls.demux {
                 _adtsFrameOverflow = new ByteArray();
                 _adtsFrameOverflow.writeBytes(pes.data, pes.data.position);
                 CONFIG::LOGGING {
-                    Log.debug("TS/AAC:ADTS frame overflow:" + _adtsFrameOverflow.length);
+                    Log.debug(this+" TS/AAC:ADTS frame overflow:" + _adtsFrameOverflow.length);
                 }
             }
         };
@@ -523,7 +523,7 @@ package org.mangui.hls.demux {
         private function _parseMPEGPES(pes : PES) : void {
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                    Log.warn("TS/MP3: no PTS info in this MP3 PES packet,discarding it");
+                    Log.warn(this+" TS/MP3: no PTS info in this MP3 PES packet,discarding it");
                 }
                 return;
             }
@@ -549,7 +549,7 @@ package org.mangui.hls.demux {
                 }
                 CONFIG::LOGGING {
                     if (!_curNalUnit) {
-                        Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
+                        Log.warn(this+" TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                     }
                 }
                 return;
@@ -561,7 +561,7 @@ package org.mangui.hls.demux {
             }
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                    Log.warn("TS: no PTS info in this AVC PES packet,discarding it");
+                    Log.warn(this+" TS: no PTS info in this AVC PES packet,discarding it");
                 }
                 return;
             }
@@ -588,7 +588,7 @@ package org.mangui.hls.demux {
                         }
                         CONFIG::LOGGING {
                             if(!_avcc) {
-                                Log.warn("TS: discarding video tag, as AVC HEADER not found yet, fragment not starting with I-Frame ?");
+                                Log.warn(this+" TS: discarding video tag, as AVC HEADER not found yet, fragment not starting with I-Frame ?");
                             }
                         }
                     }
@@ -667,7 +667,7 @@ package org.mangui.hls.demux {
                     var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
                     avccTag.push(avcc, 0, avcc.length);
                     avccTag.build();
-                    // Log.debug("TS:AVC:push AVC HEADER");
+                    // Log.debug(this+" TS:AVC:push AVC HEADER");
                     _tags.push(avccTag);
                 }
             }
@@ -706,13 +706,13 @@ package org.mangui.hls.demux {
                             var type : uint = eg.readUE();
                             if (type == 2 || type == 4 || type == 7 || type == 9) {
                                 CONFIG::LOGGING {
-                                    Log.debug2("TS: frame_type:" + frame.type + ",keyframe slice_type:" + type);
+                                    Log.debug2(this+" TS: frame_type:" + frame.type + ",keyframe slice_type:" + type);
                                 }
                                 _curVideoTag.keyframe = true;
                             }
                         } catch(e : Error) {
                             CONFIG::LOGGING {
-                                Log.warn("TS: frame_type:" + frame.type + ": slice header splitted accross several PES packets, assuming not a keyframe");
+                                Log.warn(this+" TS: frame_type:" + frame.type + ": slice header splitted accross several PES packets, assuming not a keyframe");
                             }
                             _curVideoTag.keyframe = false;
                         }
@@ -747,7 +747,7 @@ package org.mangui.hls.demux {
             // so we should really spoof the PTS by knowing the PCR at this point
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                    Log.warn("TS: no PTS info in this ID3 PES packet,discarding it");
+                    Log.warn(this+" TS: no PTS info in this ID3 PES packet,discarding it");
                 }
                 return;
             }
@@ -788,12 +788,12 @@ package org.mangui.hls.demux {
                 if (probe(data) == true) {
                     var pos_end : uint = data.position;
                     CONFIG::LOGGING {
-                        Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
+                        Log.warn(this+" TS: lost sync between offsets:" + pos_start + "/" + pos_end);
                         if (HLSSettings.logDebug2) {
                             var ba : ByteArray = new ByteArray();
                             data.position = pos_start;
                             data.readBytes(ba, 0, pos_end - pos_start);
-                            Log.debug2("TS: lost sync dump:" + Hex.fromArray(ba));
+                            Log.debug2(this+" TS: lost sync dump:" + Hex.fromArray(ba));
                         }
                     }
                     data.position = pos_end + 1;
@@ -837,7 +837,7 @@ package org.mangui.hls.demux {
                     todo -= _parsePAT(stt,data);
                     CONFIG::LOGGING {
                         if (_pmtParsed == false) {
-                            Log.debug("TS: PAT found.PMT PID:" + _pmtId);
+                            Log.debug(this+" TS: PAT found.PMT PID:" + _pmtId);
                         }
                     }
                     break;
@@ -845,9 +845,9 @@ package org.mangui.hls.demux {
 					CONFIG::LOGGING {
 	                    if (_pmtParsed == false || _unknownPIDFound == true) {
                             if(_pmtParsed == false) {
-                                Log.debug("TS: PMT found");
+                                Log.debug(this+" TS: PMT found");
                             } else {
-                                Log.warn("TS: reparsing PMT, unknown PID found");
+                                Log.warn(this+" TS: reparsing PMT, unknown PID found");
                             }
                         }
                     }
@@ -858,7 +858,7 @@ package org.mangui.hls.demux {
                         // in theory there should be no A/V packets before PAT/PMT)
                         if (_pmtParsed == false && _unknownPIDFound == true) {
                             CONFIG::LOGGING {
-                                Log.warn("TS: late PMT found, rewinding at beginning of TS");
+                                Log.warn(this+" TS: late PMT found, rewinding at beginning of TS");
                             }
                             _pmtParsed = true;
                             _readPosition = 0;
@@ -886,7 +886,7 @@ package org.mangui.hls.demux {
                     }
                     CONFIG::LOGGING {
                         if (!_curAudioPES) {
-                            Log.warn("TS: Discarding audio packet with id " + pid);
+                            Log.warn(this+" TS: Discarding audio packet with id " + pid);
                         }
                     }
                     break;
@@ -906,21 +906,21 @@ package org.mangui.hls.demux {
                         var pes : PES = new PES(_curId3PES);
                         if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                             CONFIG::LOGGING {
-                                Log.debug2("TS: complete ID3 PES found, parse it");
+                                Log.debug2(this+" TS: complete ID3 PES found, parse it");
                             }
                             // complete PES, parse and push into the queue
                             _parseID3PES(pes);
                             _curId3PES = null;
                         } else {
                             CONFIG::LOGGING {
-                                Log.debug("TS: partial ID3 PES");
+                                Log.debug(this+" TS: partial ID3 PES");
                             }
                             _curId3PES.position = _curId3PES.length;
                         }
                     }
                     CONFIG::LOGGING {
                         if (!stt && !_curId3PES) {
-                            Log.warn("TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
+                            Log.warn(this+" TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
                     break;
@@ -939,7 +939,7 @@ package org.mangui.hls.demux {
                     }
                     CONFIG::LOGGING {
                         if (!_curVideoPES) {
-                            Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
+                            Log.warn(this+" TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
                     break;
@@ -955,7 +955,7 @@ package org.mangui.hls.demux {
                     if((_avcId ==-1 && !_audioOnly) ||
                        (_audioId ==-1 && !_audioFound)) {
                         CONFIG::LOGGING {
-                            Log.debug("TS: unknown PID:" + pid);
+                            Log.debug(this+" TS: unknown PID:" + pid);
                         }
                         _unknownPIDFound = true;
                     }
@@ -1022,12 +1022,12 @@ package org.mangui.hls.demux {
                         if(_avcId != sid) {
                         _avcId = sid;
                         CONFIG::LOGGING {
-                            Log.debug("TS: Selected video PID: " + _avcId);
+                            Log.debug(this+" TS: Selected video PID: " + _avcId);
                         }
                         }
                     } else {
                         CONFIG::LOGGING {
-                            Log.warn("TS: discarding video PID found in altaudio Fragment: " + _avcId);
+                            Log.warn(this+" TS: discarding video PID found in altaudio Fragment: " + _avcId);
                         }
                     }
                 } else if (typ == 0x03 || typ == 0x04) {
@@ -1039,7 +1039,7 @@ package org.mangui.hls.demux {
                     if(_id3Id != sid) {
                     _id3Id = sid;
                     CONFIG::LOGGING {
-                        Log.debug("TS: Selected ID3 PID: " + _id3Id);
+                        Log.debug(this+" TS: Selected ID3 PID: " + _id3Id);
                     }
                 }
                 }
@@ -1056,7 +1056,7 @@ package org.mangui.hls.demux {
             if (audioFound != _audioFound) {
             CONFIG::LOGGING {
                     if (audioFound) {
-                    Log.debug("TS: Found " + audioList.length + " audio tracks");
+                    Log.debug(this+" TS: Found " + audioList.length + " audio tracks");
                 }
             }
                 _audioFound = audioFound;
@@ -1066,13 +1066,13 @@ package org.mangui.hls.demux {
                 _audioIsAAC = audioTrack.isAAC;
                 _audioSelected = true;
                 CONFIG::LOGGING {
-                    Log.debug("TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
+                    Log.debug(this+" TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
                 }
             } else {
                 audioPID = -1;
                 _audioSelected = false;
                 CONFIG::LOGGING {
-                    Log.debug("TS: no audio selected");
+                    Log.debug(this+" TS: no audio selected");
                 }
             }
             // in case audio PID change, flush any partially parsed audio PES packet

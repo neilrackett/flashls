@@ -66,7 +66,7 @@ package org.mangui.hls.demux {
                 pts = Math.round(_pts / 90);
                 dts = Math.round(_dts / 90);
                 // CONFIG::LOGGING {
-                // Log.info("pts/dts: " + pts + "/"+ dts);
+                // Log.info(this+" pts/dts: " + pts + "/"+ dts);
                 // }
             }
             // Skip other header data and parse payload.

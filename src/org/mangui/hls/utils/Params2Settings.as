@@ -57,11 +57,11 @@
                     // get HLSSetting type
                     HLSSettings[param] = c(value);
                     CONFIG::LOGGING {
-                        Log.info("HLSSettings." + param + " = " + HLSSettings[param]);
+                        Log.info("[Params2Settings] HLSSettings." + param + " = " + HLSSettings[param]);
                     }
                 } catch(error : Error) {
                     CONFIG::LOGGING {
-                        Log.warn("Can't set HLSSettings." + param);
+                        Log.warn("[Params2Settings] Can't set HLSSettings." + param);
                     }
                 }
             }

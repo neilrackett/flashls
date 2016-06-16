@@ -48,7 +48,7 @@
 
         public function notifycomplete() : void {
             CONFIG::LOGGING {
-                Log.debug("MP3: extracting MP3 tags");
+                Log.debug(this+" MP3: extracting MP3 tags");
             }
             var audioTags : Vector.<FLVTag> = new Vector.<FLVTag>();
             /* parse MP3, convert Elementary Streams to TAG */
@@ -77,7 +77,7 @@
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {
-                Log.debug("MP3: all tags extracted, callback demux");
+                Log.debug(this+" MP3: all tags extracted, callback demux");
             }
             _data = null;
             if(id3.tags.length) {
@@ -110,7 +110,7 @@
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD) {
                         CONFIG::LOGGING {
-                            Log.debug2("MP3: found header " + short + "@ " + (data.position-2));
+                            Log.debug2("[MP3Demuxer] MP3: found header " + short + "@ " + (data.position-2));
                         }
                         data.position = pos;
                         return true;

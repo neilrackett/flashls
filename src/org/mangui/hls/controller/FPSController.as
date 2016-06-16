@@ -64,7 +64,7 @@
 
       private function _stageSetHandler(event : HLSEvent) : void {
         CONFIG::LOGGING {
-          Log.debug("FPSController:stage defined, listen to throttle event");
+          Log.debug(this+" FPSController:stage defined, listen to throttle event");
         }
         _timer = new Timer(HLSSettings.fpsDroppedMonitoringPeriod,0);
         _timer.addEventListener(TimerEvent.TIMER, _checkFPS);
@@ -79,14 +79,14 @@
             _playing = true;
             _lastTime = 0;
             CONFIG::LOGGING {
-              Log.debug("FPSController:playback starting, start monitoring FPS");
+              Log.debug(this+" FPSController:playback starting, start monitoring FPS");
             }
             break;
           default:
             _playing = false;
             // stop fps monitoring in all other cases
             CONFIG::LOGGING {
-              Log.debug("FPSController:playback stopped, stop monitoring FPS");
+              Log.debug(this+" FPSController:playback stopped, stop monitoring FPS");
             }
             break;
         }
@@ -94,7 +94,7 @@
 
       private function onThrottle(e : Object) : void {
         CONFIG::LOGGING {
-             Log.debug("FPSController:onThrottle:" + e.state + ',fps:' + e.targetFrameRate);
+             Log.debug(this+" FPSController:onThrottle:" + e.state + ',fps:' + e.targetFrameRate);
         }
         switch(e.state) {
           case RESUME:
@@ -117,11 +117,11 @@
           var currentDropFPS : Number = 1000*currentDropped/currentPeriod;
           var currentFPS : Number = _hls.stream.currentFPS;
           CONFIG::LOGGING {
-            Log.debug2("FPSController:currentDropped,currentPeriod,currentDropFPS," + currentDropped +',' + currentPeriod +',' + currentDropFPS.toFixed(1));
+            Log.debug2(this+" FPSController:currentDropped,currentPeriod,currentDropFPS," + currentDropped +',' + currentPeriod +',' + currentDropFPS.toFixed(1));
           }
           if(currentDropFPS > HLSSettings.fpsDroppedMonitoringThreshold*currentFPS) {
             CONFIG::LOGGING {
-              Log.warn("FPSController:drop FPS ratio >" + HLSSettings.fpsDroppedMonitoringThreshold + ',drop/displayed:' +currentDropFPS.toFixed(1)+","+currentFPS.toFixed(1) + " in the last " + HLSSettings.fpsDroppedMonitoringPeriod + "ms");
+              Log.warn(this+" FPSController:drop FPS ratio >" + HLSSettings.fpsDroppedMonitoringThreshold + ',drop/displayed:' +currentDropFPS.toFixed(1)+","+currentFPS.toFixed(1) + " in the last " + HLSSettings.fpsDroppedMonitoringPeriod + "ms");
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP, _hls.currentLevel));
             if(HLSSettings.capLevelonFPSDrop) {
@@ -129,14 +129,14 @@
               if(currentLevel > 0 && (_hls.autoLevelCapping == -1 || _hls.autoLevelCapping >= _hls.currentLevel)) {
                 var capLevel : int = currentLevel-1;
                 CONFIG::LOGGING {
-                  Log.warn("FPSController:cap level on FPS drop to " + capLevel);
+                  Log.warn(this+" FPSController:cap level on FPS drop to " + capLevel);
                 }
                 _hls.autoLevelCapping = capLevel;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP_LEVEL_CAPPING, capLevel));
                 if(HLSSettings.smoothAutoSwitchonFPSDrop) {
                   if(_hls.autoLevel == true) {
                     CONFIG::LOGGING {
-                      Log.warn("FPSController:trigger smooth level switch on frame drop");
+                      Log.warn(this+" FPSController:trigger smooth level switch on frame drop");
                     }
                     _hls.nextLevel = -1;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH));
