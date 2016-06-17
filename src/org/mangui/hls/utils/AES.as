@@ -6,6 +6,8 @@
     import flash.events.Event;
     import flash.utils.ByteArray;
     import flash.utils.getTimer;
+    
+    import org.mangui.hls.HLSSettings;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -82,7 +84,7 @@
             var start_time : int = getTimer();
 			// Limit the amount of time available per frame for decryption
 			// For example, at 60fps we have 1000/60 = 16.6ms budget total per frame
-			var max_time : uint = 1000/_stage.frameRate / 4;
+			var max_time : uint = 1000/_stage.frameRate * HLSSettings.aesMaxFrameTime;
             var decrypted : Boolean;
             do {
                 try {

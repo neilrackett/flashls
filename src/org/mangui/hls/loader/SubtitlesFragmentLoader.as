@@ -7,9 +7,11 @@ package org.mangui.hls.loader {
     import flash.events.Event;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
+    import flash.events.TimerEvent;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
     import flash.utils.Dictionary;
+    import flash.utils.Timer;
     import flash.utils.clearTimeout;
     import flash.utils.setTimeout;
     
@@ -56,6 +58,8 @@ package org.mangui.hls.loader {
         protected var _appended:Dictionary = new Dictionary(true);
         /** Subtitles sequencer used for VOD streams while we iron out some bugs */
 		protected var _sequencer:SubtitlesSequencer;
+		/** Prevents CPU spike when loading and processing multiple WebVTT files */
+		protected var _fragmentLoadTimer:Timer;
 		
         public function SubtitlesFragmentLoader(hls:HLS, streamBuffer:StreamBuffer) {
 
@@ -72,6 +76,9 @@ package org.mangui.hls.loader {
             _loader.addEventListener(Event.COMPLETE, loader_completeHandler);
             _loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
             _loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
+			
+			_fragmentLoadTimer = new Timer(100, 1);
+			_fragmentLoadTimer.addEventListener(TimerEvent.TIMER_COMPLETE, loadNextFragment);
 			
 			// Alternative method of sequencing VOD subs until we work out why some streams f*** up 
 			_sequencer = new SubtitlesSequencer(hls);
@@ -98,6 +105,10 @@ package org.mangui.hls.loader {
             _loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
             _loader = null;
             
+			_fragmentLoadTimer.stop();
+			_fragmentLoadTimer.removeEventListener(TimerEvent.TIMER_COMPLETE, loadNextFragment);
+			_fragmentLoadTimer = null;
+			
             _fragments = null;
             _fragment = null;
             _cache = null;
@@ -117,6 +128,7 @@ package org.mangui.hls.loader {
             catch (e:Error) {};
 			
             _fragments = new Vector.<Fragment>();
+			_fragmentLoadTimer.stop();
 			_sequencer.stop();
 			
 			if (_hls.subtitlesTrack != -1) {
@@ -163,7 +175,7 @@ package org.mangui.hls.loader {
 					Log.debug(this+" Loading subtitles fragments for track "+_hls.subtitlesTrack);
 				}
                 _fragments = _fragments.concat(_hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments);
-                loadNextFragment();
+                _fragmentLoadTimer.start();
             }
         }
         
@@ -193,7 +205,7 @@ package org.mangui.hls.loader {
         /**
          * Load the next subtitles fragment 
          */
-        protected function loadNextFragment():void {
+        protected function loadNextFragment(event:Event=null):void {
 			if (_fragments.length) {
 				CONFIG::LOGGING {
 					Log.debug(this+" Loading next subtitles fragment");
@@ -229,13 +241,13 @@ package org.mangui.hls.loader {
 	                var cached:Vector.<FLVTag> = _cache[_fragment] as Vector.<FLVTag>;
 	                if (cached) {
 	                    appendTags(_fragment, cached);
-	                    loadNextFragment();
+						_fragmentLoadTimer.start();
 					}
 				} else {
 					_loader.load(new URLRequest(_fragment.url));
 				}
             } else {
-                loadNextFragment();
+				_fragmentLoadTimer.start();
             }
         }
         
@@ -270,9 +282,9 @@ package org.mangui.hls.loader {
 				_sequencer.appendSubtitles(_fragment.level, subtitles);
 			}
 			
-            loadNextFragment();
+			_fragmentLoadTimer.start();
         }
-        
+
 		/**
 		 * Fill in the gaps between subtitles with blanks
 		 */

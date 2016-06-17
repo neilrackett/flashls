@@ -46,7 +46,7 @@ package org.mangui.hls {
          *
          * Default is HLSMaxLevelCappingMode.DOWNSCALE
          */
-        public static var maxLevelCappingMode : String = HLSMaxLevelCappingMode.DOWNSCALE;
+        public static var maxLevelCappingMode : String = HLSMaxLevelCappingMode.UPSCALE;
 
         // // // // // // /////////////////////////////////
         //
@@ -284,15 +284,6 @@ package org.mangui.hls {
 		 */
 		public static var liveStopLoadingOnPause : Boolean = true;
 		
-		/**
-		 * liveStopOnLiveStall
-		 * 
-		 * Should live streams stop when a live stall is detected?
-		 * 
-		 * Default is true
-		 */
-		public static var liveStopOnLiveStall : Boolean = true;
-		
         /**
          * manifestLoadMaxRetry
          *
@@ -437,6 +428,14 @@ package org.mangui.hls {
 		 */
 		public static var maxDownSwitchLimit:uint = uint.MAX_VALUE;
 		
+		/**
+		 * When decoding AES data, how much of the time available for each
+		 * frame should be used for decryption?
+		 * 
+		 * Default is 0.2
+		 */
+		public static var aesMaxFrameTime:Number = 0.2;
+		
         /**
          * useHardwareVideoDecoder
          *
@@ -492,9 +491,5 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logError : Boolean = true;
-		
-		/* Internal */
-		
-		private static var _altAudioPassiveSwitching:Boolean = false;
     }
 }
