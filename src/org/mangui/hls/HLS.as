@@ -75,7 +75,7 @@ package org.mangui.hls {
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
 		
-		static public const VERSION:String = "1.0.43";
+		static public const VERSION:String = "1.0.44";
 		
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;

@@ -23,27 +23,27 @@ package org.mangui.hls.controller {
      */
     public class LevelController {
         /** Reference to the HLS controller. **/
-        private var _hls : HLS;
+        private var _hls:HLS;
         /** switch up threshold **/
-        private var _switchup : Vector.<Number> = null;
+        private var _switchup:Vector.<Number> = null;
         /** switch down threshold **/
-        private var _switchdown : Vector.<Number> = null;
+        private var _switchdown:Vector.<Number> = null;
         /** bitrate array **/
-        private var _bitrate : Vector.<uint> = null;
+        private var _bitrate:Vector.<uint> = null;
         /** vector of levels with unique dimension with highest bandwidth **/
-        private var _maxUniqueLevels : Vector.<Level> = null;
+        private var _maxUniqueLevels:Vector.<Level> = null;
         /** nb level **/
-        private var _numLevels : int = 0;
-        private var _lastSegmentDuration : Number;
-        private var _lastFetchDuration : Number;
-        private var lastBandwidth : int;
-        private var _autoLevelCapping : int;
-        private var _startLevel : int = -1;
-        private var _fpsController : FPSController;
-        private var _bandwidthTooLow : Boolean;
+        private var _numLevels:int = 0;
+        private var _lastSegmentDuration:Number;
+        private var _lastFetchDuration:Number;
+        private var _lastBandwidth:Number;
+        private var _autoLevelCapping:int;
+        private var _startLevel:int = -1;
+        private var _fpsController:FPSController;
+        private var _bandwidthTooLow:Boolean;
 
         /** Create the loader. **/
-        public function LevelController(hls : HLS) : void {
+        public function LevelController(hls:HLS):void {
             _hls = hls;
             _fpsController = new FPSController(hls);
             /* low priority listener, so that other listeners with default priority
@@ -54,8 +54,8 @@ package org.mangui.hls.controller {
             _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
         }
-		
-        public function dispose() : void {
+        
+        public function dispose():void {
             _fpsController.dispose();
             _fpsController = null;
             _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
@@ -64,47 +64,47 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
         }
 
-        private function _fragmentLoadedHandler(event : HLSEvent) : void {
-            var metrics : HLSLoadMetrics = event.loadMetrics;
+        private function _fragmentLoadedHandler(event:HLSEvent):void {
+            var metrics:HLSLoadMetrics = event.loadMetrics;
             // only monitor main fragment metrics for level switching
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
-                lastBandwidth = metrics.bandwidth;
+                _lastBandwidth = metrics.bandwidth;
                 _lastSegmentDuration = metrics.duration;
                 _lastFetchDuration = metrics.processing_duration;
-				
-				// Do we have enough bandwidth available to continue playback?
-				var minBitrate:uint = _hls.levels[0].bitrate;
-				_bandwidthTooLow = lastBandwidth < minBitrate;
-				if (_bandwidthTooLow) {
-					CONFIG::LOGGING {
-						Log.warn(this+" Bandwidth too low to continue playback!");
-					}
-					_hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, new HLSError(HLSError.BANDWIDTH_TOO_LOW, _hls.levels[0].url, "bandwidthTooLow")));
-				}
+                
+                // Do we have enough bandwidth available to continue playback?
+                var minBitrate:uint = _hls.levels[0].bitrate;
+                _bandwidthTooLow = _lastBandwidth < minBitrate;
+                if (_bandwidthTooLow) {
+                    CONFIG::LOGGING {
+                        Log.warn(this+" Bandwidth too low to continue playback!");
+                    }
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, new HLSError(HLSError.BANDWIDTH_TOO_LOW, _hls.levels[0].url, "bandwidthTooLow")));
+                }
             }
         }
 
-		protected function _liveLoadingStalledHandler(event:HLSEvent):void
-		{
-			if (_bandwidthTooLow && _hls.loadLevel == 0) {
-				CONFIG::LOGGING {
-					Log.error(this+" Live stall caused by low bandwidth");
-				}
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.LIVE_STALL, _hls.levels[0].url, "liveStall"))); 
-			}
-		}
+        protected function _liveLoadingStalledHandler(event:HLSEvent):void
+        {
+            if (_bandwidthTooLow && _hls.loadLevel == 0) {
+                CONFIG::LOGGING {
+                    Log.error(this+" Live stall caused by low bandwidth");
+                }
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.LIVE_STALL, _hls.levels[0].url, "liveStall"))); 
+            }
+        }
 
-        private function _manifestParsedHandler(event : HLSEvent) : void {
+        private function _manifestParsedHandler(event:HLSEvent):void {
             if(HLSSettings.autoStartLoad) {
                 // upon manifest parsed event, trigger a level switch to load startLevel playlist
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, startLevel));
             }
         }
 
-        private function _manifestLoadedHandler(event : HLSEvent) : void {
-            var levels : Vector.<Level> = event.levels;
-            var maxswitchup : Number = 0;
-            var minswitchdwown : Number = Number.MAX_VALUE;
+        private function _manifestLoadedHandler(event:HLSEvent):void {
+            var levels:Vector.<Level> = event.levels;
+            var maxswitchup:Number = 0;
+            var minswitchdwown:Number = Number.MAX_VALUE;
             _numLevels = levels.length;
             _bitrate = new Vector.<uint>(_numLevels, true);
             _switchup = new Vector.<Number>(_numLevels, true);
@@ -112,9 +112,9 @@ package org.mangui.hls.controller {
             _autoLevelCapping = -1;
             _lastSegmentDuration = 0;
             _lastFetchDuration = 0;
-            lastBandwidth = 0;
+            _lastBandwidth = 0;
 
-            var i : int;
+            var i:int;
 
             for (i = 0; i < _numLevels; i++) {
                 _bitrate[i] = levels[i].bitrate;
@@ -149,9 +149,9 @@ package org.mangui.hls.controller {
             }
         }
 
-        public function getAutoStartBestLevel(downloadBandwidth : int, initialDelay : int, lastSegmentDuration : int) : int {
-            var bwFactor : Number;
-            var max_level : int = _maxLevel;
+        public function getAutoStartBestLevel(downloadBandwidth:int, initialDelay:int, lastSegmentDuration:int):int {
+            var bwFactor:Number;
+            var max_level:int = _maxLevel;
             // in case initial delay is capped
             if(HLSSettings.autoStartMaxDuration != -1) {
                 // if we are above initial delay, stick to level 0
@@ -168,7 +168,7 @@ package org.mangui.hls.controller {
             CONFIG::LOGGING {
                 Log.debug(this+" getAutoStartBestLevel,initialDelay/max delay/bwFactor=" + initialDelay + "/" + HLSSettings.autoStartMaxDuration + "/" + bwFactor.toFixed(2));
             }
-            for (var i : int = max_level; i >= 0; i--) {
+            for (var i:int = max_level; i >= 0; i--) {
                 if (_bitrate[i]*bwFactor <= downloadBandwidth) {
                     return Math.max(0, i);
                 }
@@ -176,11 +176,11 @@ package org.mangui.hls.controller {
             return 0;
         }
 
-        private function get _maxLevelsWithUniqueDimensions() : Vector.<Level> {
-            var filter : Function = function(l : Level, i : int, v : Vector.<Level>) : Boolean {
+        private function get _maxLevelsWithUniqueDimensions():Vector.<Level> {
+            var filter:Function = function(l:Level, i:int, v:Vector.<Level>):Boolean {
                 if (l.width > 0 && l.height > 0) {
                     if (i + 1 < v.length) {
-                        var nextLevel : Level = v[i + 1];
+                        var nextLevel:Level = v[i + 1];
                         if (l.width != nextLevel.width && l.height != nextLevel.height) {
                             return true;
                         }
@@ -196,39 +196,39 @@ package org.mangui.hls.controller {
 
 
         /** Return the capping/max level value that could be used by automatic level selection algorithm **/
-        public function get autoLevelCapping() : int {
+        public function get autoLevelCapping():int {
             return _autoLevelCapping;
         }
 
         /** set the capping/max level value that could be used by automatic level selection algorithm **/
-        public function set autoLevelCapping(newLevel : int) : void {
+        public function set autoLevelCapping(newLevel:int):void {
             _autoLevelCapping = newLevel;
         }
 
-        private function get _maxLevel() : int {
+        private function get _maxLevel():int {
             // if set, _autoLevelCapping takes precedence
             if(_autoLevelCapping >= 0) {
                 return Math.min(_numLevels - 1, _autoLevelCapping);
             } else if (HLSSettings.capLevelToStage) {
-                var maxLevelsCount : int = _maxUniqueLevels.length;
+                var maxLevelsCount:int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
-                    var maxLevel : Level = this._maxUniqueLevels[0],
-                    maxLevelIdx : int = maxLevel.index,
-                    stage : Stage = _hls.stage,
-                    sWidth : Number = stage.stageWidth,
-                    sHeight : Number = stage.stageHeight,
-                    lWidth : int,
-                    lHeight : int,
-                    i : int;
+                    var maxLevel:Level = this._maxUniqueLevels[0],
+                    maxLevelIdx:int = maxLevel.index,
+                    stage:Stage = _hls.stage,
+                    sWidth:Number = stage.stageWidth,
+                    sHeight:Number = stage.stageHeight,
+                    lWidth:int,
+                    lHeight:int,
+                    i:int;
 
                    // retina display support
                    // contentsScaleFactor was added in FP11.5, but this allows us to include the option in all builds
                     try {
-                        var contentsScaleFactor : int =  stage['contentsScaleFactor'];
+                        var contentsScaleFactor:int =  stage['contentsScaleFactor'];
                         sWidth*=contentsScaleFactor;
                         sHeight*=contentsScaleFactor;
-                    } catch(e : Error) {
+                    } catch(e:Error) {
                        // Ignore errors, we're running in FP < 11.5
                     }
 
@@ -274,106 +274,88 @@ package org.mangui.hls.controller {
             }
         }
 
+		/** 
+		 * What's the maximum quality we can use for the current bandwidth?
+		 * If no bandwidth specified, the last known bandwidth is used
+		 * 
+		 * @param	bandwidth
+		 */
+        public function getMaxLevelForBandwidth(bandwidth:Number=NaN):int {
+            
+            var i:uint;
+            var maxLevel:uint = _hls.levels.length-1;
+            
+            if (isNaN(bandwidth)) bandwidth = _lastBandwidth || 0; 
+            
+            for (i=0; i<=maxLevel; ++i) {
+                if (_hls.levels[i].bitrate > bandwidth) {
+                    return Math.max(0, i-1);
+                }
+            }
+            
+            return maxLevel;
+        }
+        
         /** Update the quality level for the next fragment load. **/
-        public function getNextLevel(current_level : int, buffer : Number) : int {
-
-			// Experimental: does only using lastBandwidth enable quicker response to changing bandwidth?
-			if (!lastBandwidth) return current_level;
-			
-			var maxLevel:uint = Math.min(_maxLevel, current_level+HLSSettings.maxUpSwitchLimit);
-			var minLevel:uint = Math.max(0, current_level-HLSSettings.maxDownSwitchLimit);
-			var newLevel:int;
-			var length:uint = _hls.levels.length;
-
-			for (newLevel=0; newLevel<length; ++newLevel) {
-				if (_hls.levels[newLevel].bitrate > lastBandwidth) {
-					newLevel = Math.max(0, newLevel-1);
-					break;
-				}
-			}
-
-			newLevel = Math.max(minLevel, Math.min(newLevel, maxLevel));
-
-			return newLevel;
-			
-			/*
-            if (!_hls.stream.isReady || _lastFetchDuration == 0 || _lastSegmentDuration == 0) {
+        public function getNextLevel(current_level:int, buffer:Number):int {
+            
+            if (!_lastBandwidth || _lastFetchDuration <= 0 || _lastSegmentDuration <= 0) {
                 return current_level;
             }
-
-            // rsft : remaining segment fetch time : available time to fetch next segment
-			// it depends on the current playback timestamp , the timestamp of the first frame of the next segment
-			// and TBMT, indicating a desired latency between the time instant to receive the last byte of a
-			// segment to the playback of the first media frame of a segment
-			// buffer is start time of next segment
-			// TBMT is the buffer size we need to ensure (we need at least 2 segments buffered
-            var rsft : Number = 1000 * buffer - 2 * _lastFetchDuration;
-            var sftm : Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
-            var max_level : Number = _maxLevel;
-            var switch_to_level : int = current_level;
+            
+            // rsft:remaining segment fetch time:available time to fetch next segment
+            // it depends on the current playback timestamp , the timestamp of the first frame of the next segment
+            // and TBMT, indicating a desired latency between the time instant to receive the last byte of a
+            // segment to the playback of the first media frame of a segment
+            // buffer is start time of next segment
+            // TBMT is the buffer size we need to ensure (we need at least 2 segments buffered
+            var rsft:Number = 1000 * buffer - 2 * _lastFetchDuration;
+            var sftm:Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
+            var max_level:Number = Math.min(_maxLevel, current_level+HLSSettings.maxUpSwitchLimit, getMaxLevelForBandwidth());
+            var min_level:Number = Math.max(0, current_level-HLSSettings.maxDownSwitchLimit);
+            var switch_to_level:int = current_level;
             
             CONFIG::LOGGING {
                 Log.info(this+" rsft: " + rsft);
                 Log.info(this+" sftm: " + sftm);
             }
             
+			trace(this, "getNextLevel >>> CURRENT_LEVEL="+current_level+", MAX_LEVEL="+max_level+", MIN_LEVEL="+min_level);
+			trace("+-->", _maxLevel, current_level+HLSSettings.maxUpSwitchLimit, getMaxLevelForBandwidth());
+			
             // to switch level up :
             // rsft should be greater than switch up condition
             if (current_level < max_level && sftm > 1+_switchup[current_level]) {
                 CONFIG::LOGGING {
-                    Log.debug(this+" sftm > 1+_switchup[_level] = "+sftm+" > "+(1+_switchup[current_level]));
+                    Log.debug("sftm:> 1+_switchup[_level]=" + (1 + _switchup[current_level]));
                 }
-                
-                var maxUpSwitchLimit:uint = Math.max(1, HLSSettings.maxUpSwitchLimit);
-                max_level = Math.min(max_level, current_level+maxUpSwitchLimit);
-                
-                while (switch_to_level < max_level 
-                    && sftm > 1+_switchup[switch_to_level]) {
-                    ++switch_to_level;
-                }
+                switch_to_level = current_level+1;
             }
-            
             // to switch level down :
-            // rsft should be smaller than switch up condition,
-            // or the current level is greater than max level
-            else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
-                CONFIG::LOGGING {
-                    Log.debug(this+" sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
-                }
-                var bufferratio : Number = 1000 * buffer / _lastSegmentDuration;
-                // find suitable level matching current bandwidth, starting from current level
-				// when switching level down, we also need to consider that we might need to load two fragments.
-				// the condition (bufferratio > 2*_levels[j].bitrate/_lastBandwidth)
-				// ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth.
-                for (var j : int = current_level - 1; j >= 0; j--) {
-                    if (_bitrate[j] <= lastBandwidth && (bufferratio > 2 * _bitrate[j] / lastBandwidth)) {
-                        switch_to_level = j;
-                        break;
-                    }
-                    if (j == 0) {
-                        switch_to_level = 0;
-                    }
-                }
-            }
-            
-            // Then we should check if selected level is higher than max_level if so, than take the min of those two
-            var maxDownSwitchLimit:uint = Math.max(1, HLSSettings.maxDownSwitchLimit);
-            switch_to_level = Math.min(max_level, Math.max(switch_to_level, current_level-maxDownSwitchLimit));
-            
-            CONFIG::LOGGING {
-                if (switch_to_level != current_level) {
-                    Log.debug(this+" switch to level " + switch_to_level);
-                }
-            }
-
-            return switch_to_level;
-			*/
-        }
-
+            // rsft should be smaller than switch up condition or the current level is greater than max level
+            else if ((current_level > max_level && current_level > 0) || (current_level > 0 && sftm < 1-_switchdown[current_level])) {
+	            CONFIG::LOGGING {
+	                Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
+	            }
+	            var bufferratio:Number = 1000 * buffer/_lastSegmentDuration;
+	            // find suitable level matching current bandwidth, starting from current level
+	            // when switching level down, we also need to consider that we might need to load two fragments.
+	            // the condition (bufferratio > 2*_levels[j].bitrate/_lastBandwidth)
+	            // ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth.
+	            for (switch_to_level = current_level-1; switch_to_level>=min_level; --switch_to_level) {
+	                if (_bitrate[switch_to_level] <= _lastBandwidth && bufferratio > 2 * _bitrate[switch_to_level]/_lastBandwidth) {
+	                    break;
+	                }
+	            }
+	        }
+			
+			return switch_to_level;
+		}
+		
         // get level index of first level appearing in the manifest
-        public function get firstLevel() : int {
-            var levels : Vector.<Level> = _hls.levels;
-            for (var i : int = 0; i < levels.length; i++) {
+        public function get firstLevel():int {
+            var levels:Vector.<Level> = _hls.levels;
+            for (var i:int = 0; i < levels.length; i++) {
                 if (levels[i].manifest_index == 0) {
                     return i;
                 }
@@ -381,18 +363,18 @@ package org.mangui.hls.controller {
             return 0;
         }
 
-        public function isStartLevelSet() : Boolean {
+        public function isStartLevelSet():Boolean {
             return (_startLevel >=0);
         }
 
         /** set the quality level used when starting a fresh playback */
-        public function set startLevel(level : int) : void {
+        public function set startLevel(level:int):void {
             _startLevel = level;
         };
 
-        public function get startLevel() : int {
-            var start_level : int = -1;
-            var levels : Vector.<Level> = _hls.levels;
+        public function get startLevel():int {
+            var start_level:int = -1;
+            var levels:Vector.<Level> = _hls.levels;
             if (levels) {
                 // if set, _startLevel takes precedence
                 if(_startLevel >=0) {
@@ -409,7 +391,7 @@ package org.mangui.hls.controller {
                     return 0;
                 } else {
                     // set up start level as being the lowest non-audio level.
-                    for (var i : int = 0; i < levels.length; i++) {
+                    for (var i:int = 0; i < levels.length; i++) {
                         if (!levels[i].audio) {
                             start_level = i;
                             break;
@@ -440,15 +422,15 @@ package org.mangui.hls.controller {
          * @param desiredBitrate
          * @return The index of the level that has a bitrate closest to the desired bitrate.
          */
-        private function findIndexOfClosestLevel(desiredBitrate : Number) : int {
-            var levelIndex : int = -1;
-            var minDistance : Number = Number.MAX_VALUE;
-            var levels : Vector.<Level> = _hls.levels;
+        private function findIndexOfClosestLevel(desiredBitrate:Number):int {
+            var levelIndex:int = -1;
+            var minDistance:Number = Number.MAX_VALUE;
+            var levels:Vector.<Level> = _hls.levels;
 
-            for (var index : int = 0; index < levels.length; index++) {
-                var level : Level = levels[index];
+            for (var index:int = 0; index < levels.length; index++) {
+                var level:Level = levels[index];
 
-                var distance : Number = Math.abs(desiredBitrate - level.bitrate);
+                var distance:Number = Math.abs(desiredBitrate - level.bitrate);
 
                 if (distance < minDistance) {
                     levelIndex = index;
@@ -458,16 +440,16 @@ package org.mangui.hls.controller {
             return levelIndex;
         }
 
-        public function get seekLevel() : int {
-            var seek_level : int = -1;
-            var levels : Vector.<Level> = _hls.levels;
+        public function get seekLevel():int {
+            var seek_level:int = -1;
+            var levels:Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
                 // keep last level, but don't exceed _maxLevel
-				return Math.min(_hls.loadLevel, _maxLevel);
+                return Math.min(_hls.loadLevel, _maxLevel);
             }
 
             // set up seek level as being the lowest non-audio level.
-            for (var i : int = 0; i < levels.length; i++) {
+            for (var i:int = 0; i < levels.length; i++) {
                 if (!levels[i].audio) {
                     seek_level = i;
                     break;
