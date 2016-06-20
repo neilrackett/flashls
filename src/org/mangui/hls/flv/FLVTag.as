@@ -204,9 +204,9 @@ package org.mangui.hls.flv {
             }
         }
 
-        /** Trace the contents of this tag. **/
+        /** Info about the contents of this tag. **/
         public function toString() : String {
-            return "TAG (type: " + type + ", pts:" + pts + ", dts:" + dts + ", length:" + length + ")";
+            return "[FLVTag type=" + type + ", pts=" + pts + ", dts=" + dts + ", length=" + length + "]";
         }
 
         public function clone() : FLVTag {

@@ -288,7 +288,9 @@ package org.mangui.hls.loader {
             }
             metrics.id  = _levels[level].start_seqnum;
             metrics.id2 = _levels[level].end_seqnum;
-			trace(this, ">>>>>>>>>>>>>>> V:", metrics.id);
+			CONFIG::LOGGING {
+				Log.debug(this+" >>>>>>>>>>>>>>> V:"+metrics.id);
+			}
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, metrics));
             _manifestLoading = null;
         }

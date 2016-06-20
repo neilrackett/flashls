@@ -41,19 +41,17 @@
 
         /** Update playback position/duration **/
         private function _levelSwitchHandler(event : HLSEvent) : void {
-        	var cc : String = (_hls.levels[event.level] as Level).closed_captions;
-
-        	if (cc && cc === "NONE")
-        	{
+        	var cc : String;
+			if (event.level != -1) {
+				cc = Level(_hls.levels[event.level]).closed_captions;
+			}
+        	if (cc && cc === "NONE") {
         		// manifest told us to ignore any 608/708 binary
         		_hasClosedCapations = HLSClosedCaptionsState.NO;
-        	}
-    		else
-    		{
+        	} else {
     			_hasClosedCapations = HLSClosedCaptionsState.UNKNOWN;
     		}
-
-    		// YES only happens for WebVTT, which isn't supported.
+    		// YES only happens for WebVTT
         }
     }
 }

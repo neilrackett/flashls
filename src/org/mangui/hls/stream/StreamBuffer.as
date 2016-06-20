@@ -184,20 +184,16 @@ package org.mangui.hls.stream {
                 * three target durations from the end of the Playlist file 
                 */
                 _seekPositionRequested = Math.max(loadLevel.targetduration, loadLevel.duration - 3*loadLevel.averageduration);
-                
                 // NEIL: Part of workaround for blank/frozen image at start of live stream
                 if (newPosition == -2) {
                     if (_altAudioTrackSwitching) {
-                        _seekPositionRequested = Math.max(oldPosition, _seekPositionRequested) + 0.1;
-                        trace(this, ">>> SEEK LIVE/ALT", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
+                        _seekPositionRequested += 0.1;
                     } else {
                         _seekPositionRequested = Math.max(0, min_pos, oldPosition);
-                        trace(this, ">>> SEEK LIVE", oldPosition, "=>", newPosition, "->", _seekPositionRequested);
                     }
                 }
             } else if (newPosition == -2) {
                 _seekPositionRequested = oldPosition;
-                trace(this, ">>> SEEK VOD", _hls.position, "=>", newPosition, "->", _seekPositionRequested);
             } else {
                 _seekPositionRequested = Math.min(Math.max(newPosition, 0), maxPosition);
             }

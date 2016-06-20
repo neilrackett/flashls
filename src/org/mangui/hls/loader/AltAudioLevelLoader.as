@@ -127,7 +127,9 @@ package org.mangui.hls.loader {
 			}
 			metrics.id  = audioLevel.start_seqnum;
 			metrics.id2 = audioLevel.end_seqnum;
-			trace(this, ">>>>>>> A:", metrics.id);
+			CONFIG::LOGGING {
+				Log.debug(this+" >>>>>>> A:"+metrics.id);
+			}
 			_hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, metrics));
 			_manifestLoading = null;
 		};

@@ -416,17 +416,17 @@ package org.mangui.hls {
 		 * When bandwidth availability increases, what is the maximum number 
 		 * of quality levels we can we switch up at a time?
 		 * 
-		 * Default is uint.MAX_VALUE
+		 * Default is 99
 		 */
-		public static var maxUpSwitchLimit:uint = uint.MAX_VALUE;
+		public static var maxUpSwitchLimit:uint = 99;
 		
 		/**
 		 * When bandwidth availability decreases, what is the maximum number 
 		 * of quality levels we can we switch down at a time?
 		 * 
-		 * Default is uint.MAX_VALUE
+		 * Default is 99
 		 */
-		public static var maxDownSwitchLimit:uint = uint.MAX_VALUE;
+		public static var maxDownSwitchLimit:uint = 99;
 		
 		/**
 		 * When decoding AES data, how much of the time available for each
@@ -443,9 +443,9 @@ package org.mangui.hls {
          *  it will set NetStream.useHardwareDecoder
          *  refer to http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/NetStream.html#useHardwareDecoder
          *
-         * Default is false
+         * Default is true
          */
-        public static var useHardwareVideoDecoder : Boolean = false;
+        public static var useHardwareVideoDecoder : Boolean = true;
 
         /**
          * logInfo
