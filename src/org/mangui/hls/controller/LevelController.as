@@ -314,15 +314,10 @@ package org.mangui.hls.controller {
             var max_level:Number = Math.min(_maxLevel, current_level+HLSSettings.maxUpSwitchLimit, getMaxLevelForBandwidth());
             var min_level:Number = Math.max(0, current_level-HLSSettings.maxDownSwitchLimit);
             var switch_to_level:int = current_level;
-            
-            CONFIG::LOGGING {
-                Log.info(this+" rsft: " + rsft);
-                Log.info(this+" sftm: " + sftm);
-            }
-            
-			trace(this, "getNextLevel >>> CURRENT_LEVEL="+current_level+", MAX_LEVEL="+max_level+", MIN_LEVEL="+min_level);
-			trace("+-->", _maxLevel, current_level+HLSSettings.maxUpSwitchLimit, getMaxLevelForBandwidth());
-			
+            //CONFIG::LOGGING {
+            //    Log.info(this+" rsft: " + rsft);
+            //    Log.info(this+" sftm: " + sftm);
+            //}
             // to switch level up :
             // rsft should be greater than switch up condition
             if (current_level < max_level && sftm > 1+_switchup[current_level]) {
