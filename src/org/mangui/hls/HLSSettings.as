@@ -396,11 +396,21 @@ package org.mangui.hls {
          * subtitlesUseFlvTagForVod
          * 
          * Should VOD subtitles be appended directly into the stream or handled
-		 * using media time events? 
+		 * using media time events for VOD streams? 
          * 
          * Default is false
          */
         public static var subtitlesUseFlvTagForVod:Boolean = false;
+		
+        /**
+         * subtitlesUseFlvTagForLive
+         * 
+         * Should VOD subtitles be appended directly into the stream or handled
+		 * using media time events for live streams? 
+         * 
+         * Default is false
+         */
+        public static var subtitlesUseFlvTagForLive:Boolean = true;
 		
 		/**
 		 * altAudioSwitchMode

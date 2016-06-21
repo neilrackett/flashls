@@ -9,6 +9,7 @@ package org.mangui.hls.utils {
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.constant.HLSPlayStates;
 	import org.mangui.hls.constant.HLSSeekStates;
+	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
 	import org.mangui.hls.model.Subtitle;
@@ -145,7 +146,7 @@ package org.mangui.hls.utils {
 			
 			var mediaTime:HLSMediatime = event.mediatime;
 			var track:Vector.<Subtitle> = _tracks[_hls.subtitlesTrack];
-			var matchingSubtitle:Subtitle = emptySubtitle;
+			var matchingSubtitle:Subtitle = _hls.type == HLSTypes.LIVE ? null : emptySubtitle;
 			
 			if (track) {
 				
@@ -167,7 +168,7 @@ package org.mangui.hls.utils {
 				_currentIndex = i;
 			}
 			
-			if (!matchingSubtitle.equals(_currentSubtitle)) {
+			if (matchingSubtitle && !matchingSubtitle.equals(_currentSubtitle)) {
 				_currentSubtitle = matchingSubtitle;
 				dispatchTextData(matchingSubtitle);
 			}

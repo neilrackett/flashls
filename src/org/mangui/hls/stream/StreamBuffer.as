@@ -217,6 +217,9 @@ package org.mangui.hls.stream {
                 // stop any load in progress ...
                 _fragmentLoader.stop();
                 _altaudiofragmentLoader.stop();
+				_subtitlesFragmentLoader.stop();
+				// clear the cache
+				flushBuffer();
                 // seek position is out of buffer : load from fragment
                 _liveLoadingStalled = false;
                 _fragmentLoader.seek(_seekPositionRequested);
@@ -230,7 +233,7 @@ package org.mangui.hls.stream {
                 } else {
                     _useAltAudio = false;
                 }
-                flushBuffer();
+				_subtitlesFragmentLoader.seek(_seekPositionRequested);
             }
             _playbackCompleted = false;
             _lastMediaTimeUpdate = 0;

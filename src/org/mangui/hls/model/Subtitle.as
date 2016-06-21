@@ -55,7 +55,7 @@ package org.mangui.hls.model
         public function Subtitle(
 			trackid:int,
 			htmlText:String, 
-			startPTS:Number, endPTS:Number,
+			startPTS:Number, endPTS:Number=NaN,
 			startPosition:Number=NaN, endPosition:Number=NaN,
 			startDate:Number=NaN, endDate:Number=NaN
 		)
@@ -66,7 +66,7 @@ package org.mangui.hls.model
 			_text = StringUtil.removeHtmlTags(_htmlText);
 			
 			_startPTS = startPTS;
-			_endPTS = endPTS;
+			_endPTS = endPTS || _startPTS;
 			
 			_startPosition = startPosition || _startPTS/1000;
 			_endPosition = endPosition || _endPTS/1000;

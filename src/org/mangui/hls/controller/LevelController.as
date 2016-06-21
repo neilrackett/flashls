@@ -307,63 +307,6 @@ package org.mangui.hls.controller {
 			var newLevel:Number = getMaxLevelForBandwidth();
 			
 			return Math.min(maxLevel, Math.max(newLevel, minLevel));
-			
-			/*
-            if (!_lastBandwidth || _lastFetchDuration <= 0 || _lastSegmentDuration <= 0) {
-                return current_level;
-            }
-            // rsft:remaining segment fetch time:available time to fetch next segment
-            // it depends on the current playback timestamp , the timestamp of the first frame of the next segment
-            // and TBMT, indicating a desired latency between the time instant to receive the last byte of a
-            // segment to the playback of the first media frame of a segment
-            // buffer is start time of next segment
-            // TBMT is the buffer size we need to ensure (we need at least 2 segments buffered
-            var rsft:Number = 1000 * buffer - 2 * _lastFetchDuration;
-            var sftm:Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
-            var max_level:Number = Math.min(_maxLevel, current_level+HLSSettings.maxUpSwitchLimit, getMaxLevelForBandwidth());
-            var min_level:Number = Math.max(0, current_level-HLSSettings.maxDownSwitchLimit);
-            var switch_to_level:int = current_level;
-            //CONFIG::LOGGING {
-            //    Log.info(this+" rsft: " + rsft);
-            //    Log.info(this+" sftm: " + sftm);
-            //}
-            // to switch level up :
-            // rsft should be greater than switch up condition
-            if (current_level < max_level && sftm > 1+_switchup[current_level]) {
-                CONFIG::LOGGING {
-                    Log.debug("sftm:> 1+_switchup[_level]=" + (1 + _switchup[current_level]));
-                }
-                switch_to_level = current_level+1;
-            }
-            // to switch level down :
-            // rsft should be smaller than switch up condition or the current level is greater than max level
-            else if ((current_level > max_level && current_level > 0) || (current_level > 0 && sftm < 1-_switchdown[current_level])) {
-	            CONFIG::LOGGING {
-	                Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
-	            }
-	            var bufferratio:Number = 1000 * buffer/_lastSegmentDuration;
-	            // find suitable level matching current bandwidth, starting from current level
-	            // when switching level down, we also need to consider that we might need to load two fragments.
-	            // the condition (bufferratio > 2*_levels[j].bitrate/_lastBandwidth)
-	            // ensures that buffer time is bigger than than the time to download 2 fragments from level i, if we keep same bandwidth.
-	            for (var i:int=current_level-1; i>=0; --i) {
-	                if (_bitrate[i] <= _lastBandwidth && bufferratio > 2 * _bitrate[i]/_lastBandwidth) {
-						switch_to_level = i;
-	                    break;
-					}
-	                if (i === 0) {
-						switch_to_level = 0;
-					}
-	            }
-	        }
-			switch_to_level = Math.min(max_level, Math.max(switch_to_level, min_level));
-			CONFIG::LOGGING {
-				if (switch_to_level != current_level) {
-					Log.debug(this+" Switch to level " + switch_to_level);
-				}
-			}
-			return switch_to_level;
-			*/
 		}
 		
         // get level index of first level appearing in the manifest
