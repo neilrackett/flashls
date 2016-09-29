@@ -5,7 +5,7 @@ package org.mangui.hls.constant
 {
 	public class HLSAltAudioSwitchMode
 	{
-		public static const DEFAULT:uint = 0;
+		public static const LEGACY:uint = 0;
 		public static const ACTIVE:uint = 1;
 		public static const PASSIVE:uint = 2;
 	}

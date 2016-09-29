@@ -484,7 +484,8 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info(this+" HLSNetStream:pause");
             }
-            if (HLSSettings.liveStopLoadingOnPause && (_playbackState == HLSPlayStates.PLAYING || (_playbackState == HLSPlayStates.PLAYING_BUFFERING && _hls.type == HLSTypes.LIVE))) {
+            if ((_hls.type == HLSTypes.LIVE && HLSSettings.liveStopLoadingOnPause) 
+				&& (_playbackState == HLSPlayStates.PLAYING || (_playbackState == HLSPlayStates.PLAYING_BUFFERING && _hls.type == HLSTypes.LIVE))) {
 				super.pause();
 				_watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
 				_streamBuffer.stop();

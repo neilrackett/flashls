@@ -418,9 +418,9 @@ package org.mangui.hls {
 		 * Selects which method to use when switching between alternative audio
 		 * streams.
 		 * 
-		 * Default is HLSAltAudioSwitchMode.DEFAULT
+		 * Default is HLSAltAudioSwitchMode.ACTIVE
 		 */
-		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.DEFAULT; 
+		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.ACTIVE; 
 		
 		/**
 		 * When bandwidth availability increases, what is the maximum number 

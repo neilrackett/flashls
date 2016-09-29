@@ -154,6 +154,9 @@ package org.mangui.hls.stream {
         }
 
         public function stop() : void {
+			CONFIG::LOGGING {
+				Log.debug(this+" stop()");
+			}
             _fragmentLoader.stop();
             _altaudiofragmentLoader.stop();
             flushBuffer();
@@ -1463,26 +1466,31 @@ package org.mangui.hls.stream {
             var isReady:Boolean = stream.isReady;
             var f:Function
             switch (HLSSettings.altAudioSwitchMode) {
+				
+				// Clear entire buffer, resume from current position (or start of current keyframe, depending on seek mode)
                 case HLSAltAudioSwitchMode.ACTIVE:
                     CONFIG::LOGGING {
                         Log.debug(this+" StreamBuffer : audio track changed, using ACTIVE method to switch to " + event.audioTrack);
                     }
                     if (isReady) {
-                        // Current implementation is effectively a hard reset of the current audio stream...
-                        var newPosition:Number = _hls.type == HLSTypes.LIVE ? -2 : position;
-                        function audioLevelLoadedHandler(e:HLSEvent):void {
+						// TODO VOD position currently nudged by -0.1s to prevent stream stalling, is there a better solution? 
+                        var newPosition:Number = _hls.type == HLSTypes.LIVE ? -2 : Math.max(0, position-0.1);
+                        function resumeAfterActiveSwitch(e:HLSEvent=null):void {
                             _altAudioTrackSwitchTimer = getTimer();
-                            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
+                            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, resumeAfterActiveSwitch);
                             stream.seek2(newPosition, true);
                         }
                         stop();
                         _altAudioTrackSwitching = true;
-                        _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, audioLevelLoadedHandler);
+						_hls.type == HLSTypes.LIVE
+							? _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, resumeAfterActiveSwitch)
+							: resumeAfterActiveSwitch();
                     } else {
                         flushAudio();
                     }
                     break;
 
+				// Keep the current buffer intact, append new audio to the end
                 case HLSAltAudioSwitchMode.PASSIVE:
                     CONFIG::LOGGING {
                         Log.debug(this+" StreamBuffer : audio track changed, using PASSIVE method to switch to " + event.audioTrack);
@@ -1492,10 +1500,12 @@ package org.mangui.hls.stream {
                         break;
                     }
 
-                case HLSAltAudioSwitchMode.DEFAULT:
+				// Clears audio buffer and starts loading new audio 
+				// WARNING: Usually results in loss of audio for 10-20 seconds and can break video
+                case HLSAltAudioSwitchMode.LEGACY:
                 default:
                     CONFIG::LOGGING {
-                        Log.debug(this+" StreamBuffer : audio track changed, using DEFAULT method to switch to " + event.audioTrack);
+                        Log.debug(this+" StreamBuffer : audio track changed, using LEGACY method to switch to " + event.audioTrack);
                     }
                     flushAudio();
                     break;
