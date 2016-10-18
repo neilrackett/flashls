@@ -802,14 +802,16 @@ package org.mangui.hls.stream {
             * not begin before the buffer is full, and use an in-buffer seek to get things
             * moving again once the minimum buffer requirement is reached.
             * 
-            * Appending tags without an in-buffer seek works 99% or the time, but in that 
+            * Appending tags to an insufficient buffer works 99% or the time, but in that 
             * remaining 1% we see blank or frozen video, or, if we're really lucky, animated 
             * rainbow patterns, especially when alt audio is used.
             */
             if (_seekingOutsideBuffer && bufferLength >= _hls.stream.bufferThresholdController.minBufferLength) {
                 _altAudioTrackSwitching = false;
-                _hls.stream.seek(-2);
-            } else if (!_seekingOutsideBuffer) {
+				_seekingOutsideBuffer = false;
+			}
+			
+			if (!_seekingOutsideBuffer) {
                 var netStreamBuffer : Number = _hls.stream.netStreamBufferLength;
                 /* only append tags if seek position has been reached, otherwise wait for more tags to come
                  * this is to ensure that accurate seeking will work appropriately
