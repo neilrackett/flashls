@@ -18,8 +18,9 @@ package org.mangui.hls.controller {
         private var _hls : HLS;
         private var _targetduration : Number;
         private var _minBufferLength : Number;
-        private var _minLiveBufferLength : Number;
-
+		/** Absolute minimum buffer length prevents audio-video sync issues at startup and when seeking */
+        private var _minMinBufferLength : Number;
+		
         /** Create the loader. **/
         public function BufferThresholdController(hls : HLS) : void {
             _hls = hls;
@@ -41,9 +42,7 @@ package org.mangui.hls.controller {
 				? _minBufferLength
 				: HLSSettings.minBufferLength;
 			
-			return _hls.isAltAudio
-				? Math.max(mbl, _minLiveBufferLength)
-				: mbl;
+			return Math.max(mbl, _minMinBufferLength);
         }
 		
         public function get lowBufferLength() : Number {
@@ -58,7 +57,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _targetduration = event.levels[_hls.startLevel].targetduration;
             _minBufferLength = _targetduration;
-			_minLiveBufferLength = _targetduration; // TODO Test for the minimum value that always works 
+			_minMinBufferLength = _targetduration;
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {

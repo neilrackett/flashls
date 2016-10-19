@@ -798,15 +798,17 @@ package org.mangui.hls.stream {
             /*
             * NEIL:
             *
-            * When seeking outside of the buffer, we enforce the rule that playback should 
-            * not begin before the buffer is full, and use an in-buffer seek to get things
-            * moving again once the minimum buffer requirement is reached.
+            * When seeking outside of the buffer, we ensure that playback does not begin 
+			* before the buffer has reached the specified minimum length.
             * 
-            * Appending tags to an insufficient buffer works 99% or the time, but in that 
-            * remaining 1% we see blank or frozen video, or, if we're really lucky, animated 
-            * rainbow patterns, especially when alt audio is used.
+            * Appending tags when there is an insufficient buffer (less than one complete 
+			* fragment) works 99% of the time, but in that remaining 1% we see blank or 
+			* frozen video, or, if we're really lucky, animated rainbow patterns, especially 
+			* when alt audio is used.
             */
-            if (_seekingOutsideBuffer && bufferLength >= _hls.stream.bufferThresholdController.minBufferLength) {
+            if (_seekingOutsideBuffer 
+				&& bufferLength >= _hls.stream.bufferThresholdController.minBufferLength
+			) {
                 _altAudioTrackSwitching = false;
 				_seekingOutsideBuffer = false;
 			}
