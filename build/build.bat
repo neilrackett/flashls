@@ -43,69 +43,69 @@ call "%FLEX_HOME%\bin\compc" ^
     -output %BIN_PATH%\release\flashls.swc ^
     -target-player=10.1
 
-echo.
-echo Compiling bin\release\flashlsChromeless.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\chromeless\ChromelessPlayer.as ^
-    -source-path+=..\src ^
-    -o %BIN_PATH%\release\flashlsChromeless.swf ^
-    %OPT_RELEASE% ^
-    -target-player=11.1 ^
-    -default-size 480 270 ^
-    -default-background-color=0x000000
-.\add-opt-in.py %BIN_PATH%\release\flashlsChromeless.swf
+:: echo.
+:: echo Compiling bin\release\flashlsChromeless.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\chromeless\ChromelessPlayer.as ^
+::     -source-path+=..\src ^
+::     -o %BIN_PATH%\release\flashlsChromeless.swf ^
+::     %OPT_RELEASE% ^
+::     -target-player=11.1 ^
+::     -default-size 480 270 ^
+::     -default-background-color=0x000000
+:: .\add-opt-in.py %BIN_PATH%\release\flashlsChromeless.swf
 
-echo.
-echo Compiling bin\debug\flashlsChromeless.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\chromeless\ChromelessPlayer.as ^
-    -source-path+=..\src ^
-    -o %BIN_PATH%\debug\flashlsChromeless.swf ^
-    %OPT_DEBUG% ^
-    -target-player=11.1 ^
-    -default-size 480 270 ^
-    -default-background-color=0x000000
-REM .\add-opt-in.py %BIN_PATH%\debug\flashlsChromeless.swf
+:: echo.
+:: echo Compiling bin\debug\flashlsChromeless.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\chromeless\ChromelessPlayer.as ^
+::     -source-path+=..\src ^
+::     -o %BIN_PATH%\debug\flashlsChromeless.swf ^
+::     %OPT_DEBUG% ^
+::     -target-player=11.1 ^
+::     -default-size 480 270 ^
+::     -default-background-color=0x000000
+:: REM .\add-opt-in.py %BIN_PATH%\debug\flashlsChromeless.swf
 
-echo.
-echo Compiling bin\release\flashlsFlowPlayer.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\flowplayer\HLSPluginFactory.as ^
-    -source-path+=..\src -o %BIN_PATH%\release\flashlsFlowPlayer.swf ^
-    %OPT_RELEASE% ^
-    -library-path+=..\lib\flowplayer ^
-    -load-externs=..\lib\flowplayer\flowplayer-classes.xml ^
-    -target-player=11.1
-REM .\add-opt-in.py %BIN_PATH%\release\flashlsFlowPlayer.swf
+:: echo.
+:: echo Compiling bin\release\flashlsFlowPlayer.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\flowplayer\HLSPluginFactory.as ^
+::     -source-path+=..\src -o %BIN_PATH%\release\flashlsFlowPlayer.swf ^
+::     %OPT_RELEASE% ^
+::     -library-path+=..\lib\flowplayer ^
+::     -load-externs=..\lib\flowplayer\flowplayer-classes.xml ^
+::     -target-player=11.1
+:: REM .\add-opt-in.py %BIN_PATH%\release\flashlsFlowPlayer.swf
 
-echo.
-echo Compiling bin\debug\flashlsFlowPlayer.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\flowplayer\HLSPluginFactory.as ^
-    -source-path+=..\src -o %BIN_PATH%\debug\flashlsFlowPlayer.swf ^
-    %OPT_DEBUG% ^
-    -library-path+=..\lib\flowplayer ^
-    -load-externs=..\lib\flowplayer\flowplayer-classes.xml ^
-    -target-player=11.1
-.\add-opt-in.py %BIN_PATH%\debug\flashlsFlowPlayer.swf
+:: echo.
+:: echo Compiling bin\debug\flashlsFlowPlayer.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\flowplayer\HLSPluginFactory.as ^
+::     -source-path+=..\src -o %BIN_PATH%\debug\flashlsFlowPlayer.swf ^
+::     %OPT_DEBUG% ^
+::     -library-path+=..\lib\flowplayer ^
+::     -load-externs=..\lib\flowplayer\flowplayer-classes.xml ^
+::     -target-player=11.1
+:: .\add-opt-in.py %BIN_PATH%\debug\flashlsFlowPlayer.swf
 
-echo.
-echo Compiling bin\release\flashlsOSMF.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\osmf\plugins\HLSDynamicPlugin.as ^
-    -source-path+=..\src ^
-    -o %BIN_PATH%\release\flashlsOSMF.swf ^
-    %OPT_RELEASE% ^
-    -library-path+=..\lib\osmf ^
-    -load-externs=..\lib\osmf\exclude-sources.xml ^
-    -target-player=10.1
-.\add-opt-in.py %BIN_PATH%\release\flashlsOSMF.swf
+:: echo.
+:: echo Compiling bin\release\flashlsOSMF.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\osmf\plugins\HLSDynamicPlugin.as ^
+::     -source-path+=..\src ^
+::     -o %BIN_PATH%\release\flashlsOSMF.swf ^
+::     %OPT_RELEASE% ^
+::     -library-path+=..\lib\osmf ^
+::     -load-externs=..\lib\osmf\exclude-sources.xml ^
+::     -target-player=10.1
+:: .\add-opt-in.py %BIN_PATH%\release\flashlsOSMF.swf
 
-echo.
-echo Compiling bin\debug\flashlsOSMF.swf...
-call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\osmf\plugins\HLSDynamicPlugin.as ^
-    -source-path+=..\src ^
-    -o %BIN_PATH%\debug\flashlsOSMF.swf ^
-    %OPT_DEBUG% ^
-    -library-path+=..\lib\osmf ^
-    -load-externs=..\lib\osmf\exclude-sources.xml ^
-    -target-player=10.1
-.\add-opt-in.py %BIN_PATH%\debug\flashlsOSMF.swf
+:: echo.
+:: echo Compiling bin\debug\flashlsOSMF.swf...
+:: call "%FLEX_HOME%\bin\mxmlc" ..\src\org\mangui\osmf\plugins\HLSDynamicPlugin.as ^
+::     -source-path+=..\src ^
+::     -o %BIN_PATH%\debug\flashlsOSMF.swf ^
+::     %OPT_DEBUG% ^
+::     -library-path+=..\lib\osmf ^
+::     -load-externs=..\lib\osmf\exclude-sources.xml ^
+::     -target-player=10.1
+:: .\add-opt-in.py %BIN_PATH%\debug\flashlsOSMF.swf
 
 echo.
 echo Compiling bin\release\flashlsOSMF.swc...
@@ -128,6 +128,9 @@ call "%FLEX_HOME%\bin\compc" ^
     -library-path+=..\lib\osmf ^
     -target-player=10.1 ^
     -external-library-path+=..\lib\osmf
+
+del %BIN_PATH%\release\flashls.swc
+del %BIN_PATH%\debug\flashls.swc
 
 :end
 

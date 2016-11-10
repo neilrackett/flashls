@@ -877,7 +877,7 @@ package org.mangui.hls.stream {
                         _clipBackBuffer(HLSSettings.maxBackBufferLength);
                     }
                 }
-            } else if (position < 0 || (!audioBufferLength && _altAudioTrackSwitching && getTimer()-_altAudioTrackSwitchTimer > 3000)) {
+            } else if (position < 0 || (!audioBufferLength && _altAudioTrackSwitching && getTimer()-_altAudioTrackSwitchTimer > HLSSettings.altAudioSwitchTimeout)) {
                 CONFIG::LOGGING {
                     Log.warn(this+" Alt audio switch taking too long: "+position+" / "+(getTimer()-_altAudioTrackSwitchTimer)+" ***");
                 }

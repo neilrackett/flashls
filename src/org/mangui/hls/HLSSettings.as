@@ -423,6 +423,16 @@ package org.mangui.hls {
 		public static var altAudioSwitchMode:uint = HLSAltAudioSwitchMode.ACTIVE; 
 		
 		/**
+		 * altAudioSwitchTimeout
+		 * 
+		 * What is the maximum duration, in milliseconds, to allow for switching 
+		 * alternative audio streams?
+		 * 
+		 * Default is 10000 (10 seconds)
+		 */
+		public static var altAudioSwitchTimeout:uint = 10000;
+		
+		/**
 		 * When bandwidth availability increases, what is the maximum number 
 		 * of quality levels we can we switch up at a time?
 		 * 
