@@ -218,7 +218,7 @@ package org.mangui.hls.stream {
             }
 			
             if (_seekState != HLSSeekStates.SEEKING) {
-                if (_playbackState == HLSPlayStates.PLAYING) {
+                if (_playbackState == HLSPlayStates.PLAYING || _playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                   /* check if play head reached end of stream.
                         this happens when
                             playstate is PLAYING

@@ -84,7 +84,7 @@ package org.mangui.hls.playlist {
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error);
 
-            if (flushLiveURLcache && type == HLSTypes.LIVE) {
+            if (flushLiveURLcache && (!type || type == HLSTypes.LIVE)) {
                 /*
                 add time parameter to force reload URL, there are some issues with browsers/CDN reloading from cache even if the URL has been updated ...
                 see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
@@ -473,7 +473,7 @@ package org.mangui.hls.playlist {
                         break;
                     case RENDITION_STATE_READSIMPLEVALUE:
                         if (c == ",") {
-                            variables[key] = value;
+                            variables[StringUtil.trim(key)] = value;
                             key = "";
                             value = "";
                             state = RENDITION_STATE_READKEY;
@@ -490,7 +490,7 @@ package org.mangui.hls.playlist {
                         break;
                     case STATE_READQUOTEDVALUE_END:
                         if (c == ",") {
-                            variables[key] = value;
+                            variables[StringUtil.trim(key)] = value;
                             key = "";
                             value = "";
                             state = RENDITION_STATE_READKEY;
@@ -500,7 +500,7 @@ package org.mangui.hls.playlist {
             }
 
             if (key) {
-                variables[key] = value;
+                variables[StringUtil.trim(key)] = value;
             }
 
             return variables;

@@ -160,6 +160,7 @@ package org.mangui.hls.event {
                 case LEVEL_LOADING:
                 case LEVEL_LOADING_ABORTED:
                 case LEVEL_SWITCH:
+                case LEVEL_ENDLIST:
                 case AUDIO_LEVEL_LOADING:
                 case SUBTITLES_LEVEL_LOADING:
                 case FPS_DROP:

@@ -170,6 +170,10 @@ package org.mangui.chromeless {
             _trigger("levelLoaded", event.loadMetrics);
         };
 
+        protected function _levelEndlistHandler(event : HLSEvent) : void {
+            _trigger("levelEndlist", event.level);
+        };
+
         protected function _audioLevelLoadedHandler(event : HLSEvent) : void {
             _trigger("audioLevelLoaded", event.loadMetrics);
         };
@@ -246,6 +250,10 @@ package org.mangui.chromeless {
         protected function _id3Updated(event : HLSEvent) : void {
             _trigger("id3Updated", event.ID3Data);
         }
+
+        protected function _liveLoadingStalledHandler(event : HLSEvent) : void {
+            _trigger("liveLoadingStalled");
+        };
 
         /** Javascript getters. **/
         protected function _getCurrentLevel() : int {
@@ -503,6 +511,7 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.LEVEL_ENDLIST, _levelEndlistHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
@@ -515,10 +524,11 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
+            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
-                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange)
+                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange);
                 _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
                 _stageVideo.attachNetStream(_hls.stream);
             } else {
