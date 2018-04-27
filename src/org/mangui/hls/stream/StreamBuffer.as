@@ -38,7 +38,7 @@ package org.mangui.hls.stream {
      */
     public class StreamBuffer {
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
-        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
+        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 10.0;
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
         private var _altaudiofragmentLoader : AltAudioFragmentLoader;

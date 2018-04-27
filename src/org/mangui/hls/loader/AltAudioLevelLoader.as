@@ -50,6 +50,7 @@ package org.mangui.hls.loader {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+			_hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackSwitchHandler);
 			_hls.addEventListener(Event.CLOSE, closeHandler);
         };
 
@@ -57,6 +58,7 @@ package org.mangui.hls.loader {
             _close();
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+			_hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackSwitchHandler);
 			_hls.removeEventListener(Event.CLOSE, closeHandler);
         }
 		
@@ -136,6 +138,9 @@ package org.mangui.hls.loader {
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
+			if (_hls.audioTracks.length === 0) {
+				return;
+			}
 			_currentTrack = event.audioTrack;
             var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {

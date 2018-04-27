@@ -16,8 +16,8 @@ package org.mangui.hls.utils {
     public class WebVTTParser {
 
         static private const CUE:RegExp = /^(?:(.*)(?:\n))?([\d:,.]+) --> ([\d:,.]+)((.|\n)*)/;
+		static private const MPEGTS:RegExp = /MPEGTS[:=](\d+)/;
         static private const TIMESTAMP:RegExp = /^(?:(\d{2,}):)?(\d{2}):(\d{2})[,.](\d{3})$/;
-        static private const MPEGTS:RegExp = /MPEGTS[:=](\d+)/;
 
         /**
          * Parse a string into a series of Subtitles objects and return

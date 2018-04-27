@@ -635,24 +635,26 @@ package org.mangui.hls.demux {
 						var payload_type : uint = 0;
 						var payload_size : uint = 0;
                             while (sei.position < sei.length) {
-							// Parse payload type.
-							payload_type= 0;
-							do {
-                                    payload_type += sei.readUnsignedByte();
-							} while (payload_type == 0xFF);
-							// Parse payload size.
-							payload_size = 0;
-							do {
-                                    payload_size += sei.readUnsignedByte();
-                                } while (sei.bytesAvailable!=0 && payload_size == 0xFF);
-							// Process the payload. We only support EIA-608 payloads currently.
-							if (payload_type == 4) {
-                                    readCC(sei,pes.pts);
-							} else {
-                                    sei.position+=payload_size;
+								// Parse payload type.
+								payload_type= 0;
+								do {
+	                                    payload_type += sei.readUnsignedByte();
+								} while (payload_type == 0xFF);
+								// Parse payload size.
+								payload_size = 0;
+								do {
+	                                payload_size += sei.readUnsignedByte();
+	                            } while (sei.bytesAvailable!=0 && payload_size == 0xFF);
+								// Process the payload. We only support EIA-608 payloads currently.
+								if (payload_type == 4) {
+									var readPosition : Number = sei.position;
+	                                readCC(sei,pes.pts);
+									sei.position = readPosition + payload_size;
+								} else {
+	                                sei.position+=payload_size;
+								}
 							}
 						}
-					}
                     } catch(error : Error) {
                         CONFIG::LOGGING {
                             Log.debug("TS: SEI parsing error : " + error.message);
