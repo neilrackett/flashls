@@ -9,6 +9,7 @@ package org.mangui.hls {
     import flash.net.NetConnection;
     import flash.net.URLLoader;
     import flash.net.URLStream;
+    import flash.system.Capabilities;
     
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.AudioTrackController;
@@ -75,7 +76,7 @@ package org.mangui.hls {
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
 		
-		static public const VERSION:String = "1.4.0";
+		static public const VERSION:String = "1.4.1";
 		
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
@@ -374,6 +375,11 @@ package org.mangui.hls {
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
+			
+			HLSSettings.forceHttpIfMismatch = 
+				(Capabilities.playerType == 'ActiveX' || Capabilities.playerType == 'PlugIn')
+				&& /^http:\/\//.test(stage.loaderInfo.url);
+			
             this.dispatchEvent(new HLSEvent(HLSEvent.STAGE_SET));
         }
 

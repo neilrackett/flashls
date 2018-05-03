@@ -467,6 +467,15 @@ package org.mangui.hls {
          */
         public static var useHardwareVideoDecoder : Boolean = true;
 
+		/**
+		 * forceHttpIfMismatch
+		 * 
+		 * If an HTTP manifest calls an HTTPS URL, should the URL be forced to use HTTP instead?
+		 * 
+		 * Default is true
+		 */
+		public static var forceHttpIfMismatch:Boolean = true;
+		
         /**
          * logInfo
          *

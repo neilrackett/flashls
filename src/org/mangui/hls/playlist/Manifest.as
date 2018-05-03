@@ -8,11 +8,13 @@ package org.mangui.hls.playlist {
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.system.Capabilities;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import org.mangui.hls.HLS;
+	import org.mangui.hls.HLSSettings;
 	import org.mangui.hls.constant.HLSLoaderTypes;
 	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSLoadMetrics;
@@ -70,6 +72,9 @@ package org.mangui.hls.playlist {
 		private static const replacespace : RegExp = new RegExp("\\s+", "g");
 		private static const replacesinglequote : RegExp = new RegExp("\\\'", "g");
 		private static const replacedoublequote : RegExp = new RegExp("\\\"", "g");
+		private static const absoluteurl : RegExp = /^https?:\/\//;
+		private static const http : RegExp = /^http:\/\//;		
+		private static const https : RegExp = /^https:\/\//;		
 		/** Index in the array with levels. **/
 		private var _index : int;
 		/** URLLoader instance. **/
@@ -544,7 +549,10 @@ package org.mangui.hls.playlist {
 		private static function _extractURL(path : String, base : String) : String {
 			// trim white space if any
 			path.replace(replacespace, "");
-			if (/^https?:\/\//.test(path)) {
+			if (absoluteurl.test(path)) {
+				if (HLSSettings.forceHttpIfMismatch && http.test(base) && https.test(path)) { 
+					return path.replace(https, 'http://');
+				}
 				return path;
 			} else {
 				// Remove querystring
