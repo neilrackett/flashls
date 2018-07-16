@@ -375,11 +375,6 @@ package org.mangui.hls {
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
-			
-			HLSSettings.forceHttpIfMismatch = 
-				(Capabilities.playerType == 'ActiveX' || Capabilities.playerType == 'PlugIn')
-				&& /^http:\/\//.test(stage.loaderInfo.url);
-			
             this.dispatchEvent(new HLSEvent(HLSEvent.STAGE_SET));
         }
 
