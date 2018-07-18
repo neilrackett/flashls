@@ -364,6 +364,8 @@ package org.mangui.hls {
 		 * 
 		 * Should a subtitles track automatically be selected if it is flagged 
 		 * as DEFAULT=YES?
+         * 
+		 * Should always be set to false for OSMF implementations.
 		 * 
 		 * Default is false
 		 */
@@ -377,9 +379,11 @@ package org.mangui.hls {
 		 * If true, these subtitles will always be selected in preference to 
 		 * default subtitles. 
          * 
-         * Default is true 
+		 * Should always be set to false for OSMF implementations.
+         * 
+         * Default is false 
          */
-        public static var subtitlesAutoSelect:Boolean = true;
+        public static var subtitlesAutoSelect:Boolean = false;
         
         /**
          * subtitlesAutoSelectForced
@@ -388,9 +392,11 @@ package org.mangui.hls {
          * as FORCED=YES? If true, forced subtitles will always be selected 
 		 * in preference to all others.
          * 
-         * Default is true 
+		 * Should always be set to false for OSMF implementations.
+		 * 
+         * Default is false
          */
-        public static var subtitlesAutoSelectForced:Boolean = true;
+        public static var subtitlesAutoSelectForced:Boolean = false;
         
         /**
          * subtitlesUseFlvTagForVod

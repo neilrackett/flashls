@@ -76,7 +76,7 @@ package org.mangui.hls {
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
 		
-		static public const VERSION:String = "1.4.1";
+		static public const VERSION:String = "1.4.2";
 		
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
@@ -339,6 +339,11 @@ package org.mangui.hls {
             return _subtitlesTrackController.forcedSubtitlesTrack;
         }
         
+        /** The ID of the subtitles track flagged for automatic selection */
+        public function get autoSelectSubtitlesTrack():int {
+            return _subtitlesTrackController.autoSelectSubtitlesTrack;
+        }
+        
         /** Does the current subtitles playlist contain forced subtitles? */
         public function get hasForcedSubtitles():Boolean {
             return _subtitlesTrackController.hasForcedSubtitles;
@@ -375,6 +380,11 @@ package org.mangui.hls {
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
+			
+			HLSSettings.forceHttpIfMismatch = 
+				(Capabilities.playerType == 'ActiveX' || Capabilities.playerType == 'PlugIn')
+				&& /^http:\/\//.test(stage.loaderInfo.url);
+			
             this.dispatchEvent(new HLSEvent(HLSEvent.STAGE_SET));
         }
 

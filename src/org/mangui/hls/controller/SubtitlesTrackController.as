@@ -39,6 +39,8 @@ package org.mangui.hls.controller {
         private var _defaultTrackId : int;
         /** forced subtitles track id **/
         private var _forcedTrackId : int;
+        /** auto select subtitles track id **/
+        private var _autoSelectTrackId : int;
         
         use namespace hls_internal;
         
@@ -86,6 +88,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _defaultTrackId = -1;
             _forcedTrackId = -1;
+            _autoSelectTrackId = -1;
             _subtitlesTrackId = -1;
             _subtitlesTracksFromManifest = new Vector.<SubtitlesTrack>();
             _subtitlesTracks = new Vector.<SubtitlesTrack>();
@@ -104,7 +107,6 @@ package org.mangui.hls.controller {
             
             var subtitlesTrackList : Vector.<SubtitlesTrack> = new Vector.<SubtitlesTrack>();
             var streamId : String = _hls.levels[level].subtitles_stream_id;
-            var autoSelectId : int = -1;
             
             // check if subtitles stream id is set, and subtitles tracks available
             if (streamId && _levelLoader.subtitlesPlaylistTracks) {
@@ -128,9 +130,8 @@ package org.mangui.hls.controller {
                         if (isForced) _forcedTrackId = idx;
                         
                         // Technical Note TN2288: https://developer.apple.com/library/ios/technotes/tn2288/_index.html
-                        if (autoSelect 
-                            && playlistTrack.lang.toLowerCase().substr(0,2) == Capabilities.language) {
-                            autoSelectId = idx;
+                        if (autoSelect && playlistTrack.lang.toLowerCase().substr(0,2) == Capabilities.language) {
+                            _autoSelectTrackId = idx;
                         }
                     }
                 }
@@ -154,6 +155,8 @@ package org.mangui.hls.controller {
                 _subtitlesTracksMerge();
             }
 
+			// TODO Fix OSMF compatibility issues (player crashes after LoadTrait when auto select enabled) 
+
             // PRIORITY #1: Automatically select forced subtitles track
             if (HLSSettings.subtitlesAutoSelectForced && _forcedTrackId != -1){
                 subtitlesTrack = _forcedTrackId;
@@ -161,8 +164,8 @@ package org.mangui.hls.controller {
             }
 
             // PRIORITY #2: Automatically select auto-select subtitles track that matches current locale
-            if (HLSSettings.subtitlesAutoSelect && autoSelectId != -1) {
-                subtitlesTrack = autoSelectId;
+            if (HLSSettings.subtitlesAutoSelect && _autoSelectTrackId != -1) {
+                subtitlesTrack = _autoSelectTrackId;
                 return;
             }
 
@@ -238,6 +241,10 @@ package org.mangui.hls.controller {
 
         public function get forcedSubtitlesTrack():int {
             return _forcedTrackId;
+        }
+
+        public function get autoSelectSubtitlesTrack():int {
+            return _autoSelectTrackId;
         }
     }
 }
