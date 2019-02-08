@@ -125,12 +125,14 @@ package org.mangui.hls.loader {
                 if(subtitlesLevel == null) {
                     subtitlesLevel = subtitlesTrack.level = new Level();
                 }
-                
+                				
                 subtitlesLevel.updateFragments(frags);
                 subtitlesLevel.targetduration = Manifest.getTargetDuration(string);
-                
-                // if stream is live, use a timer to periodically reload playlist
-                if (_hls.type == HLSTypes.LIVE) {
+				
+                // if stream requires progressive download for subtitles, use a timer to periodically reload playlist
+				// This is the default for LIVE, but typically not needed for VOD (which normally lists all fragments 
+				// in the subtitles level manifest), but the option's there if you need it
+                if (_hls.type == HLSTypes.LIVE || HLSSettings.subtitlesUseProgressiveDownloadForVod) {
                     var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*subtitlesLevel.averageduration - getTimer());
                     CONFIG::LOGGING {
                         Log.debug(this+" Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");

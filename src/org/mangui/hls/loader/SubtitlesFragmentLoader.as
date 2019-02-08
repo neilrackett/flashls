@@ -175,7 +175,7 @@ package org.mangui.hls.loader {
         protected function loadNextFragment(event:Event=null):void {
 			if (_fragments.length) {
 				CONFIG::LOGGING {
-					Log.debug(this+" Loading next subtitles fragment");
+					Log.debug(this+" Loading next subtitles fragment ("+_fragments.length+" remaining)");
 				}
                 _retryRemaining = HLSSettings.fragmentLoadMaxRetry;
                 _retryDelay = 1000;
@@ -202,15 +202,17 @@ package org.mangui.hls.loader {
 					Log.debug(this+" Loading subtitles fragment: "+_fragment.url);
 				}
 				// Has the fragment already been loaded, processed and cached?
-				if (_tagCache[_fragment]) {
-	                var cached:Vector.<FLVTag> = _tagCache[_fragment] as Vector.<FLVTag>;
+				if (_tagCache[_fragment.url]) {
+	                var cached:* = _tagCache[_fragment.url]; // Vector.<FLVTag> or Boolean, depending if FLV tags are being used
 	                if (cached) {
-	                    appendTags(_fragment, cached);
+	                    if (useFlvTags && cached is FLVTag) {
+							appendTags(_fragment, cached);
+						}
 						loadNextFragment();
+						return;
 					}
-				} else {
-					_loader.load(new URLRequest(_fragment.url));
 				}
+				_loader.load(new URLRequest(_fragment.url));
             } else {
 				loadNextFragment();
             }
@@ -226,7 +228,7 @@ package org.mangui.hls.loader {
 			}
             var subtitles:Vector.<Subtitle> = WebVTTParser.parse(_loader.data, _fragment.level, _fragment.program_date);
 			
-			if (_hls.type == HLSTypes.VOD) {
+			if (_hls.type == HLSTypes.VOD && subtitles.length) {
 				subtitles = padSubtitles(subtitles);
 			}
 			
@@ -235,14 +237,14 @@ package org.mangui.hls.loader {
 				var tags:Vector.<FLVTag> = toTags(subtitles);
 				if (tags) {
 	                if (_hls.type == HLSTypes.VOD) {
-	                    _tagCache[_fragment] = tags;
+	                    _tagCache[_fragment.url] = tags;
 	                }
 	                appendTags(_fragment, tags);
 	            }
 
 			// ... or append them to the sequencer, if you prefer
 			} else {
-				_tagCache[_fragment] = true;
+				_tagCache[_fragment.url] = true;
 				_sequencer.appendSubtitles(_fragment.level, subtitles);
 			}
 			
@@ -254,20 +256,27 @@ package org.mangui.hls.loader {
 		 */
 		protected function padSubtitles(subtitles:Vector.<Subtitle>):Vector.<Subtitle> {
 			
+			var subtitle:Subtitle;
+			
+			subtitles || (subtitles = new Vector.<Subtitle>());
+			
 			// Fill all the gaps
 			for (var i:uint=0; i<subtitles.length-1; i++) {
 				
 				var nextSubtitle:Subtitle = subtitles[i+1];
-				var subtitle:Subtitle = subtitles[i];
 				
-				if (subtitle.endPTS < nextSubtitle.startPTS) {
+				subtitle = subtitles[i];
+				
+				if (nextSubtitle && subtitle.endPTS < nextSubtitle.startPTS) {
 					subtitles.splice(i+1, 0, new Subtitle(_fragment.level, '', subtitle.endPTS, nextSubtitle.startPTS, subtitle.endPosition, nextSubtitle.startPosition, subtitle.endDate, nextSubtitle.startDate));
 					++i;
 				}
 			}
 			
-			// ... and add a blank one at the end
-			subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endDate, subtitle.endDate));
+			if (subtitle) {
+				// ... and add a blank one at the end
+				subtitles.push(new Subtitle(_fragment.level, '', subtitle.endPTS, subtitle.endPTS, subtitle.endPosition, subtitle.endPosition, subtitle.endDate, subtitle.endDate));
+			}
 			
 			return subtitles;
 		}

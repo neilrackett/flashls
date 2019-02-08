@@ -419,6 +419,15 @@ package org.mangui.hls {
         public static var subtitlesUseFlvTagForLive:Boolean = true;
 		
 		/**
+		 * subtitlesUseProgressiveDownloadForVod
+		 * 
+		 * Should VOD subtitles use progressive download, the same as live streams?
+		 * 
+		 * Default is false
+		 */
+		public static var subtitlesUseProgressiveDownloadForVod:Boolean = false;
+		
+		/**
 		 * altAudioSwitchMode
 		 * 
 		 * Selects which method to use when switching between alternative audio
